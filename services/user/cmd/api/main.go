@@ -3,11 +3,11 @@ package main
 import (
 	"log"
 
-	"github.com/chris/system-design-library/pkg/config"
-	"github.com/chris/system-design-library/pkg/events"
-	"github.com/chris/system-design-library/pkg/logger"
-	"github.com/chris/system-design-library/pkg/server"
-	"github.com/chris/system-design-library/services/user/internal/handler"
+	"github.com/chris-alexander-pop/system-design-library/pkg/config"
+	"github.com/chris-alexander-pop/system-design-library/pkg/events"
+	"github.com/chris-alexander-pop/system-design-library/pkg/logger"
+	"github.com/chris-alexander-pop/system-design-library/pkg/server"
+	"github.com/chris-alexander-pop/system-design-library/services/user/internal/handler"
 )
 
 type Config struct {

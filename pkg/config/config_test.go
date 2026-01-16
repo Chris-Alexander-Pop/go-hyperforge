@@ -4,8 +4,8 @@ import (
 	"os"
 	"testing"
 
-	"github.com/chris/system-design-library/pkg/config"
-	"github.com/chris/system-design-library/pkg/test"
+	"github.com/chris-alexander-pop/system-design-library/pkg/config"
+	"github.com/chris-alexander-pop/system-design-library/pkg/test"
 )
 
 type ConfigSuite struct {

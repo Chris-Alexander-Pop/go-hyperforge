@@ -4,8 +4,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/chris/system-design-library/pkg/jwt"
-	"github.com/chris/system-design-library/pkg/test"
+	"github.com/chris-alexander-pop/system-design-library/pkg/jwt"
+	"github.com/chris-alexander-pop/system-design-library/pkg/test"
 )
 
 type JWTSuite struct {

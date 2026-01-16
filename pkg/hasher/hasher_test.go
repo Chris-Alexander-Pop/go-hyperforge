@@ -3,8 +3,8 @@ package hasher_test
 import (
 	"testing"
 
-	"github.com/chris/system-design-library/pkg/hasher"
-	"github.com/chris/system-design-library/pkg/test"
+	"github.com/chris-alexander-pop/system-design-library/pkg/hasher"
+	"github.com/chris-alexander-pop/system-design-library/pkg/test"
 )
 
 type HasherSuite struct {

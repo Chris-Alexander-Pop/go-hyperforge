@@ -4,9 +4,9 @@ import (
 	"log"
 	"net/url"
 
-	"github.com/chris/system-design-library/pkg/config"
-	"github.com/chris/system-design-library/pkg/logger"
-	"github.com/chris/system-design-library/pkg/server"
+	"github.com/chris-alexander-pop/system-design-library/pkg/config"
+	"github.com/chris-alexander-pop/system-design-library/pkg/logger"
+	"github.com/chris-alexander-pop/system-design-library/pkg/server"
 	"github.com/labstack/echo/v4/middleware"
 )
 

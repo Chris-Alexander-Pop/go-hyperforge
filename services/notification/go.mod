@@ -1,10 +1,10 @@
-module github.com/chris/system-design-library/services/notification
+module github.com/chris-alexander-pop/system-design-library/services/notification
 
 go 1.25.5
 
-replace github.com/chris/system-design-library => ../../
+replace github.com/chris-alexander-pop/system-design-library => ../../
 
-require github.com/chris/system-design-library v0.0.0-00010101000000-000000000000
+require github.com/chris-alexander-pop/system-design-library v0.0.0-00010101000000-000000000000
 
 require (
 	github.com/BurntSushi/toml v1.2.1 // indirect

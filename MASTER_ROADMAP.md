@@ -48,11 +48,7 @@ This is the master plan to build the ultimate Go microservices ecosystem. It is 
 *   **DDD**: Aggregates, Specs.
 *   **CQRS**: Command Bus.
 
-### 11. [Testing Strategy](roadmap/12_TESTING_STRATEGY.md)
+### 11. [Testing Strategy](roadmap/11_TESTING_STRATEGY.md)
 *   **Framework**: `pkg/test` (TestContainers, Mocks).
 *   **Types**: Unit, Integration, E2E, Contract.
 
----
-
-## 🎯 Immediate Next Steps
-Pick a Reference Architecture (e.g. Chat) and implement it using the Foundation Library!

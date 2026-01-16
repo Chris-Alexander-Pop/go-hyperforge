@@ -4,9 +4,9 @@ import (
 	"context"
 	"log"
 
-	"github.com/chris/system-design-library/pkg/config"
-	"github.com/chris/system-design-library/pkg/events"
-	"github.com/chris/system-design-library/pkg/logger"
+	"github.com/chris-alexander-pop/system-design-library/pkg/config"
+	"github.com/chris-alexander-pop/system-design-library/pkg/events"
+	"github.com/chris-alexander-pop/system-design-library/pkg/logger"
 )
 
 type Config struct {

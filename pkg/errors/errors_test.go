@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"testing"
 
-	appErrors "github.com/chris/system-design-library/pkg/errors"
-	"github.com/chris/system-design-library/pkg/test"
+	appErrors "github.com/chris-alexander-pop/system-design-library/pkg/errors"
+	"github.com/chris-alexander-pop/system-design-library/pkg/test"
 )
 
 type ErrorsSuite struct {

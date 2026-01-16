@@ -1,4 +1,4 @@
-module github.com/chris/system-design-library
+module github.com/chris-alexander-pop/system-design-library
 
 go 1.25.5
 

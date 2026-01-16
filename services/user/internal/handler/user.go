@@ -4,7 +4,7 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/chris/system-design-library/pkg/events"
+	"github.com/chris-alexander-pop/system-design-library/pkg/events"
 	"github.com/labstack/echo/v4"
 )
 
