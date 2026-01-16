@@ -17,6 +17,9 @@ type Cache interface {
 	// Delete removes a key.
 	Delete(ctx context.Context, key string) error
 
+	// Incr increments a counter.
+	Incr(ctx context.Context, key string, delta int64) (int64, error)
+
 	// Close cleans up resources
 	Close() error
 }

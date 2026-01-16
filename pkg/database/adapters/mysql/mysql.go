@@ -5,6 +5,7 @@ import (
 
 	"github.com/chris-alexander-pop/system-design-library/pkg/database"
 	"github.com/chris-alexander-pop/system-design-library/pkg/errors"
+	mysqldriver "github.com/go-sql-driver/mysql"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	gormlogger "gorm.io/gorm/logger"
@@ -28,7 +29,7 @@ func New(cfg database.Config) (*gorm.DB, error) {
 		// Register the custom config with a unique name (hash or just "custom")
 		// For simplicity, we use "custom" but in a real system we might need uniqueness if multiple DBs have different certs.
 		// Re-registering with the same name is allowed by the driver (overwrites).
-		err = driver.RegisterTLSConfig("custom", tlsConfig)
+		err = mysqldriver.RegisterTLSConfig("custom", tlsConfig)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to register mysql tls config")
 		}

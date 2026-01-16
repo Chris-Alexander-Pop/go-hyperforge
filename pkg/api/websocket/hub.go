@@ -3,9 +3,9 @@ package websocket
 import (
 	"log"
 	"net/http"
-	"sync"
 	"time"
 
+	"github.com/chris-alexander-pop/system-design-library/pkg/concurrency"
 	"github.com/gorilla/websocket"
 )
 
@@ -23,7 +23,7 @@ type Hub struct {
 	// Unregister requests from clients
 	unregister chan *Client
 
-	mu sync.RWMutex
+	mu *concurrency.SmartRWMutex
 }
 
 func NewHub() *Hub {
@@ -32,6 +32,7 @@ func NewHub() *Hub {
 		register:   make(chan *Client),
 		unregister: make(chan *Client),
 		clients:    make(map[*Client]bool),
+		mu:         concurrency.NewSmartRWMutex(concurrency.MutexConfig{Name: "websocket-hub"}),
 	}
 }
 

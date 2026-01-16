@@ -17,6 +17,10 @@ const (
 	CodeUnauthorized    = "UNAUTHORIZED"
 	CodeForbidden       = "FORBIDDEN"
 	CodeConflict        = "CONFLICT"
+
+	// Aliases
+	CodeUnauthenticated  = CodeUnauthorized
+	CodePermissionDenied = CodeForbidden
 )
 
 // AppError is a custom error type that includes an error code, message, and underlying error.

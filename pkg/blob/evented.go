@@ -2,22 +2,23 @@ package blob
 
 import (
 	"context"
+	"io"
 	"time"
 
 	"github.com/chris-alexander-pop/system-design-library/pkg/events"
 )
 
-// EventedStore decorates a BlobStore to emit events
+// EventedStore decorates a Store to emit events
 type EventedStore struct {
-	next BlobStore
+	next Store
 	bus  events.Bus
 }
 
-func NewEventedStore(next BlobStore, bus events.Bus) *EventedStore {
+func NewEventedStore(next Store, bus events.Bus) *EventedStore {
 	return &EventedStore{next: next, bus: bus}
 }
 
-func (s *EventedStore) Upload(ctx context.Context, key string, data []byte) error {
+func (s *EventedStore) Upload(ctx context.Context, key string, data io.Reader) error {
 	err := s.next.Upload(ctx, key, data)
 	if err == nil {
 		// Emit Event
@@ -27,15 +28,14 @@ func (s *EventedStore) Upload(ctx context.Context, key string, data []byte) erro
 			Source:    "pkg/blob",
 			Timestamp: time.Now(),
 			Payload: map[string]interface{}{
-				"key":  key,
-				"size": len(data),
+				"key": key,
 			},
 		})
 	}
 	return err
 }
 
-func (s *EventedStore) Download(ctx context.Context, key string) ([]byte, error) {
+func (s *EventedStore) Download(ctx context.Context, key string) (io.ReadCloser, error) {
 	return s.next.Download(ctx, key)
 }
 
@@ -53,4 +53,8 @@ func (s *EventedStore) Delete(ctx context.Context, key string) error {
 		})
 	}
 	return err
+}
+
+func (s *EventedStore) URL(key string) string {
+	return s.next.URL(key)
 }

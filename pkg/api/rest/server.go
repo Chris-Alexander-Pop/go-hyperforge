@@ -95,7 +95,7 @@ func genericErrorHandler(err error, c echo.Context) {
 	if he, ok := err.(*echo.HTTPError); ok {
 		code = he.Code
 		msg = he.Message.(string)
-	} else if e, ok := err.(*errors.Error); ok {
+	} else if e, ok := err.(*errors.AppError); ok {
 		// Map Custom Error Codes
 		switch e.Code {
 		case errors.CodeNotFound:

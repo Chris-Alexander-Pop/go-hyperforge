@@ -3,9 +3,9 @@ package memory
 import (
 	"context"
 	"encoding/json"
-	"sync"
 	"time"
 
+	"github.com/chris-alexander-pop/system-design-library/pkg/concurrency"
 	"github.com/chris-alexander-pop/system-design-library/pkg/errors"
 )
 
@@ -16,12 +16,13 @@ type item struct {
 
 type MemoryCache struct {
 	items map[string]item
-	mu    sync.RWMutex
+	mu    *concurrency.SmartRWMutex
 }
 
 func New() *MemoryCache {
 	return &MemoryCache{
 		items: make(map[string]item),
+		mu:    concurrency.NewSmartRWMutex(concurrency.MutexConfig{Name: "memory-cache"}),
 	}
 }
 
@@ -29,17 +30,16 @@ func (m *MemoryCache) Get(ctx context.Context, key string, dest interface{}) err
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 
-	item, ok := m.items[key]
+	it, ok := m.items[key]
 	if !ok {
 		return errors.New(errors.CodeNotFound, "key not found", nil)
 	}
 
-	if time.Now().After(item.expiresAt) {
-		// Lazy delete? Cannot modify under RLock. Just return NotFound.
+	if time.Now().After(it.expiresAt) {
 		return errors.New(errors.CodeNotFound, "key expired", nil)
 	}
 
-	return json.Unmarshal(item.value, dest)
+	return json.Unmarshal(it.value, dest)
 }
 
 func (m *MemoryCache) Set(ctx context.Context, key string, value interface{}, ttl time.Duration) error {
@@ -69,16 +69,14 @@ func (m *MemoryCache) Incr(ctx context.Context, key string, delta int64) (int64,
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
-	item, ok := m.items[key]
+	it, ok := m.items[key]
 	var val int64
 
 	if ok {
-		// Check expiry
-		if time.Now().After(item.expiresAt) {
+		if time.Now().After(it.expiresAt) {
 			val = 0
 		} else {
-			// Unmarshal
-			_ = json.Unmarshal(item.value, &val)
+			_ = json.Unmarshal(it.value, &val)
 		}
 	}
 
@@ -89,14 +87,9 @@ func (m *MemoryCache) Incr(ctx context.Context, key string, delta int64) (int64,
 		return 0, err
 	}
 
-	// Incr usually preserves existing TTL or sets no TTL?
-	// Redis INCR preserves TTL. If key is new, it needs a TTL or infinite?
-	// For simplicity, if new, we set default infinite (or very long).
-	// If existing, preserve expiry.
-
-	expiry := time.Now().Add(24 * time.Hour) // Default for new keys
-	if ok && time.Now().Before(item.expiresAt) {
-		expiry = item.expiresAt
+	expiry := time.Now().Add(24 * time.Hour)
+	if ok && time.Now().Before(it.expiresAt) {
+		expiry = it.expiresAt
 	}
 
 	m.items[key] = item{

@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/aidantwoods/go-paseto/v2"
+	"aidanwoods.dev/go-paseto"
 	"github.com/chris-alexander-pop/system-design-library/pkg/auth"
 	"github.com/chris-alexander-pop/system-design-library/pkg/errors"
 )

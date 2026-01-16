@@ -15,6 +15,13 @@ const (
 	StrategyTokenBucket Strategy = "token_bucket"
 )
 
+// Result from a rate limit check
+type Result struct {
+	Allowed   bool
+	Remaining int64
+	Reset     time.Duration
+}
+
 // Limiter defines the interface for different strategies
 type Limiter interface {
 	// Allow checks if the request is allowed

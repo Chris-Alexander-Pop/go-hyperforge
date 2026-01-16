@@ -6,6 +6,7 @@ import (
 
 	"github.com/chris-alexander-pop/system-design-library/pkg/api/grpc"
 	"github.com/chris-alexander-pop/system-design-library/pkg/api/rest"
+	"github.com/labstack/echo/v4"
 )
 
 type Protocol string
@@ -47,7 +48,7 @@ func New(cfg Config) (Server, error) {
 		// Specialized setup requires schemas here, which this factory doesn't know.
 		// So this is a stub or we assume simple playground for now.
 		r := rest.New(rest.Config{Port: cfg.Port})
-		r.Echo().Any("/query", func(c echoContext) error { return nil }) // Stub
+		r.Echo().Any("/query", func(c echo.Context) error { return nil }) // Stub
 		return r, nil
 
 	default:
@@ -70,6 +71,3 @@ func (w *grpcServerWrapper) Shutdown(ctx context.Context) error {
 	w.s.Stop()
 	return nil
 }
-
-// Helper needed because rest.Server depends on Echo types which we shouldn't expose unless needed.
-type echoContext interface{}

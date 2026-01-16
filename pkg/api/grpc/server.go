@@ -25,12 +25,11 @@ type Server struct {
 
 func New(cfg Config) *Server {
 	opts := []grpc.ServerOption{
+		grpc.StatsHandler(otelgrpc.NewServerHandler()), // OTel Tracing
 		grpc.UnaryInterceptor(chainUnary(
-			otelgrpc.UnaryServerInterceptor(), // OTel Tracing
-			RecoveryInterceptor(),             // Panic Recovery
-			LoggingInterceptor(),              // Structured Logging
+			RecoveryInterceptor(), // Panic Recovery
+			LoggingInterceptor(),  // Structured Logging
 		)),
-		grpc.StreamInterceptor(otelgrpc.StreamServerInterceptor()),
 	}
 
 	srv := grpc.NewServer(opts...)
