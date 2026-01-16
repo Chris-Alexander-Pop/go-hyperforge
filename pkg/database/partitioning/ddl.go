@@ -11,6 +11,7 @@ import (
 func CreateRangePartition(db *gorm.DB, table, column, start, end string) error {
 	partitionName := fmt.Sprintf("%s_%s_%s", table, start, end)
 	// Sanitize inputs in real app!
+	// TBI: Robust SQL injection prevention for table/column names (using "" quoting)
 	sql := fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s PARTITION OF %s FOR VALUES FROM ('%s') TO ('%s');",
 		partitionName, table, start, end)
 

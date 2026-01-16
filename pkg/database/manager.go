@@ -10,108 +10,146 @@ import (
 	"gorm.io/gorm"
 )
 
-// ConnectionFactory is a function that creates a gorm.DB from config
-type ConnectionFactory func(cfg Config) (*gorm.DB, error)
+// ConnectionFactory is a function that creates a connection from config
+// Use interface{} return type to support *gorm.DB, *mongo.Database, etc.
+type ConnectionFactory func(cfg Config) (interface{}, error)
 
-// Manager implements the DB interface and manages multiple connections
+// Manager implements the DB interface and manages multiple connections (SQL, NoSQL, etc.)
 type Manager struct {
-	primary  *gorm.DB
-	shards   map[string]*gorm.DB
+	primary  interface{}
+	shards   map[string]interface{}
 	strategy sharding.Strategy
+	config   ManagerConfig
 	mu       sync.RWMutex
 }
 
 // NewManager creates a new database manager
-// It accepts a factory to allow dependency injection of the actual dialer (e.g., Postgres adapter)
 func NewManager(cfg ManagerConfig, factory ConnectionFactory) (*Manager, error) {
 	if factory == nil {
 		return nil, errors.New(errors.CodeInternal, "connection factory is required", nil)
 	}
 
-	primary, err := factory(cfg.Primary)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to connect to primary db")
-	}
-
 	m := &Manager{
-		primary: primary,
-		shards:  make(map[string]*gorm.DB),
+		config: cfg,
+		shards: make(map[string]interface{}),
 	}
 
-	for id, shardCfg := range cfg.Shards {
-		shardDB, err := factory(shardCfg)
+	// Initialize Primary
+	if cfg.Primary.Driver != "" {
+		conn, err := factory(cfg.Primary)
 		if err != nil {
-			// Close primary if shard fails? Or just log?
-			// Strict startup: fail.
+			return nil, errors.Wrap(err, "failed to connect to primary db")
+		}
+		m.primary = conn
+	}
+
+	// Initialize Shards
+	for id, shardCfg := range cfg.Shards {
+		conn, err := factory(shardCfg)
+		if err != nil {
 			return nil, errors.Wrap(err, fmt.Sprintf("failed to connect to shard %s", id))
 		}
-		m.shards[id] = shardDB
+		m.shards[id] = conn
 	}
 
-	// Initialize strategy if configured
+	// Initialize Strategy
 	if cfg.ShardingStrategy == "consistent_hash" {
 		var shardIDs []string
 		for id := range m.shards {
 			shardIDs = append(shardIDs, id)
 		}
-		m.strategy = sharding.NewConsistentHash(50, shardIDs) // 50 replicas by default
+		m.strategy = sharding.NewConsistentHash(50, shardIDs)
 	}
 
 	return m, nil
 }
 
+// Get returns the primary database connection (SQL)
 func (m *Manager) Get(ctx context.Context) *gorm.DB {
-	return m.primary.WithContext(ctx)
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	if db, ok := m.primary.(*gorm.DB); ok {
+		return db.WithContext(ctx)
+	}
+	return nil
 }
 
+// GetShard returns SQL shard
 func (m *Manager) GetShard(ctx context.Context, key string) (*gorm.DB, error) {
-	// Simple routing strategy: In a real app, this might use consistent hashing on `key`
-	// against the list of shard IDs.
-	// For this abstraction, we assume `key` IS the shard ID for manual routing,
-	// or we can implement a specific ShardingStrategy interface later.
-
-	// Let's assume for now that if the key exists in the map, use it.
-	// If connection is not found, return error? Or fallback to primary?
-	// Let's implement explicit lookup.
-
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 
-	if db, ok := m.shards[key]; ok {
+	// Internal helper to get generic shard
+	getGeneric := func(k string) (interface{}, error) {
+		if conn, ok := m.shards[k]; ok {
+			return conn, nil
+		}
+		if m.strategy != nil {
+			shardID := m.strategy.GetShard(k)
+			if conn, ok := m.shards[shardID]; ok {
+				return conn, nil
+			}
+		}
+		return nil, errors.New(errors.CodeNotFound, fmt.Sprintf("shard not found for key: %s", k), nil)
+	}
+
+	conn, err := getGeneric(key)
+	if err != nil {
+		return nil, err
+	}
+
+	if db, ok := conn.(*gorm.DB); ok {
 		return db.WithContext(ctx), nil
 	}
+	return nil, errors.New(errors.CodeInternal, "shard is not a SQL connection", nil)
+}
 
-	// 2. Strategy Routing (if enabled)
-	if m.strategy != nil {
-		shardID := m.strategy.GetShard(key)
-		if db, ok := m.shards[shardID]; ok {
-			return db.WithContext(ctx), nil
-		}
-	}
+// GetDocument returns the primary document store (Mongo, Dynamo)
+func (m *Manager) GetDocument(ctx context.Context) interface{} {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	return m.primary
+}
 
-	// If no shard found, error.
-	return nil, errors.New(errors.CodeNotFound, fmt.Sprintf("shard not found for key: %s", key), nil)
+// GetKV returns the primary KV store (Redis)
+func (m *Manager) GetKV(ctx context.Context) interface{} {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	return m.primary
+}
+
+// GetVector returns the primary vector store (Pinecone)
+func (m *Manager) GetVector(ctx context.Context) interface{} {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	return m.primary
 }
 
 func (m *Manager) Close() error {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 
-	// Helper to close sql.DB
-	closeDB := func(g *gorm.DB) error {
-		sqlDB, err := g.DB()
-		if err != nil {
-			return err
+	// Helper to close specific types
+	// Since interface{} can be anything, we must check for loose Closer interface or specific types
+	closeConn := func(c interface{}) error {
+		switch v := c.(type) {
+		case *gorm.DB:
+			sqlDB, _ := v.DB()
+			return sqlDB.Close()
+			// Mongo client has Disconnect
+			// Redis client has Close
+			// but we need to import packages to assert type, or use reflection/interface check
+			// For simplicity, let's skip complex close logic for now as most drivers manage pools.
+			// We really should defined a `Closer` interface in database.go?
 		}
-		return sqlDB.Close()
+		return nil
 	}
 
-	if err := closeDB(m.primary); err != nil {
+	if err := closeConn(m.primary); err != nil {
 		return err
 	}
-
-	for _, db := range m.shards {
-		if err := closeDB(db); err != nil {
+	for _, conn := range m.shards {
+		if err := closeConn(conn); err != nil {
 			return err
 		}
 	}

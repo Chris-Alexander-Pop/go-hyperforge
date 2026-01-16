@@ -18,6 +18,7 @@ func New(cfg database.Config) (*gorm.DB, error) {
 
 	// Simplified TLS logic: if SSLMode is "required" or "verify-full", append tls=true (or custom)
 	// In a real app we would register a custom TLS config using mysql.RegisterTLSConfig
+	// TBI: Implement robust TLS config registration for custom CA usage
 	tlsParam := "false"
 	if cfg.SSLMode == "require" || cfg.SSLMode == "verify-full" || cfg.SSLMode == "true" {
 		tlsParam = "true" // or "custom" if certs are provided

@@ -9,6 +9,7 @@ import (
 	"github.com/chris-alexander-pop/system-design-library/pkg/database/ops"
 	"github.com/chris-alexander-pop/system-design-library/pkg/database/transfer"
 	"github.com/chris-alexander-pop/system-design-library/pkg/test"
+	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
 
@@ -29,8 +30,10 @@ type User struct {
 
 func (s *OpsSuite) TestBulkOps() {
 	cfg := database.Config{Name: "bulk_ops_test"}
-	db, err := SqliteFactory(cfg)
+	// Factory returns interface{}, need assertion
+	val, err := SqliteFactory(cfg)
 	s.Require().NoError(err)
+	db := val.(*gorm.DB)
 
 	s.Require().NoError(db.AutoMigrate(&User{}))
 
@@ -62,8 +65,9 @@ func (s *OpsSuite) TestBulkOps() {
 	// 3. Transfer (Copy Table)
 	// Create another DB
 	destCfg := database.Config{Name: "bulk_ops_dest"}
-	destDB, err := SqliteFactory(destCfg)
+	val2, err := SqliteFactory(destCfg)
 	s.Require().NoError(err)
+	destDB := val2.(*gorm.DB)
 
 	// Copy users from db -> destDB
 	err = transfer.CopyTable(ctx, db, destDB, &User{}, 10)

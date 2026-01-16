@@ -18,11 +18,11 @@ func TestShardingSuite(t *testing.T) {
 
 func (s *ShardingSuite) TestConsistentHashing() {
 	cfg := database.ManagerConfig{
-		Primary: database.Config{Name: "primary"},
+		Primary: database.Config{Name: "primary", Driver: "sqlite"},
 		Shards: map[string]database.Config{
-			"node-a": {Name: "node_a"},
-			"node-b": {Name: "node_b"},
-			"node-c": {Name: "node_c"},
+			"node-a": {Name: "node_a", Driver: "sqlite"},
+			"node-b": {Name: "node_b", Driver: "sqlite"},
+			"node-c": {Name: "node_c", Driver: "sqlite"},
 		},
 		ShardingStrategy: "consistent_hash",
 	}

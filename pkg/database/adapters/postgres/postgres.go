@@ -22,6 +22,7 @@ func New(cfg database.Config) (*gorm.DB, error) {
 
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
 		// In a real app, use a custom gorm logger that wraps our pkg/logger
+		// TBI: Implement GORM-to-pkg/logger adapter
 		Logger: logger.Default.LogMode(logger.Info),
 	})
 	if err != nil {

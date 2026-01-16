@@ -12,6 +12,7 @@ import (
 type SearchFunc func(ctx context.Context, shardID string, vector []float32, limit int) ([]Result, error)
 
 // NOTE: In a real system you would use a min-heap (priority queue) to maintain top-k across all results efficiently.
+// TBI: Implement Min-Heap for aggregation optimization
 // For this library, we'll collect all results and sort them, as K is usually small (e.g., 10-100).
 // Simplicity vs "Overengineering": We'll implement a Scatter-Gather with timeout.
 // TBI: Implement HNSW or IVF index creation and usage for truly large-scale search.

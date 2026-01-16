@@ -9,7 +9,6 @@ import (
 )
 
 // InstrumentedManager wraps Manager to add logging for connection acquisition
-// Note: GORM has its own logger for SQL queries. This is high-level manager instrumentation.
 type InstrumentedManager struct {
 	next DB
 }
@@ -19,14 +18,12 @@ func NewInstrumentedManager(next DB) *InstrumentedManager {
 }
 
 func (m *InstrumentedManager) Get(ctx context.Context) *gorm.DB {
-	// Not logging every Get() as it's too noisy, but we could trace it if needed.
-	// For now, we assume GORM plugins handle the Query Tracing.
 	return m.next.Get(ctx)
 }
 
 func (m *InstrumentedManager) GetShard(ctx context.Context, key string) (*gorm.DB, error) {
 	start := time.Now()
-	logger.L().DebugContext(ctx, "resolving shard", "key", key)
+	// logger.L().DebugContext(ctx, "resolving shard", "key", key)
 
 	db, err := m.next.GetShard(ctx, key)
 	duration := time.Since(start)
@@ -35,11 +32,19 @@ func (m *InstrumentedManager) GetShard(ctx context.Context, key string) (*gorm.D
 		logger.L().ErrorContext(ctx, "failed to resolve shard", "key", key, "error", err, "duration", duration)
 		return nil, err
 	}
-
-	// We might want to log which shard was selected if Manager exposed it,
-	// but GetShard just returns *DB.
-
 	return db, nil
+}
+
+func (m *InstrumentedManager) GetDocument(ctx context.Context) interface{} {
+	return m.next.GetDocument(ctx)
+}
+
+func (m *InstrumentedManager) GetKV(ctx context.Context) interface{} {
+	return m.next.GetKV(ctx)
+}
+
+func (m *InstrumentedManager) GetVector(ctx context.Context) interface{} {
+	return m.next.GetVector(ctx)
 }
 
 func (m *InstrumentedManager) Close() error {
