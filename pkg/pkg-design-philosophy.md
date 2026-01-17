@@ -27,7 +27,13 @@ This document defines the architectural standards, file structure, and developme
 - Use a single `Config` struct with `env` tags.
 - Ensure feature parity: If SQL has TLS, NoSQL must have TLS. No "toy" drivers.
 
----
+### Decoupled Dependencies
+**Import only what you use.**
+- Adapters live in separate packages (`pkg/{name}/adapters/{driver}/`).
+- The root package imports ZERO external SDKs—only standard library and internal packages.
+- Users explicitly import the adapter they need, pulling only that dependency.
+- This prevents "mega-dependency" scenarios where using one feature imports all SDKs.
+- Example: Importing `pkg/messaging/adapters/kafka` only pulls Sarama, not RabbitMQ or AWS SDKs.
 
 ## 2. Directory Structure Standard (The "Where")
 
@@ -87,7 +93,22 @@ Follow this step-by-step process when adding a new feature or package:
 7.  **Verify**: Run the test suite against the Real adapter (if keys provided) or rely on the logic parity with Memory adapter.
 
 ### Coding Standards
-- **Errors**: Use `pkg/errors`. Wrap everything: `errors.Wrap(err, "context")`.
-- **Logs**: Use `pkg/logger`. `Logger.L().InfoContext(ctx, ...)`.
+
+#### Internal Shared Packages (MUST USE)
+The following packages already exist in `pkg/` and **MUST** be used for consistency. Do NOT create custom implementations or import external alternatives.
+
+| Package | Purpose | Usage |
+|---------|---------|-------|
+| `pkg/errors` | Structured error handling with error codes | `errors.New("CODE", "message", err)`, `errors.Wrap(err, "context")` |
+| `pkg/logger` | Structured logging (slog-based) | `logger.L().InfoContext(ctx, "message", "key", value)` |
+| `pkg/telemetry` | OpenTelemetry setup & tracing | Tracer initialization, span creation |
+| `pkg/config` | Environment-based configuration | `env` struct tags, config loading |
+| `pkg/validator` | Input validation | Struct validation with tags |
+
+#### General Rules
+- **Errors**: Always use `pkg/errors`. Create error constructors (e.g., `ErrNotFound(err)`) that wrap `errors.New(code, msg, err)`.
+- **Logging**: Always use `pkg/logger`. Never use `fmt.Println` or `log.Printf` in production code.
+- **Tracing**: Use `otel.Tracer("pkg/{name}")` for creating tracers. Spans should be created in `instrumented.go`.
 - **Context**: Every I/O method MUST accept `context.Context` as the first argument.
 - **Parity**: If you add `SetMaxOpenConns` for SQL, check if Redis client has a similar setting (e.g., `PoolSize`) and map it.
+

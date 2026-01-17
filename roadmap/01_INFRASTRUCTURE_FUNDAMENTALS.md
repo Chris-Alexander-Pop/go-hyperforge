@@ -10,23 +10,28 @@
     - CAP Theorem Trade-offs (Documented decisions for each DB).
 
 ## Open Source Messaging (Self-Hosted)
-- [ ] **Kafka**:
-    - Producer/Consumer using `confluent-kafka-go` or `sarama`.
-- [ ] **RabbitMQ**:
+- [x] **Kafka**:
+    - Producer/Consumer using `sarama`.
+- [x] **RabbitMQ**:
     - AMQP 0.9.1 topology management.
-- [ ] **NATS**:
+- [x] **NATS**:
     - JetStream advanced patterns (WorkQueue, KV Store).
+- [x] **Redis Streams**:
+    - Consumer groups and message acknowledgment.
 
 ## AWS (Amazon Web Services)
 - [ ] **Computation**: Lambda / Fargate adapters.
 - [ ] **Storage**: S3 adapter for `pkg/blob`.
-- [ ] **Messaging**: SQS (Queue) & SNS (PubSub).
+- [x] **Messaging**: SQS (Queue) & SNS (PubSub).
 - [ ] **Auth**: Cognito User Pools.
 
 ## GCP (Google Cloud Platform)
 - [ ] **Computation**: Cloud Run / Functions.
 - [ ] **Storage**: GCS adapter.
-- [ ] **Messaging**: Pub/Sub.
+- [x] **Messaging**: Pub/Sub.
+
+## Azure
+- [x] **Messaging**: Azure Service Bus.
 
 ## Infrastructure as Code
 - [ ] **Terraform**: Modules for every service template.
