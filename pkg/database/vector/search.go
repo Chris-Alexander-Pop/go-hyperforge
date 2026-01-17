@@ -1,10 +1,10 @@
 package vector
 
 import (
-	"container/heap"
 	"context"
 	"runtime"
 
+	"github.com/chris-alexander-pop/system-design-library/pkg/datastructures/heap"
 	"github.com/chris-alexander-pop/system-design-library/pkg/errors"
 	"golang.org/x/sync/errgroup"
 	"golang.org/x/sync/semaphore"
@@ -13,27 +13,7 @@ import (
 // SearchFunc defines the signature for searching a single shard
 type SearchFunc func(ctx context.Context, shardID string, vector []float32, limit int) ([]Result, error)
 
-// ResultHeap implements heap.Interface for a Min-Heap of Results based on Score.
-// We use a Min-Heap to maintain the Top-K HIGHEST scores.
-// The root of the heap will be the item with the LOWEST score among the top K.
-// If we find an item with score > root, we pop root and push new item.
-type ResultHeap []Result
-
-func (h ResultHeap) Len() int           { return len(h) }
-func (h ResultHeap) Less(i, j int) bool { return h[i].Score < h[j].Score } // Min-Heap based on Score
-func (h ResultHeap) Swap(i, j int)      { h[i], h[j] = h[j], h[i] }
-
-func (h *ResultHeap) Push(x interface{}) {
-	*h = append(*h, x.(Result))
-}
-
-func (h *ResultHeap) Pop() interface{} {
-	old := *h
-	n := len(old)
-	x := old[n-1]
-	*h = old[0 : n-1]
-	return x
-}
+// ResultHeap removed in favor of datastructures/heap
 
 // ScatterGatherSearch executes search across all shards concurrently
 // Implements bounded concurrency and Heap-based aggregation.
@@ -85,18 +65,23 @@ func ScatterGatherSearch(
 	close(resultsChan)
 
 	// 4. Gather with Min-Heap (Maintain Top-K)
-	h := &ResultHeap{}
-	heap.Init(h)
+	// We want to keep the HIGHEST scores.
+	// We use a Min-Heap of size K. The root is the "lowest of the top K".
+	// If a new item is > root, we pop root and push new item.
+	h := heap.NewMinHeap[Result]()
 
 	for shardResults := range resultsChan {
 		for _, res := range shardResults {
-			if h.Len() < limit {
-				heap.Push(h, res)
+			if h.Size() < limit {
+				h.PushItem(res, float64(res.Score))
 			} else {
+				// Peek at the smallest item in the heap
+				_, minScore, _ := h.Peek()
+
 				// If new score is better than the worst of our top-k
-				if res.Score > (*h)[0].Score {
-					heap.Pop(h)
-					heap.Push(h, res)
+				if float64(res.Score) > minScore {
+					h.PopItem()
+					h.PushItem(res, float64(res.Score))
 				}
 			}
 		}
@@ -104,9 +89,10 @@ func ScatterGatherSearch(
 
 	// 5. Extract and Sort (Heap logic leaves them unordered mostly)
 	// Pop all gives us smallest to largest of the top K.
-	finalResults := make([]Result, h.Len())
-	for i := h.Len() - 1; i >= 0; i-- {
-		finalResults[i] = heap.Pop(h).(Result)
+	finalResults := make([]Result, h.Size())
+	for i := h.Size() - 1; i >= 0; i-- {
+		val, _, _ := h.PopItem()
+		finalResults[i] = val
 	}
 	// ResultHeap is Min-Heap.
 	// Pop element 1: Smallest.
