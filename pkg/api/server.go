@@ -1,3 +1,16 @@
+// Package api provides unified API server abstractions for multiple transports.
+//
+// Supported transports:
+//   - REST: HTTP/JSON APIs using Echo framework
+//   - gRPC: High-performance RPC using Protocol Buffers
+//   - GraphQL: Query language for APIs
+//
+// Usage:
+//
+//	import "github.com/chris-alexander-pop/system-design-library/pkg/api"
+//
+//	server, err := api.New(api.Config{Protocol: api.ProtocolREST, Port: "8080"})
+//	server.Start()
 package api
 
 import (

@@ -1,3 +1,23 @@
+// Package auth provides authentication and authorization primitives.
+//
+// Supported adapters:
+//   - Local: Username/password with bcrypt
+//   - OIDC: OpenID Connect integration
+//   - Session: Server-side session management
+//   - PASETO: Secure token generation
+//
+// Features:
+//   - Unified Claims structure for identity
+//   - Token verification interface
+//   - MFA support (TOTP, WebAuthn)
+//   - Social login adapters
+//
+// Usage:
+//
+//	import "github.com/chris-alexander-pop/system-design-library/pkg/auth/adapters/oidc"
+//
+//	verifier := oidc.New(cfg)
+//	claims, err := verifier.Verify(ctx, token)
 package auth
 
 import (

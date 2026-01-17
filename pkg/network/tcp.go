@@ -1,3 +1,14 @@
+// Package network provides TCP and UDP server implementations.
+//
+// These are low-level network primitives for building custom protocols.
+// For HTTP/REST APIs, use pkg/api instead.
+//
+// Usage:
+//
+//	import "github.com/chris-alexander-pop/system-design-library/pkg/network"
+//
+//	server := network.NewTCPServer(":9000", handler)
+//	server.ListenAndServe(ctx)
 package network
 
 import (

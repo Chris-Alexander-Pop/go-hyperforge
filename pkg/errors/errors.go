@@ -1,3 +1,23 @@
+// Package errors provides structured error handling with error codes.
+//
+// This package provides:
+//   - AppError: Structured error type with code, message, and wrapped error
+//   - Standard error codes: NOT_FOUND, INVALID_ARGUMENT, INTERNAL, etc.
+//   - Helper functions: NotFound, InvalidArgument, Internal, etc.
+//   - Protocol conversion: HTTPStatus, GRPCStatus
+//
+// Usage:
+//
+//	import "github.com/chris-alexander-pop/system-design-library/pkg/errors"
+//
+//	// Create errors
+//	err := errors.NotFound("user not found", nil)
+//	err := errors.InvalidArgument("email is required", nil)
+//	err := errors.Internal("database error", originalErr)
+//
+//	// Check and convert
+//	status := errors.HTTPStatus(err)  // Returns HTTP status code
+//	grpcStatus := errors.GRPCStatus(err)  // Returns gRPC status
 package errors
 
 import (

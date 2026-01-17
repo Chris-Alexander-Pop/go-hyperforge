@@ -1,3 +1,20 @@
+// Package logger provides structured logging with OpenTelemetry trace correlation.
+//
+// This package provides:
+//   - slog-based structured logging (JSON or TEXT format)
+//   - Automatic trace_id and span_id injection from OpenTelemetry context
+//   - Global logger accessor via L()
+//
+// Usage:
+//
+//	import "github.com/chris-alexander-pop/system-design-library/pkg/logger"
+//
+//	// Initialize (typically in main)
+//	logger.Init(logger.Config{Level: "INFO", Format: "JSON"})
+//
+//	// Use anywhere via global accessor
+//	logger.L().InfoContext(ctx, "message", "key", value)
+//	logger.L().ErrorContext(ctx, "failed", "error", err)
 package logger
 
 import (
@@ -15,9 +32,13 @@ var (
 	once          sync.Once
 )
 
+// Config holds configuration for the logger.
 type Config struct {
-	Level  string `env:"LOG_LEVEL" env-default:"INFO"`
-	Format string `env:"LOG_FORMAT" env-default:"JSON"` // JSON or TEXT
+	// Level sets the minimum log level: DEBUG, INFO, WARN, ERROR.
+	Level string `env:"LOG_LEVEL" env-default:"INFO"`
+
+	// Format sets the output format: JSON or TEXT.
+	Format string `env:"LOG_FORMAT" env-default:"JSON"`
 }
 
 // Init initializes the global logger

@@ -1,3 +1,19 @@
+// Package concurrency provides advanced concurrency primitives with observability.
+//
+// This package includes:
+//   - SmartMutex: sync.Mutex with slow lock detection and deadlock monitoring
+//   - SmartRWMutex: sync.RWMutex with the same observability features
+//   - Semaphore: Counting semaphore for resource limiting
+//   - WorkerPool: Managed pool of worker goroutines
+//   - Pipeline: Concurrent data processing pipeline
+//
+// Usage:
+//
+//	import "github.com/chris-alexander-pop/system-design-library/pkg/concurrency"
+//
+//	mu := concurrency.NewSmartRWMutex(concurrency.MutexConfig{Name: "my-mutex"})
+//	mu.Lock()
+//	defer mu.Unlock()
 package concurrency
 
 import (

@@ -1,3 +1,15 @@
+// Package hasher provides password hashing using Argon2id.
+//
+// Argon2id is the recommended algorithm for password hashing,
+// providing protection against both GPU and side-channel attacks.
+//
+// Usage:
+//
+//	import "github.com/chris-alexander-pop/system-design-library/pkg/hasher"
+//
+//	h := hasher.New()
+//	hash, err := h.Hash("password123")
+//	ok := h.Verify("password123", hash)
 package hasher
 
 import (

@@ -1,3 +1,17 @@
+// Package events provides an in-process event bus for domain events.
+//
+// This package is for local pub/sub within a single process.
+// For distributed messaging, use pkg/messaging instead.
+//
+// Usage:
+//
+//	import "github.com/chris-alexander-pop/system-design-library/pkg/events/adapters/memory"
+//
+//	bus := memory.New()
+//	bus.Subscribe(ctx, "users", func(ctx context.Context, e events.Event) error {
+//		// Handle event
+//	})
+//	bus.Publish(ctx, "users", events.Event{Type: "user.created", Payload: user})
 package events
 
 import (

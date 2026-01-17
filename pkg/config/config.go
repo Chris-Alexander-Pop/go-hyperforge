@@ -1,3 +1,21 @@
+// Package config provides environment-based configuration loading and validation.
+//
+// This package reads configuration from environment variables (and .env files)
+// using struct tags, then validates the loaded configuration.
+//
+// Usage:
+//
+//	import "github.com/chris-alexander-pop/system-design-library/pkg/config"
+//
+//	type AppConfig struct {
+//		Port     int    `env:"PORT" env-default:"8080"`
+//		LogLevel string `env:"LOG_LEVEL" env-default:"INFO" validate:"required"`
+//	}
+//
+//	var cfg AppConfig
+//	if err := config.Load(&cfg); err != nil {
+//		log.Fatal(err)
+//	}
 package config
 
 import (

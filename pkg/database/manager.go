@@ -160,10 +160,12 @@ func (m *Manager) Close() error {
 	}
 
 	var firstErr error
+
 	// Close primary
-	if err := closeConn(m.primary); err != nil && firstErr == nil {
+	if err := closeConn(m.primary); err != nil {
 		firstErr = err
 	}
+
 	// Close shards
 	for _, conn := range m.shards {
 		if err := closeConn(conn); err != nil && firstErr == nil {

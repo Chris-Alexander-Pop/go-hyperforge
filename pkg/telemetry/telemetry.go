@@ -1,3 +1,20 @@
+// Package telemetry provides OpenTelemetry tracing initialization.
+//
+// This package sets up the OpenTelemetry tracer provider with OTLP export.
+// Traces are automatically correlated with logs via pkg/logger.
+//
+// Usage:
+//
+//	import "github.com/chris-alexander-pop/system-design-library/pkg/telemetry"
+//
+//	shutdown, err := telemetry.Init(telemetry.Config{
+//		ServiceName: "my-service",
+//		Endpoint:    "localhost:4317",
+//	})
+//	if err != nil {
+//		log.Fatal(err)
+//	}
+//	defer shutdown(context.Background())
 package telemetry
 
 import (
@@ -12,12 +29,19 @@ import (
 	semconv "go.opentelemetry.io/otel/semconv/v1.17.0"
 )
 
-// Config holds configuration for OpenTelemetry
+// Config holds configuration for OpenTelemetry.
 type Config struct {
-	ServiceName    string `env:"OTEL_SERVICE_NAME" env-default:"unknown-service"`
+	// ServiceName identifies this service in traces.
+	ServiceName string `env:"OTEL_SERVICE_NAME" env-default:"unknown-service"`
+
+	// ServiceVersion is the version of this service.
 	ServiceVersion string `env:"OTEL_SERVICE_VERSION" env-default:"0.0.1"`
-	Environment    string `env:"APP_ENV" env-default:"development"`
-	Endpoint       string `env:"OTEL_EXPORTER_OTLP_ENDPOINT" env-default:"localhost:4317"`
+
+	// Environment is the deployment environment (development, staging, production).
+	Environment string `env:"APP_ENV" env-default:"development"`
+
+	// Endpoint is the OTLP collector endpoint.
+	Endpoint string `env:"OTEL_EXPORTER_OTLP_ENDPOINT" env-default:"localhost:4317"`
 }
 
 // Init initializes the OpenTelemetry tracer provider and returns a shutdown function

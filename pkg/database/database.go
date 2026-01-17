@@ -1,3 +1,22 @@
+// Package database provides a unified interface for SQL and NoSQL databases.
+//
+// Supported backends:
+//   - SQL: PostgreSQL, MySQL, SQLite, SQL Server, ClickHouse
+//   - Document: MongoDB, DynamoDB
+//   - Key-Value: Redis
+//   - Vector: Pinecone
+//
+// Features:
+//   - Connection pooling and lifecycle management
+//   - Multi-database sharding support
+//   - Instrumented wrapper for logging and tracing
+//
+// Usage:
+//
+//	import "github.com/chris-alexander-pop/system-design-library/pkg/database/adapters/postgres"
+//
+//	db, err := postgres.New(cfg)
+//	gormDB := db.Get(ctx)
 package database
 
 import (

@@ -1,3 +1,18 @@
+// Package blob provides a unified interface for object/blob storage.
+//
+// Supported backends:
+//   - Local: File-system based storage for development
+//   - S3: AWS S3 compatible storage (works with MinIO, Wasabi, etc.)
+//   - GCS: Google Cloud Storage
+//   - Azure Blob: Azure Blob Storage
+//
+// Usage:
+//
+//	import "github.com/chris-alexander-pop/system-design-library/pkg/blob/adapters/s3"
+//
+//	store := s3.New(cfg)
+//	err := store.Upload(ctx, "photos/cat.jpg", reader)
+//	reader, err := store.Download(ctx, "photos/cat.jpg")
 package blob
 
 import (
