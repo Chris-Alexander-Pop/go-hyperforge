@@ -4,10 +4,10 @@ import (
 	"context"
 	"crypto/tls"
 	"crypto/x509"
-	"fmt"
 	"os"
 	"time"
 
+	"github.com/chris-alexander-pop/system-design-library/pkg/errors"
 	"github.com/chris-alexander-pop/system-design-library/pkg/logger"
 	"github.com/chris-alexander-pop/system-design-library/pkg/resilience"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
@@ -55,7 +55,7 @@ func New(ctx context.Context, cfg Config) (*grpc.ClientConn, error) {
 		if cfg.CAFile != "" {
 			caCert, err := os.ReadFile(cfg.CAFile)
 			if err != nil {
-				return nil, fmt.Errorf("failed to read CA file: %w", err)
+				return nil, errors.Wrap(err, "failed to read CA file")
 			}
 			caCertPool := x509.NewCertPool()
 			caCertPool.AppendCertsFromPEM(caCert)
@@ -64,7 +64,7 @@ func New(ctx context.Context, cfg Config) (*grpc.ClientConn, error) {
 		if cfg.CertFile != "" && cfg.KeyFile != "" {
 			cert, err := tls.LoadX509KeyPair(cfg.CertFile, cfg.KeyFile)
 			if err != nil {
-				return nil, fmt.Errorf("failed to load client cert: %w", err)
+				return nil, errors.Wrap(err, "failed to load client cert")
 			}
 			tlsConfig.Certificates = []tls.Certificate{cert}
 		}

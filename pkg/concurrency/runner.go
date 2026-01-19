@@ -6,6 +6,7 @@ import (
 	"runtime/debug"
 	"sync"
 
+	"github.com/chris-alexander-pop/system-design-library/pkg/errors"
 	"github.com/chris-alexander-pop/system-design-library/pkg/logger"
 )
 
@@ -14,7 +15,7 @@ func SafeGo(ctx context.Context, fn func()) {
 	go func() {
 		defer func() {
 			if r := recover(); r != nil {
-				err := fmt.Errorf("panic recovered: %v", r)
+				err := errors.Internal(fmt.Sprintf("panic recovered: %v", r), nil)
 				stack := string(debug.Stack())
 				logger.L().ErrorContext(ctx, "goroutine panic", "error", err, "stack", stack)
 			}

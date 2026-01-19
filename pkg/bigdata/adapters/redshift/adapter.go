@@ -9,6 +9,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/redshiftdata"
 	"github.com/aws/aws-sdk-go-v2/service/redshiftdata/types"
 	"github.com/chris-alexander-pop/system-design-library/pkg/bigdata"
+	"github.com/chris-alexander-pop/system-design-library/pkg/errors"
 )
 
 type Adapter struct {
@@ -66,7 +67,7 @@ func (a *Adapter) Query(ctx context.Context, query string, args ...interface{}) 
 			break
 		}
 		if desc.Status == types.StatusStringFailed || desc.Status == types.StatusStringAborted {
-			return nil, fmt.Errorf("query failed: %s", *desc.Error)
+			return nil, errors.Internal(fmt.Sprintf("query failed: %s", *desc.Error), nil)
 		}
 		// Wait handled by caller context or simple sleep?
 		// SDK doesn't have waiter for this yet commonly used.

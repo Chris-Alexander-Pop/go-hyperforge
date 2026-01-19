@@ -19,6 +19,7 @@ import (
 
 	"github.com/chris-alexander-pop/system-design-library/pkg/api/grpc"
 	"github.com/chris-alexander-pop/system-design-library/pkg/api/rest"
+	"github.com/chris-alexander-pop/system-design-library/pkg/errors"
 	"github.com/labstack/echo/v4"
 )
 
@@ -65,7 +66,7 @@ func New(cfg Config) (Server, error) {
 		return r, nil
 
 	default:
-		return nil, fmt.Errorf("unknown protocol: %s", cfg.Protocol)
+		return nil, errors.InvalidArgument(fmt.Sprintf("unknown protocol: %s", cfg.Protocol), nil)
 	}
 }
 

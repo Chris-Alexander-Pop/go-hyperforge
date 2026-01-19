@@ -59,7 +59,7 @@ func New(t ProviderType, clientID, clientSecret, redirectURL string) (Provider, 
 		userInfoURL = "https://graph.facebook.com/me?fields=id,name,email"
 		scopes = []string{"email"}
 	default:
-		return nil, fmt.Errorf("unsupported provider: %s", t)
+		return nil, errors.InvalidArgument(fmt.Sprintf("unsupported provider: %s", t), nil)
 	}
 
 	conf := &oauth2.Config{
@@ -91,7 +91,7 @@ func (p *GenericOAuth2) Exchange(ctx context.Context, code string) (*UserInfo, e
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("provider returned status: %d", resp.StatusCode)
+		return nil, errors.Internal(fmt.Sprintf("provider returned status: %d", resp.StatusCode), nil)
 	}
 
 	// Parsing varies slightly by provider, but most follow basic JSON.

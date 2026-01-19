@@ -28,7 +28,7 @@ func New(cfg Config) *Adapter {
 func (a *Adapter) Verify(ctx context.Context, tokenString string) (*auth.Claims, error) {
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+			return nil, errors.InvalidArgument(fmt.Sprintf("unexpected signing method: %v", token.Header["alg"]), nil)
 		}
 		return []byte(a.cfg.Secret), nil
 	})

@@ -2,8 +2,9 @@ package executor
 
 import (
 	"context"
-	"fmt"
 	"sync"
+
+	"github.com/chris-alexander-pop/system-design-library/pkg/errors"
 )
 
 // Task is a unit of work.
@@ -77,7 +78,7 @@ func (d *DAGExecutor) Run(ctx context.Context) error {
 
 	for completed < total {
 		if active == 0 && completed < total {
-			return fmt.Errorf("cycle detected or deadlock")
+			return errors.Internal("cycle detected or deadlock", nil)
 		}
 
 		select {

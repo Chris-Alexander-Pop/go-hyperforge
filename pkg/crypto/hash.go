@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"fmt"
 
+	"github.com/chris-alexander-pop/system-design-library/pkg/errors"
 	"golang.org/x/crypto/argon2"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -112,7 +113,7 @@ func (h *Hasher) verifyArgon2id(password, encoded string) (bool, error) {
 	// Split the last part to get just the salt (without the hash that got concatenated)
 	parts := splitArgon2Hash(encoded)
 	if len(parts) != 5 {
-		return false, fmt.Errorf("invalid argon2id hash format")
+		return false, errors.InvalidArgument("invalid argon2id hash format", nil)
 	}
 
 	salt, err := base64.RawStdEncoding.DecodeString(parts[3])

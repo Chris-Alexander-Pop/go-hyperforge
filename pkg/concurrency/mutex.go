@@ -27,11 +27,24 @@ import (
 	"github.com/chris-alexander-pop/system-design-library/pkg/logger"
 )
 
-// MutexConfig controls the strictness of the SmartMutex
+// MutexConfig controls the behavior of SmartMutex and SmartRWMutex.
 type MutexConfig struct {
-	Name            string
-	SlowThreshold   time.Duration // Log if held longer than this
-	MonitorInterval time.Duration // Interval to check for deadlocks (held > Threshold)
+	// Name identifies this mutex in logs (only used in DebugMode).
+	Name string
+
+	// SlowThreshold logs a warning if the lock is held longer than this (only in DebugMode).
+	// Default: 100ms
+	SlowThreshold time.Duration
+
+	// MonitorInterval is how often to check for potential deadlocks (only in DebugMode).
+	MonitorInterval time.Duration
+
+	// DebugMode enables observability features: caller tracking, duration logging,
+	// and slow lock detection. This adds ~1000ns overhead per Lock() due to
+	// runtime.Caller(). Use this when debugging lock contention issues.
+	//
+	// Default is false (fast mode) for production performance.
+	DebugMode bool
 }
 
 // SmartMutex is a sync.Mutex with observability
@@ -51,15 +64,18 @@ func NewSmartMutex(cfg MutexConfig) *SmartMutex {
 }
 
 func (m *SmartMutex) Lock() {
-	// 1. Trace access? (Optional, adds overhead)
 	m.mu.Lock()
 
-	// 2. Record State
+	// Only track in DebugMode (expensive observability)
+	if !m.config.DebugMode {
+		return
+	}
+
+	// Record State
 	m.lockedAt.Store(time.Now().UnixMilli())
 	m.isLocked.Store(true)
 
-	// 3. Debug info (Caller)
-	// runtime.Caller is expensive, but this is "overengineered" mode.
+	// Debug info (Caller) - expensive but useful for debugging
 	_, file, line, ok := runtime.Caller(1)
 	if ok {
 		m.holder.Store(fmt.Sprintf("%s:%d", file, line))
@@ -67,7 +83,13 @@ func (m *SmartMutex) Lock() {
 }
 
 func (m *SmartMutex) Unlock() {
-	// 1. Check Duration
+	// Fast path: no observability
+	if !m.config.DebugMode {
+		m.mu.Unlock()
+		return
+	}
+
+	// Check Duration
 	start := m.lockedAt.Load()
 	duration := time.Since(time.UnixMilli(start))
 
@@ -76,7 +98,7 @@ func (m *SmartMutex) Unlock() {
 	m.isLocked.Store(false)
 	m.mu.Unlock()
 
-	// 2. Log if slow
+	// Log if slow
 	if duration > m.config.SlowThreshold {
 		logger.L().Warn("SmartMutex held too long",
 			"name", m.config.Name,
@@ -104,6 +126,12 @@ func NewSmartRWMutex(cfg MutexConfig) *SmartRWMutex {
 
 func (m *SmartRWMutex) Lock() {
 	m.mu.Lock()
+
+	// Only track in DebugMode (expensive observability)
+	if !m.config.DebugMode {
+		return
+	}
+
 	m.lockedAt.Store(time.Now().UnixMilli())
 	m.isLocked.Store(true)
 	_, file, line, ok := runtime.Caller(1)
@@ -113,6 +141,12 @@ func (m *SmartRWMutex) Lock() {
 }
 
 func (m *SmartRWMutex) Unlock() {
+	// Fast path: no observability
+	if !m.config.DebugMode {
+		m.mu.Unlock()
+		return
+	}
+
 	// Check duration logic same as Mutex
 	start := m.lockedAt.Load()
 	duration := time.Since(time.UnixMilli(start))

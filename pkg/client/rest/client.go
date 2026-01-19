@@ -7,9 +7,9 @@ import (
 
 	"crypto/tls"
 	"crypto/x509"
-	"fmt"
 	"os"
 
+	"github.com/chris-alexander-pop/system-design-library/pkg/errors"
 	"github.com/chris-alexander-pop/system-design-library/pkg/logger"
 	"github.com/chris-alexander-pop/system-design-library/pkg/resilience"
 	"github.com/hashicorp/go-retryablehttp"
@@ -67,7 +67,7 @@ func New(cfg Config) (*Client, error) {
 		if cfg.CAFile != "" {
 			caCert, err := os.ReadFile(cfg.CAFile)
 			if err != nil {
-				return nil, fmt.Errorf("failed to read CA file: %w", err)
+				return nil, errors.Wrap(err, "failed to read CA file")
 			}
 			caCertPool := x509.NewCertPool()
 			caCertPool.AppendCertsFromPEM(caCert)
@@ -76,7 +76,7 @@ func New(cfg Config) (*Client, error) {
 		if cfg.CertFile != "" && cfg.KeyFile != "" {
 			cert, err := tls.LoadX509KeyPair(cfg.CertFile, cfg.KeyFile)
 			if err != nil {
-				return nil, fmt.Errorf("failed to load client cert: %w", err)
+				return nil, errors.Wrap(err, "failed to load client cert")
 			}
 			tlsConfig.Certificates = []tls.Certificate{cert}
 		}

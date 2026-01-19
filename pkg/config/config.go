@@ -19,8 +19,7 @@
 package config
 
 import (
-	"fmt"
-
+	"github.com/chris-alexander-pop/system-design-library/pkg/errors"
 	"github.com/go-playground/validator/v10"
 	"github.com/ilyakaznacheev/cleanenv"
 )
@@ -35,14 +34,14 @@ func Load[T any](cfg *T) error {
 		// Actually cleanenv.ReadConfig returns error if file not found.
 		// So we fallback to ReadEnv.
 		if err := cleanenv.ReadEnv(cfg); err != nil {
-			return fmt.Errorf("failed to read env config: %w", err)
+			return errors.Wrap(err, "failed to read env config")
 		}
 	}
 
 	// 2. Validate the struct
 	validate := validator.New()
 	if err := validate.Struct(cfg); err != nil {
-		return fmt.Errorf("config validation failed: %w", err)
+		return errors.Wrap(err, "config validation failed")
 	}
 
 	return nil

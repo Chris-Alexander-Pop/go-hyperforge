@@ -19,8 +19,8 @@ package telemetry
 
 import (
 	"context"
-	"fmt"
 
+	"github.com/chris-alexander-pop/system-design-library/pkg/errors"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
 	"go.opentelemetry.io/otel/propagation"
@@ -56,7 +56,7 @@ func Init(cfg Config) (func(context.Context) error, error) {
 		),
 	)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create resource: %w", err)
+		return nil, errors.Wrap(err, "failed to create resource")
 	}
 
 	// Set up OTLP exporter
@@ -65,7 +65,7 @@ func Init(cfg Config) (func(context.Context) error, error) {
 		otlptracegrpc.WithInsecure(), // Use WithInsecure for now; in prod, configure TLS
 	)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create trace exporter: %w", err)
+		return nil, errors.Wrap(err, "failed to create trace exporter")
 	}
 
 	// Register TracerProvider
