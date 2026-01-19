@@ -3,42 +3,26 @@ package tests
 import (
 	"context"
 	"io"
-	"os"
 	"strings"
-	"testing"
 
 	"github.com/chris-alexander-pop/system-design-library/pkg/errors"
 	"github.com/chris-alexander-pop/system-design-library/pkg/storage/blob"
-	"github.com/chris-alexander-pop/system-design-library/pkg/storage/blob/adapters/local"
 	"github.com/chris-alexander-pop/system-design-library/pkg/test"
 )
 
 type BlobSuite struct {
 	*test.Suite
-	store blob.Store
-	dir   string
+	Store blob.Store
+	// Optional cleanup
+	Cleanup func()
 }
 
-func TestBlobSuite(t *testing.T) {
-	test.Run(t, &BlobSuite{Suite: test.NewSuite()})
-}
-
-func (s *BlobSuite) SetupTest() {
-	s.Suite.SetupTest()
-	// Create temp dir for testing
-	dir, err := os.MkdirTemp("", "blob-test-*")
-	s.Require().NoError(err)
-	s.dir = dir
-
-	localStore, err := local.New(blob.Config{LocalDir: dir})
-	s.Require().NoError(err)
-
-	// Use the instrumented store to test it concurrently
-	s.store = blob.NewInstrumentedStore(localStore, "test-blob")
-}
+// Remove TestBlobSuite as it shouldn't run independently without store
 
 func (s *BlobSuite) TearDownTest() {
-	os.RemoveAll(s.dir)
+	if s.Cleanup != nil {
+		s.Cleanup()
+	}
 }
 
 func (s *BlobSuite) TestUploadDownloadDelete() {
@@ -47,11 +31,11 @@ func (s *BlobSuite) TestUploadDownloadDelete() {
 	content := "hello world"
 
 	// Upload
-	err := s.store.Upload(ctx, key, strings.NewReader(content))
+	err := s.Store.Upload(ctx, key, strings.NewReader(content))
 	s.NoError(err)
 
 	// Download
-	rc, err := s.store.Download(ctx, key)
+	rc, err := s.Store.Download(ctx, key)
 	s.NoError(err)
 	defer rc.Close()
 
@@ -60,11 +44,11 @@ func (s *BlobSuite) TestUploadDownloadDelete() {
 	s.Equal(content, string(readContent))
 
 	// Delete
-	err = s.store.Delete(ctx, key)
+	err = s.Store.Delete(ctx, key)
 	s.NoError(err)
 
 	// Verify Gone
-	_, err = s.store.Download(ctx, key)
+	_, err = s.Store.Download(ctx, key)
 	s.Error(err)
 
 	// Check specific error code

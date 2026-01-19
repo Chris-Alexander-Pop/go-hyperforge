@@ -1,25 +1,24 @@
 package tests
 
 import (
-	"testing"
-
 	"github.com/chris-alexander-pop/system-design-library/pkg/secrets"
-	"github.com/chris-alexander-pop/system-design-library/pkg/secrets/adapters/memory"
 	"github.com/chris-alexander-pop/system-design-library/pkg/test"
 )
 
 type SecretsTestSuite struct {
 	test.Suite
-	manager secrets.Manager
+	Manager secrets.Manager
 }
 
 func (s *SecretsTestSuite) SetupTest() {
 	s.Suite.SetupTest()
-	s.manager = memory.New()
+	// Manager must be injected by embedding suite or initializing before running
 }
 
 func (s *SecretsTestSuite) TearDownTest() {
-	s.manager.Close()
+	if s.Manager != nil {
+		s.Manager.Close()
+	}
 }
 
 func (s *SecretsTestSuite) TestGetSetDelete() {
@@ -27,27 +26,23 @@ func (s *SecretsTestSuite) TestGetSetDelete() {
 	val := "12345"
 
 	// Get missing
-	_, err := s.manager.GetSecret(s.Ctx, key)
+	_, err := s.Manager.GetSecret(s.Ctx, key)
 	s.Error(err)
 
 	// Set
-	err = s.manager.SetSecret(s.Ctx, key, val)
+	err = s.Manager.SetSecret(s.Ctx, key, val)
 	s.NoError(err)
 
 	// Get existing
-	retrieved, err := s.manager.GetSecret(s.Ctx, key)
+	retrieved, err := s.Manager.GetSecret(s.Ctx, key)
 	s.NoError(err)
 	s.Equal(val, retrieved)
 
 	// Delete
-	err = s.manager.DeleteSecret(s.Ctx, key)
+	err = s.Manager.DeleteSecret(s.Ctx, key)
 	s.NoError(err)
 
 	// Get deleted
-	_, err = s.manager.GetSecret(s.Ctx, key)
+	_, err = s.Manager.GetSecret(s.Ctx, key)
 	s.Error(err)
-}
-
-func TestSecretsSuite(t *testing.T) {
-	test.Run(t, new(SecretsTestSuite))
 }
