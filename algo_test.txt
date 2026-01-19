@@ -1,0 +1,35 @@
+?   	github.com/chris-alexander-pop/system-design-library/pkg/algorithms	[no test files]
+?   	github.com/chris-alexander-pop/system-design-library/pkg/algorithms/concurrency/adaptive	[no test files]
+?   	github.com/chris-alexander-pop/system-design-library/pkg/algorithms/consensus	[no test files]
+# github.com/chris-alexander-pop/system-design-library/pkg/algorithms/graph/astar [github.com/chris-alexander-pop/system-design-library/pkg/algorithms/graph/astar.test]
+pkg/algorithms/graph/astar/astar_test.go:36:11: undefined: ShortestPath
+ok  	github.com/chris-alexander-pop/system-design-library/pkg/algorithms/consensus/paxos	0.006s
+?   	github.com/chris-alexander-pop/system-design-library/pkg/algorithms/consensus/raft	[no test files]
+?   	github.com/chris-alexander-pop/system-design-library/pkg/algorithms/consistenthash/bounded	[no test files]
+?   	github.com/chris-alexander-pop/system-design-library/pkg/algorithms/consistenthash/ring	[no test files]
+?   	github.com/chris-alexander-pop/system-design-library/pkg/algorithms/dht	[no test files]
+?   	github.com/chris-alexander-pop/system-design-library/pkg/algorithms/dht/chord	[no test files]
+?   	github.com/chris-alexander-pop/system-design-library/pkg/algorithms/gossip/swim	[no test files]
+FAIL	github.com/chris-alexander-pop/system-design-library/pkg/algorithms/graph/astar [build failed]
+ok  	github.com/chris-alexander-pop/system-design-library/pkg/algorithms/graph/dijkstra	0.009s
+?   	github.com/chris-alexander-pop/system-design-library/pkg/algorithms/graph/kruskal	[no test files]
+?   	github.com/chris-alexander-pop/system-design-library/pkg/algorithms/graph/louvain	[no test files]
+?   	github.com/chris-alexander-pop/system-design-library/pkg/algorithms/graph/prim	[no test files]
+?   	github.com/chris-alexander-pop/system-design-library/pkg/algorithms/loadbalancing	[no test files]
+?   	github.com/chris-alexander-pop/system-design-library/pkg/algorithms/loadbalancing/leastconnections	[no test files]
+?   	github.com/chris-alexander-pop/system-design-library/pkg/algorithms/loadbalancing/random	[no test files]
+ok  	github.com/chris-alexander-pop/system-design-library/pkg/algorithms/loadbalancing/roundrobin	0.003s
+?   	github.com/chris-alexander-pop/system-design-library/pkg/algorithms/loadbalancing/weightedroundrobin	[no test files]
+?   	github.com/chris-alexander-pop/system-design-library/pkg/algorithms/ratelimit	[no test files]
+?   	github.com/chris-alexander-pop/system-design-library/pkg/algorithms/ratelimit/fixedwindow	[no test files]
+?   	github.com/chris-alexander-pop/system-design-library/pkg/algorithms/ratelimit/htb	[no test files]
+?   	github.com/chris-alexander-pop/system-design-library/pkg/algorithms/ratelimit/leakybucket	[no test files]
+ok  	github.com/chris-alexander-pop/system-design-library/pkg/algorithms/ratelimit/shaper	0.225s
+?   	github.com/chris-alexander-pop/system-design-library/pkg/algorithms/ratelimit/slidingwindow	[no test files]
+ok  	github.com/chris-alexander-pop/system-design-library/pkg/algorithms/ratelimit/tokenbucket	0.114s
+?   	github.com/chris-alexander-pop/system-design-library/pkg/algorithms/search/ahocorasick	[no test files]
+?   	github.com/chris-alexander-pop/system-design-library/pkg/algorithms/sort/heapsort	[no test files]
+ok  	github.com/chris-alexander-pop/system-design-library/pkg/algorithms/sort/mergesort	0.002s
+ok  	github.com/chris-alexander-pop/system-design-library/pkg/algorithms/sort/quicksort	0.002s
+?   	github.com/chris-alexander-pop/system-design-library/pkg/algorithms/sort/radixsort	[no test files]
+FAIL
