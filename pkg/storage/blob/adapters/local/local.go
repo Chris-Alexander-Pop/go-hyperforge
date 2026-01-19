@@ -6,8 +6,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/blob"
 	"github.com/chris-alexander-pop/system-design-library/pkg/errors"
+	"github.com/chris-alexander-pop/system-design-library/pkg/storage/blob"
 )
 
 // Store implements Store on the local filesystem

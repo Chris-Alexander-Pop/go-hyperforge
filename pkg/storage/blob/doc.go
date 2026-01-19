@@ -10,7 +10,7 @@ Supported backends:
 
 Usage:
 
-	import "github.com/chris-alexander-pop/system-design-library/pkg/blob/adapters/s3"
+	import "github.com/chris-alexander-pop/system-design-library/pkg/storage/blob/adapters/s3"
 
 	store := s3.New(cfg)
 	err := store.Upload(ctx, "data.txt", reader)

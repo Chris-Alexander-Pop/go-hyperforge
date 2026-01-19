@@ -28,490 +28,223 @@
 
 ---
 
-## 1. AI & ML
+## 1. AI & Machine Learning (`pkg/ai`)
+
+### LLM Core (`pkg/ai/llm`)
+| Package | Status | Enables Services | Description |
+|---------|--------|------------------|-------------|
+| `pkg/ai/llm/adapters/openai` | ❌ | llm-gateway | OpenAI Adapter |
+| `pkg/ai/llm/adapters/anthropic` | ❌ | llm-gateway | Anthropic Adapter |
+| `pkg/ai/llm/adapters/gemini` | ❌ | llm-gateway | Google Gemini Adapter |
+| `pkg/ai/llm/adapters/ollama` | ❌ | llm-gateway | Ollama Adapter (Local LLM) |
+| `pkg/ai/llm/adapters/memory` | ❌ | testing | In-memory Mock |
+| `pkg/ai/llm/chains` | ❌ | agent-orchestrator | LangChain-style chains |
+| `pkg/ai/llm/memory` | ❌ | context-manager | Conversation History |
+| `pkg/ai/llm/rag` | ❌ | rag-service | Retrieval Augmented Generation |
+| `pkg/ai/llm/tools` | ❌ | agent-runtime | Function Calling/Tool Registry |
+| `pkg/ai/llm/embeddings` | ❌ | embedding-service | Embedding Generation |
+
+### Machine Learning (`pkg/ai/ml`)
+| Package | Status | Enables Services | Description |
+|---------|--------|------------------|-------------|
+| `pkg/ai/ml/training` | ❌ | training-job | Training Protocol Abstractions |
+| `pkg/ai/ml/training/adapters/tensorflow`| ❌ | training-job | TensorFlow Training |
+| `pkg/ai/ml/training/adapters/pytorch` | ❌ | training-job | PyTorch Training |
+| `pkg/ai/ml/inference` | ❌ | inference-service | Model Serving Interface |
+| `pkg/ai/ml/feature` | ❌ | feature-store | Feature Store Client |
+| `pkg/ai/ml/sagemaker` | ❌ | training-job | AWS SageMaker Adapter |
+| `pkg/ai/ml/vertexai` | ❌ | training-job | GCP Vertex AI Adapter |
+| `pkg/ai/ml/azureml` | ❌ | training-job | Azure ML Adapter |
+| `pkg/ai/ml/mlflow` | ❌ | model-registry | MLflow Adapter |
+
+### Perception (`pkg/ai/perception`)
+| Package | Status | Enables Services | Description |
+|---------|--------|------------------|-------------|
+| `pkg/ai/perception/vision` | ❌ | media-analysis | Image Classification/OCR |
+| `pkg/ai/perception/speech` | ❌ | transcription | STT / TTS |
+| `pkg/ai/perception/ocr` | ❌ | document-parser | Document Intelligence |
+
+---
+
+## 2. Communication (`pkg/communication`)
 
 | Package | Status | Enables Services | Description |
 |---------|--------|------------------|-------------|
-| `pkg/ai` | ❌ | agent-runtime, llm-gateway, chatbot | LLM interface (OpenAI, Anthropic, Gemini, Ollama) |
-| `pkg/ai/embeddings` | ❌ | embedding-service | Embedding generation |
-| `pkg/ai/rag` | ❌ | context-manager | RAG pipeline |
-| `pkg/ai/tools` | ❌ | tool-registry | Function calling |
-| `pkg/ai/memory` | ❌ | context-manager | Conversation history |
-| `pkg/ai/chains` | ❌ | agent-orchestrator | Prompt chain builder |
-| `pkg/ai/vision` | ❌ | media | Image analysis |
-| `pkg/ai/speech` | ❌ | transcoding | STT/TTS |
-| `pkg/vectordb` | 🔄 | vector-search | Pinecone, Weaviate (pgvector exists in database/vector) |
+| `pkg/communication/email` | ❌ | notification | Email Interface |
+| `pkg/communication/email/adapters/sendgrid`| ❌ | notification | SendGrid Adapter |
+| `pkg/communication/email/adapters/ses` | ❌ | notification | AWS SES Adapter |
+| `pkg/communication/email/adapters/smtp` | ❌ | notification | Standard SMTP Adapter |
+| `pkg/communication/sms` | ❌ | notification | SMS Interface |
+| `pkg/communication/sms/adapters/twilio` | ❌ | notification | Twilio Adapter |
+| `pkg/communication/sms/adapters/sns` | ❌ | notification | AWS SNS Adapter |
+| `pkg/communication/push` | ❌ | push-service | Push Notification Interface |
+| `pkg/communication/push/adapters/fcm` | ❌ | push-service | Firebase Cloud Messaging |
+| `pkg/communication/push/adapters/apns` | ❌ | push-service | Apple Push Notification |
+| `pkg/communication/chat` | ❌ | chatbot | Chat Platform Integrations (Slack/Discord) |
+| `pkg/communication/template` | ❌ | notification | Production Template Engine |
 
 ---
 
-## 2. ML Infrastructure (SageMaker, etc.)
+## 3. Commerce (`pkg/commerce`)
 
 | Package | Status | Enables Services | Description |
 |---------|--------|------------------|-------------|
-| `pkg/ml/sagemaker` | ❌ | ml-inference, fine-tuning | AWS SageMaker client |
-| `pkg/ml/vertexai` | ❌ | ml-inference | GCP Vertex AI |
-| `pkg/ml/azureml` | ❌ | ml-inference | Azure Machine Learning |
-| `pkg/ml/mlflow` | ❌ | model-registry | MLflow tracking/registry |
-| `pkg/ml/feature` | ❌ | recommendation | Feature store interface |
-| `pkg/ml/serving` | ❌ | ml-inference | Model serving (TensorFlow Serving, Triton) |
+| `pkg/commerce/payment` | ❌ | payment-gateway | Payment Interface |
+| `pkg/commerce/payment/adapters/stripe` | ❌ | payment-gateway | Stripe Adapter |
+| `pkg/commerce/payment/adapters/paypal` | ❌ | payment-gateway | PayPal Adapter |
+| `pkg/commerce/billing` | ❌ | billing-engine | Invoicing & Subscription Logic |
+| `pkg/commerce/tax` | ❌ | tax-service | Tax Calculation |
+| `pkg/commerce/currency` | ❌ | currency-exchange | FX Rates & Conversion |
 
 ---
 
-## 3. Orchestration & Workflows
+## 4. Data & Analytics (`pkg/data`)
+
+### Big Data & ETL
+| Package | Status | Enables Services | Description |
+|---------|--------|------------------|-------------|
+| `pkg/data/etl/adapters/glue` | ❌ | etl-pipeline | AWS Glue Adapter |
+| `pkg/data/etl/adapters/datafactory` | ❌ | etl-pipeline | Azure Data Factory Adapter |
+| `pkg/data/etl/airflow` | ❌ | workflow-engine | Airflow Orchestration |
+| `pkg/data/processing/emr` | ❌ | big-data-job | AWS EMR Adapter |
+| `pkg/data/processing/dataproc` | ❌ | big-data-job | GCP Dataproc Adapter |
+| `pkg/data/processing/hdinsight` | ❌ | big-data-job | Azure HDInsight Adapter |
+
+### Database
+| Package | Status | Enables Services | Description |
+|---------|--------|------------------|-------------|
+| `pkg/database/timeseries` | ❌ | telemetry | Time-series Interface |
+| `pkg/database/timeseries/adapters/timestream`| ❌ | telemetry | AWS Timestream Adapter |
+| `pkg/database/timeseries/adapters/influxdb` | ❌ | telemetry | InfluxDB Adapter |
+| `pkg/database/document` | ❌ | cms | Document DB Interface |
+| `pkg/database/graph` | ❌ | recommendation | Graph DB Interface |
+| `pkg/database/adapters/dynamodb` | ❌ | highly-scalable | AWS DynamoDB Adapter |
+| `pkg/database/adapters/cosmosdb` | ❌ | multi-region | Azure CosmosDB Adapter |
+| `pkg/database/adapters/firestore` | ❌ | mobile-backend | GCP Firestore Adapter |
+
+### Storage (File/Block/Object)
+| Package | Status | Enables Services | Description |
+|---------|--------|------------------|-------------|
+| `pkg/storage/blob` | ❌ | media-store | Object Storage (S3/GCS/Azure) |
+| `pkg/storage/file` | ❌ | shared-fs | Network File Systems (EFS/NFS) |
+| `pkg/storage/block` | ❌ | vm-disk | Block Storage (EBS) |
+| `pkg/storage/archive` | ❌ | backup | Cold Storage (Glacier) |
+
+### Search
+| Package | Status | Enables Services | Description |
+|---------|--------|------------------|-------------|
+| `pkg/data/search` | ❌ | resource-search | Search Interface |
+| `pkg/data/search/adapters/elasticsearch` | ❌ | resource-search | Elasticsearch Adapter |
+| `pkg/data/search/adapters/meilisearch` | ❌ | resource-search | Meilisearch Adapter |
+| `pkg/data/search/adapters/algolia` | ❌ | resource-search | Algolia Adapter |
+
+---
+
+## 5. Workflows & Orchestration (`pkg/workflow`)
 
 | Package | Status | Enables Services | Description |
 |---------|--------|------------------|-------------|
-| `pkg/stepfunctions` | ❌ | workflow, agent-orchestrator | AWS Step Functions client |
-| `pkg/temporal` | ❌ | workflow | Temporal workflow engine |
-| `pkg/airflow` | ❌ | etl-pipeline, scheduled-jobs | Airflow DAG triggering |
-| `pkg/saga` | ❌ | order, payment | Saga pattern coordinator |
-| `pkg/outbox` | ❌ | payment, order | Transactional outbox |
-| `pkg/scheduler` | ❌ | scheduled-jobs, campaign-manager | Cron scheduler |
+| `pkg/workflow/adapters/stepfunctions` | ❌ | state-machine | AWS Step Functions |
+| `pkg/workflow/adapters/temporal` | ❌ | durable-execution| Temporal Client |
+| `pkg/workflow/adapters/logicapps` | ❌ | integration | Azure Logic Apps |
+| `pkg/workflow/saga` | ❌ | order-manager | Saga Pattern Orchestrator |
+| `pkg/workflow/scheduler` | ❌ | cron-service | Distributed Job Scheduler |
 
 ---
 
-## 4. Communication
+## 6. Security & Identity (`pkg/security`, `pkg/auth`)
+
+### Auth
+| Package | Status | Enables Services | Description |
+|---------|--------|------------------|-------------|
+| `pkg/auth/adapters/cognito` | ❌ | identity-provider| AWS Cognito Adapter |
+| `pkg/auth/adapters/gcpidentity` | ❌ | identity-provider| GCP Identity Adapter |
+| `pkg/auth/adapters/entraid` | ❌ | identity-provider| Azure Entra ID Adapter |
+| `pkg/auth/session` | ❌ | api-gateway | Distributed Session Management |
+| `pkg/auth/mfa` | ❌ | auth-service | Multi-Factor Authentication |
+| `pkg/auth/webauthn` | ❌ | auth-service | Passkeys / Biometrics |
+
+### Protection
+| Package | Status | Enables Services | Description |
+|---------|--------|------------------|-------------|
+| `pkg/security/fraud` | ❌ | checkout | Fraud Detection/Risk Scoring |
+| `pkg/security/captcha` | ❌ | registration | Bot Protection |
+| `pkg/security/waf` | ❌ | edge-security | Web Application Firewall Control |
+| `pkg/security/crypto/kms` | ❌ | key-management | Key Management Service |
+| `pkg/security/secrets` | ❌ | vault | Secret Management Interface |
+| `pkg/security/scanning` | ❌ | compliance | Vulnerability Scanning (GuardDuty) |
+
+---
+
+## 7. Core Infrastructure (`pkg/network`, `pkg/compute`)
+
+### Networking
+| Package | Status | Enables Services | Description |
+|---------|--------|------------------|-------------|
+| `pkg/network/loadbalancer/core` | ❌ | private-cloud | **Local** Load Balancing Logic |
+| `pkg/network/loadbalancer/adapters/aws`| ❌ | cloud-infra | AWS ELB/ALB Management |
+| `pkg/network/loadbalancer/adapters/gcp`| ❌ | cloud-infra | GCP Load Balancing |
+| `pkg/network/dns` | ❌ | service-discovery| DNS Management (Route53/CloudDNS) |
+| `pkg/network/cdn` | ❌ | content-delivery | CDN Management (CloudFront/Akamai) |
+| `pkg/network/apigateway` | ❌ | api-routing | API Gateway Management |
+| `pkg/network/ip` | ❌ | geo-blocking | IP Intelligence / Geolocation |
+
+### Compute
+| Package | Status | Enables Services | Description |
+|---------|--------|------------------|-------------|
+| `pkg/compute/serverless/lambda` | ❌ | faas | AWS Lambda Management |
+| `pkg/compute/serverless/gcf` | ❌ | faas | Google Cloud Functions |
+| `pkg/compute/container/k8s` | ❌ | paas | Kubernetes Client/Controller |
+| `pkg/compute/container/fargate` | ❌ | paas | AWS Fargate |
+
+---
+
+## 8. Web3 (`pkg/web3`)
 
 | Package | Status | Enables Services | Description |
 |---------|--------|------------------|-------------|
-| `pkg/email` | ❌ | email, notification | SendGrid, SES, SMTP |
-| `pkg/sms` | ❌ | sms, notification | Twilio, SNS |
-| `pkg/push` | ❌ | push-notification | FCM, APNs |
-| `pkg/template` | ❌ | notification, email | Template rendering |
+| `pkg/web3/blockchain/ethereum` | ❌ | wallet | Ethereum Client (geth wrapper) |
+| `pkg/web3/blockchain/solana` | ❌ | wallet | Solana RPC Client |
+| `pkg/web3/storage/ipfs` | ❌ | nft-storage | IPFS Client |
+| `pkg/web3/identity` | ❌ | auth-dapp | Wallet Connect / DID |
 
 ---
 
-## 5. Payments & Commerce
+## 9. IoT (`pkg/iot`)
 
 | Package | Status | Enables Services | Description |
 |---------|--------|------------------|-------------|
-| `pkg/payment` | ❌ | payment, subscription-manager | Stripe, PayPal |
-| `pkg/invoicing` | ❌ | invoice-generator, billing | PDF generation |
-| `pkg/tax` | ❌ | tax-calculator | Avalara, TaxJar |
-| `pkg/currency` | ❌ | currency-converter | Exchange rates |
+| `pkg/iot/protocols/mqtt` | ❌ | vehicle-telemetry| MQTT Client |
+| `pkg/iot/device/ota` | ❌ | device-manager | Over-the-Air Updates |
+| `pkg/iot/adapters/awsiot` | ❌ | iot-cloud | AWS IoT Core |
+| `pkg/iot/adapters/greengrass` | ❌ | edge-compute | AWS Greengrass |
 
 ---
 
-## 6. Database (Additions)
+## 10. Enterprise Patterns (`pkg/enterprise`)
 
 | Package | Status | Enables Services | Description |
 |---------|--------|------------------|-------------|
-| `pkg/database/sharding` | ✅ | high-scale | Already exists |
-| `pkg/database/vector` | ✅ | vector-search | Already exists |
-| `pkg/database/partitioning` | ✅ | analytics | Already exists |
-| `pkg/database/adapters/dynamodb` | ❌ | inventory | DynamoDB adapter |
-| `pkg/database/adapters/cosmosdb` | ❌ | multi-region | Cosmos DB adapter |
-| `pkg/database/adapters/firestore` | ❌ | mobile apps | Firestore adapter |
-| `pkg/timeseries` | ❌ | telemetry-ingestion | InfluxDB, TimescaleDB |
+| `pkg/enterprise/ddd` | ❌ | core-business | Domain-Driven Design Primitives |
+| `pkg/enterprise/cqrs` | ❌ | reporting | Command Query Responsibility Segregation |
+| `pkg/enterprise/eventsource` | ❌ | audit-log | Event Sourcing Store |
 
 ---
 
-## 7. Search
-
-| Package | Status | Enables Services | Description |
-|---------|--------|------------------|-------------|
-| `pkg/search` | ❌ | search | Elasticsearch, Meilisearch |
-| `pkg/search/algolia` | ❌ | search | Algolia adapter |
-
----
-
-## 8. Identity (Additions)
-
-| Package | Status | Enables Services | Description |
-|---------|--------|------------------|-------------|
-| `pkg/auth` | ✅ | auth | Complete |
-| `pkg/auth/mfa` | ✅ | auth | TOTP exists |
-| `pkg/auth/webauthn` | ❌ | auth | FIDO2/WebAuthn |
-| `pkg/session` | ❌ | session-store | Distributed sessions |
-| `pkg/abac` | ❌ | permission | Attribute-based AC |
-
----
-
-## 9. Observability (Additions)
-
-| Package | Status | Enables Services | Description |
-|---------|--------|------------------|-------------|
-| `pkg/telemetry` | ✅ | All | OpenTelemetry exists |
-| `pkg/metrics` | ❌ | metrics-collector | Prometheus helpers |
-| `pkg/health` | ❌ | health-aggregator | Health check standard |
-| `pkg/profiling` | ❌ | capacity-planner | pprof, Pyroscope |
-
----
-
-## 10. Security (Additions)
-
-| Package | Status | Enables Services | Description |
-|---------|--------|------------------|-------------|
-| `pkg/algorithms/ratelimit` | ✅ | rate-limiter | Token bucket, sliding window |
-| `pkg/api/ratelimit` | ✅ | rate-limiter | Distributed rate limiting |
-| `pkg/concurrency/distlock` | ✅ | distributed-lock | Already exists |
-| `pkg/fraud` | ❌ | fraud-detection | Risk scoring |
-| `pkg/captcha` | ❌ | ddos-protection | reCAPTCHA |
-
----
-
-## 11. Media
-
-| Package | Status | Enables Services | Description |
-|---------|--------|------------------|-------------|
-| `pkg/image` | ❌ | media | Resize, compress |
-| `pkg/video` | ❌ | transcoding, vod-service | FFmpeg wrapper |
-| `pkg/cdn` | ❌ | media | CDN URL signing |
-
----
-
-## 12. Web3
-
-| Package | Status | Enables Services | Description |
-|---------|--------|------------------|-------------|
-| `pkg/ethereum` | ❌ | wallet-service | go-ethereum wrapper |
-| `pkg/solana` | ❌ | wallet-service | RPC client |
-| `pkg/ipfs` | ❌ | nft-marketplace | Content addressing |
-
----
-
-## 13. Geolocation
-
-| Package | Status | Enables Services | Description |
-|---------|--------|------------------|-------------|
-| `pkg/geo` | ❌ | geolocation, geofencing | IP geolocation |
-| `pkg/routing` | ❌ | routing | Maps API |
-
----
-
-## 14. IoT
-
-| Package | Status | Enables Services | Description |
-|---------|--------|------------------|-------------|
-| `pkg/mqtt` | ❌ | device-registry | MQTT client |
-| `pkg/ota` | ❌ | device-registry | Firmware updates |
-
----
-
-## 15. Enterprise Patterns
-
-| Package | Status | Enables Services | Description |
-|---------|--------|------------------|-------------|
-| `pkg/ddd` | ❌ | All domain services | Aggregate root, value objects |
-| `pkg/cqrs` | ❌ | analytics, reporting | Command/Query bus |
-| `pkg/eventsource` | ❌ | audit, workflow | Event store |
-| `pkg/uow` | ❌ | All DB services | Unit of Work |
-
----
-
-## Cloud Integrations (90% Coverage Target)
-
-### AWS (Amazon Web Services)
-
-#### Compute & Serverless
-| Service | Package | Status |
-|---------|---------|--------|
-| Lambda | `pkg/serverless/lambda` | ❌ |
-| Fargate | `pkg/container/fargate` | ❌ |
-| ECS | `pkg/container/ecs` | ❌ |
-| EKS | `pkg/container/eks` | ❌ |
-| Batch | `pkg/batch/awsbatch` | ❌ |
-| App Runner | `pkg/container/apprunner` | ❌ |
-
-#### Storage
-| Service | Package | Status |
-|---------|---------|--------|
-| S3 | `pkg/blob/adapters/s3` | ✅ |
-| EBS | `pkg/storage/ebs` | ❌ |
-| EFS | `pkg/storage/efs` | ❌ |
-| Glacier | `pkg/archive/glacier` | ❌ |
-
-#### Database
-| Service | Package | Status |
-|---------|---------|--------|
-| RDS | `pkg/database/adapters/rds` | 🔄 (use postgres/mysql) |
-| DynamoDB | `pkg/database/adapters/dynamodb` | ❌ |
-| ElastiCache | `pkg/cache/adapters/elasticache` | ❌ |
-| DocumentDB | `pkg/database/adapters/documentdb` | ❌ |
-| Neptune | `pkg/database/adapters/neptune` | ❌ |
-| Timestream | `pkg/timeseries/timestream` | ❌ |
-| MemoryDB | `pkg/cache/adapters/memorydb` | ❌ |
-| Keyspaces | `pkg/database/adapters/keyspaces` | ❌ |
-
-#### Messaging & Streaming
-| Service | Package | Status |
-|---------|---------|--------|
-| SQS | `pkg/messaging/adapters/sqs` | ✅ |
-| SNS | `pkg/messaging/adapters/sns` | ✅ |
-| Kinesis | `pkg/streaming/adapters/kinesis` | ✅ |
-| EventBridge | `pkg/events/adapters/eventbridge` | ❌ |
-| MQ (RabbitMQ) | `pkg/messaging/adapters/amazonmq` | ❌ |
-| MSK (Kafka) | `pkg/messaging/adapters/msk` | ❌ |
-
-#### AI & ML
-| Service | Package | Status |
-|---------|---------|--------|
-| SageMaker | `pkg/ml/sagemaker` | ❌ |
-| Bedrock | `pkg/ai/adapters/bedrock` | ❌ |
-| Rekognition | `pkg/ai/vision/rekognition` | ❌ |
-| Textract | `pkg/ai/ocr/textract` | ❌ |
-| Comprehend | `pkg/ai/nlp/comprehend` | ❌ |
-| Polly | `pkg/ai/speech/polly` | ❌ |
-| Transcribe | `pkg/ai/speech/transcribe` | ❌ |
-| Lex | `pkg/ai/chatbot/lex` | ❌ |
-| Personalize | `pkg/ai/recommendation/personalize` | ❌ |
-| Forecast | `pkg/ai/forecast/awsforecast` | ❌ |
-
-#### Security & Identity
-| Service | Package | Status |
-|---------|---------|--------|
-| Secrets Manager | `pkg/secrets/adapters/aws` | ✅ |
-| Cognito | `pkg/auth/adapters/cognito` | ❌ |
-| IAM | `pkg/iam/aws` | ❌ |
-| KMS | `pkg/crypto/adapters/kms` | ❌ |
-| WAF | `pkg/security/waf/aws` | ❌ |
-| GuardDuty | `pkg/security/guardduty` | ❌ |
-
-#### Orchestration & Workflows
-| Service | Package | Status |
-|---------|---------|--------|
-| Step Functions | `pkg/workflow/stepfunctions` | ❌ |
-| SWF | `pkg/workflow/swf` | ❌ |
-| MWAA (Airflow) | `pkg/workflow/mwaa` | ❌ |
-
-#### Networking
-| Service | Package | Status |
-|---------|---------|--------|
-| API Gateway | `pkg/apigateway/aws` | ❌ |
-| CloudFront | `pkg/cdn/cloudfront` | ❌ |
-| Route 53 | `pkg/dns/route53` | ❌ |
-| ELB/ALB | `pkg/loadbalancer/aws` | ❌ |
-
-#### Notifications
-| Service | Package | Status |
-|---------|---------|--------|
-| SES | `pkg/email/adapters/ses` | ❌ |
-| Pinpoint | `pkg/notification/pinpoint` | ❌ |
-
-#### IoT
-| Service | Package | Status |
-|---------|---------|--------|
-| IoT Core | `pkg/iot/awsiot` | ❌ |
-| Greengrass | `pkg/iot/greengrass` | ❌ |
-
-#### Analytics
-| Service | Package | Status |
-|---------|---------|--------|
-| Athena | `pkg/analytics/athena` | ❌ |
-| Redshift | `pkg/database/adapters/redshift` | ❌ |
-| QuickSight | `pkg/analytics/quicksight` | ❌ |
-| Glue | `pkg/etl/glue` | ❌ |
-| EMR | `pkg/bigdata/emr` | ❌ |
-
-#### Monitoring
-| Service | Package | Status |
-|---------|---------|--------|
-| CloudWatch | `pkg/monitoring/cloudwatch` | ❌ |
-| X-Ray | `pkg/tracing/xray` | ❌ |
-
----
-
-### GCP (Google Cloud Platform)
-
-#### Compute & Serverless
-| Service | Package | Status |
-|---------|---------|--------|
-| Cloud Functions | `pkg/serverless/gcf` | ❌ |
-| Cloud Run | `pkg/container/cloudrun` | ❌ |
-| GKE | `pkg/container/gke` | ❌ |
-| Compute Engine | `pkg/compute/gce` | ❌ |
-
-#### Storage
-| Service | Package | Status |
-|---------|---------|--------|
-| Cloud Storage | `pkg/blob/adapters/gcs` | ✅ |
-| Filestore | `pkg/storage/filestore` | ❌ |
-| Archive | `pkg/archive/gcsarchive` | ❌ |
-
-#### Database
-| Service | Package | Status |
-|---------|---------|--------|
-| Cloud SQL | `pkg/database/adapters/cloudsql` | 🔄 (use postgres/mysql) |
-| Firestore | `pkg/database/adapters/firestore` | ❌ |
-| Bigtable | `pkg/database/adapters/bigtable` | ❌ |
-| Spanner | `pkg/database/adapters/spanner` | ❌ |
-| Memorystore | `pkg/cache/adapters/memorystore` | ❌ |
-| AlloyDB | `pkg/database/adapters/alloydb` | ❌ |
-
-#### Messaging & Streaming
-| Service | Package | Status |
-|---------|---------|--------|
-| Pub/Sub | `pkg/messaging/adapters/pubsub` | ✅ |
-| Eventarc | `pkg/events/adapters/eventarc` | ❌ |
-| Dataflow | `pkg/streaming/dataflow` | ❌ |
-
-#### AI & ML
-| Service | Package | Status |
-|---------|---------|--------|
-| Vertex AI | `pkg/ml/vertexai` | ❌ |
-| Vision API | `pkg/ai/vision/gcp` | ❌ |
-| Speech-to-Text | `pkg/ai/speech/gcpstt` | ❌ |
-| Text-to-Speech | `pkg/ai/speech/gcptts` | ❌ |
-| Natural Language | `pkg/ai/nlp/gcpnl` | ❌ |
-| Translation | `pkg/ai/translate/gcp` | ❌ |
-| Document AI | `pkg/ai/ocr/documentai` | ❌ |
-| Recommendations AI | `pkg/ai/recommendation/gcpai` | ❌ |
-
-#### Security & Identity
-| Service | Package | Status |
-|---------|---------|--------|
-| Secret Manager | `pkg/secrets/adapters/gcp` | ✅ |
-| Cloud IAM | `pkg/iam/gcp` | ❌ |
-| Cloud KMS | `pkg/crypto/adapters/gcpkms` | ❌ |
-| Identity Platform | `pkg/auth/adapters/gcpidentity` | ❌ |
-
-#### Orchestration
-| Service | Package | Status |
-|---------|---------|--------|
-| Cloud Workflows | `pkg/workflow/gcpworkflows` | ❌ |
-| Cloud Composer | `pkg/workflow/composer` | ❌ |
-| Cloud Tasks | `pkg/queue/cloudtasks` | ❌ |
-| Cloud Scheduler | `pkg/scheduler/gcpscheduler` | ❌ |
-
-#### Networking
-| Service | Package | Status |
-|---------|---------|--------|
-| Cloud CDN | `pkg/cdn/gcpcdn` | ❌ |
-| Cloud DNS | `pkg/dns/gcpdns` | ❌ |
-| Cloud Load Balancing | `pkg/loadbalancer/gcp` | ❌ |
-| API Gateway | `pkg/apigateway/gcp` | ❌ |
-
-#### Analytics
-| Service | Package | Status |
-|---------|---------|--------|
-| BigQuery | `pkg/database/adapters/bigquery` | ❌ |
-| Dataproc | `pkg/bigdata/dataproc` | ❌ |
-| Looker | `pkg/analytics/looker` | ❌ |
-
-#### Monitoring
-| Service | Package | Status |
-|---------|---------|--------|
-| Cloud Monitoring | `pkg/monitoring/gcpmonitoring` | ❌ |
-| Cloud Trace | `pkg/tracing/cloudtrace` | ❌ |
-| Cloud Logging | `pkg/logging/gcplogging` | ❌ |
-
----
-
-### Azure
-
-#### Compute & Serverless
-| Service | Package | Status |
-|---------|---------|--------|
-| Azure Functions | `pkg/serverless/azfunc` | ❌ |
-| Container Apps | `pkg/container/containerapps` | ❌ |
-| AKS | `pkg/container/aks` | ❌ |
-| Container Instances | `pkg/container/aci` | ❌ |
-
-#### Storage
-| Service | Package | Status |
-|---------|---------|--------|
-| Blob Storage | `pkg/blob/adapters/azure` | ✅ |
-| File Storage | `pkg/storage/azurefile` | ❌ |
-| Queue Storage | `pkg/queue/azurequeue` | ❌ |
-| Table Storage | `pkg/database/adapters/azuretable` | ❌ |
-
-#### Database
-| Service | Package | Status |
-|---------|---------|--------|
-| Cosmos DB | `pkg/database/adapters/cosmosdb` | ❌ |
-| Azure SQL | `pkg/database/adapters/azuresql` | ❌ |
-| PostgreSQL Flexible | `pkg/database/adapters/azurepg` | 🔄 |
-| Redis Cache | `pkg/cache/adapters/azureredis` | ❌ |
-
-#### Messaging
-| Service | Package | Status |
-|---------|---------|--------|
-| Service Bus | `pkg/messaging/adapters/servicebus` | ✅ |
-| Event Hubs | `pkg/streaming/adapters/eventhubs` | ✅ |
-| Event Grid | `pkg/events/adapters/eventgrid` | ❌ |
-
-#### AI & ML
-| Service | Package | Status |
-|---------|---------|--------|
-| Azure ML | `pkg/ml/azureml` | ❌ |
-| Azure OpenAI | `pkg/ai/adapters/azureopenai` | ❌ |
-| Cognitive Services | `pkg/ai/cognitive` | ❌ |
-| Form Recognizer | `pkg/ai/ocr/formrecognizer` | ❌ |
-| Translator | `pkg/ai/translate/azure` | ❌ |
-| Speech Services | `pkg/ai/speech/azurespeech` | ❌ |
-
-#### Security & Identity
-| Service | Package | Status |
-|---------|---------|--------|
-| Key Vault | `pkg/secrets/adapters/azure` | ✅ |
-| Entra ID (AAD) | `pkg/auth/adapters/entraid` | ❌ |
-| Managed Identity | `pkg/iam/azuremsi` | ❌ |
-
-#### Orchestration
-| Service | Package | Status |
-|---------|---------|--------|
-| Logic Apps | `pkg/workflow/logicapps` | ❌ |
-| Durable Functions | `pkg/workflow/durablefunc` | ❌ |
-
-#### Networking
-| Service | Package | Status |
-|---------|---------|--------|
-| CDN | `pkg/cdn/azurecdn` | ❌ |
-| Front Door | `pkg/cdn/frontdoor` | ❌ |
-| API Management | `pkg/apigateway/apim` | ❌ |
-| DNS | `pkg/dns/azuredns` | ❌ |
-
-#### Analytics
-| Service | Package | Status |
-|---------|---------|--------|
-| Synapse | `pkg/database/adapters/synapse` | ❌ |
-| Data Factory | `pkg/etl/datafactory` | ❌ |
-| HDInsight | `pkg/bigdata/hdinsight` | ❌ |
-
-#### Monitoring
-| Service | Package | Status |
-|---------|---------|--------|
-| Monitor | `pkg/monitoring/azuremonitor` | ❌ |
-| Application Insights | `pkg/tracing/appinsights` | ❌ |
-
-#### Communication
-| Service | Package | Status |
-|---------|---------|--------|
-| Communication Services | `pkg/communication/azure` | ❌ |
-| Notification Hubs | `pkg/push/adapters/azurepush` | ❌ |
-
----
-
-## Priority Order
-
-### Phase 1: AI & Core
-1. `pkg/ai` - LLM interface (OpenAI, Anthropic, Gemini)
-2. `pkg/ai/adapters/bedrock` + `pkg/ml/vertexai` + `pkg/ai/adapters/azureopenai` - Cloud AI
-3. `pkg/email` + `pkg/sms` + `pkg/push` - Notifications
-4. `pkg/payment` - Commerce
-5. `pkg/search` - Discovery
-
-### Phase 2: Orchestration & Serverless
-6. `pkg/workflow/stepfunctions` + `pkg/workflow/gcpworkflows` + `pkg/workflow/logicapps`
-7. `pkg/serverless/*` - Lambda, Cloud Functions, Azure Functions
-8. `pkg/saga` + `pkg/outbox` - Distributed transactions
-
-### Phase 3: Database & Storage
-9. `pkg/database/adapters/dynamodb` + `pkg/database/adapters/firestore` + `pkg/database/adapters/cosmosdb`
-10. `pkg/timeseries/*` - Timestream, etc.
-11. `pkg/cdn/*` - CloudFront, GCP CDN, Azure CDN
-
-### Phase 4: Analytics & Big Data
-12. `pkg/analytics/athena` + `pkg/database/adapters/bigquery` + `pkg/database/adapters/synapse`
-13. `pkg/etl/*` - Glue, Data Factory
-
-### Phase 5: Security & Networking
-14. `pkg/iam/*` - AWS/GCP/Azure IAM
-15. `pkg/crypto/adapters/*` - KMS wrappers
-16. `pkg/apigateway/*` - API Gateway clients
-
-### Phase 6: Specialized
-17. `pkg/iot/*` - IoT Core, Greengrass
-18. `pkg/ai/speech/*` - Polly, Transcribe, GCP Speech, Azure Speech
-19. `pkg/ethereum` + `pkg/ipfs` - Web3
+## 11. Private Cloud Components (Infrastructure-as-a-Service)
+
+> **MISSING REQUIREMENTS**: To build a "Private Cloud" (AWS equivalent) on bare metal, you need the following **Server-Side** capabilities, not just clients.
+
+| Domain | Package | Needs Implementation | Description |
+|--------|---------|---------------------|-------------|
+| **Compute** | `pkg/cloud/hypervisor` | ❌ | VM Management (Libvirt/QEMU/Firecracker) |
+| **Compute** | `pkg/cloud/provisioning` | ❌ | Bare Metal Provisioning (PXE/IPMI) |
+| **Compute** | `pkg/cloud/scheduler` | ❌ | Placement Logic (Bin-packing VMs onto Hosts) |
+| **Network** | `pkg/network/sdn` | ❌ | Software Defined Networking (VPC/Overlay) |
+| **Network** | `pkg/network/dhcp` | ❌ | IP Address Management System (IPAM) |
+| **Network** | `pkg/network/firewall` | ❌ | Distributed Firewall / Security Groups |
+| **Storage** | `pkg/storage/controller` | ❌ | Volume Controller (Ceph/LVM wrapper) |
+| **Identity** | `pkg/iam/provider` | ❌ | Identity Provider Server (OIDC/SAML issuer) |
+| **Billing** | `pkg/metering` | ❌ | Usage Metering & Rating Engine |
+| **Control** | `pkg/cloud/controlplane` | ❌ | API Server & State Manager (The "Brain") |
 

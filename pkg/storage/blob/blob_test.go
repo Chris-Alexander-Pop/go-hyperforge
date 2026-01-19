@@ -6,9 +6,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/blob"
-	"github.com/chris-alexander-pop/system-design-library/pkg/blob/adapters/memory"
 	"github.com/chris-alexander-pop/system-design-library/pkg/errors"
+	"github.com/chris-alexander-pop/system-design-library/pkg/storage/blob"
+	"github.com/chris-alexander-pop/system-design-library/pkg/storage/blob/adapters/memory"
 )
 
 func TestBlobStore(t *testing.T) {

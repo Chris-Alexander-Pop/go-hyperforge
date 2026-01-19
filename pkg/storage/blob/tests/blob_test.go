@@ -7,9 +7,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/blob"
-	"github.com/chris-alexander-pop/system-design-library/pkg/blob/adapters/local"
 	"github.com/chris-alexander-pop/system-design-library/pkg/errors"
+	"github.com/chris-alexander-pop/system-design-library/pkg/storage/blob"
+	"github.com/chris-alexander-pop/system-design-library/pkg/storage/blob/adapters/local"
 	"github.com/chris-alexander-pop/system-design-library/pkg/test"
 )
 
