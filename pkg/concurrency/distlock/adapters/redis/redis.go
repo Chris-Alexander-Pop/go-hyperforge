@@ -1,44 +1,45 @@
-package distlock
+package redis
 
 import (
 	"context"
 	"time"
 
+	"github.com/chris-alexander-pop/system-design-library/pkg/concurrency/distlock"
 	"github.com/google/uuid"
 	"github.com/redis/go-redis/v9"
 )
 
-// RedisLocker implements distributed locking using Redis.
-type RedisLocker struct {
+// Adapter implements distlock.Locker using Redis.
+type Adapter struct {
 	client redis.Cmdable
 	prefix string
 }
 
-// NewRedisLocker creates a new Redis-based distributed locker.
-func NewRedisLocker(client redis.Cmdable, prefix string) *RedisLocker {
+func New(client redis.Cmdable, prefix string) *Adapter {
 	if prefix == "" {
 		prefix = "lock:"
 	}
-	return &RedisLocker{
+	return &Adapter{
 		client: client,
 		prefix: prefix,
 	}
 }
 
-func (l *RedisLocker) NewLock(key string, ttl time.Duration) Lock {
-	return &redisLock{
-		client: l.client,
-		key:    l.prefix + key,
+func (a *Adapter) NewLock(key string, ttl time.Duration) distlock.Lock {
+	return &Lock{
+		client: a.client,
+		key:    a.prefix + key,
 		value:  uuid.New().String(), // Unique identifier for this lock holder
 		ttl:    ttl,
 	}
 }
 
-func (l *RedisLocker) Close() error {
+func (a *Adapter) Close() error {
 	return nil
 }
 
-type redisLock struct {
+// Lock implements a Redis-based lock.
+type Lock struct {
 	client redis.Cmdable
 	key    string
 	value  string
@@ -47,7 +48,7 @@ type redisLock struct {
 }
 
 // Acquire attempts to acquire the lock using SET NX (set if not exists).
-func (l *redisLock) Acquire(ctx context.Context) (bool, error) {
+func (l *Lock) Acquire(ctx context.Context) (bool, error) {
 	success, err := l.client.SetNX(ctx, l.key, l.value, l.ttl).Result()
 	if err != nil {
 		return false, err
@@ -66,7 +67,7 @@ else
 end
 `)
 
-func (l *redisLock) Release(ctx context.Context) error {
+func (l *Lock) Release(ctx context.Context) error {
 	if !l.held {
 		return nil
 	}
@@ -89,7 +90,7 @@ else
 end
 `)
 
-func (l *redisLock) Extend(ctx context.Context, ttl time.Duration) error {
+func (l *Lock) Extend(ctx context.Context, ttl time.Duration) error {
 	if !l.held {
 		return nil
 	}
@@ -103,26 +104,6 @@ func (l *redisLock) Extend(ctx context.Context, ttl time.Duration) error {
 	return nil
 }
 
-func (l *redisLock) IsHeld() bool {
+func (l *Lock) IsHeld() bool {
 	return l.held
-}
-
-// AcquireWithRetry attempts to acquire the lock with retries.
-func AcquireWithRetry(ctx context.Context, lock Lock, retryDelay time.Duration, maxRetries int) (bool, error) {
-	for i := 0; i < maxRetries; i++ {
-		acquired, err := lock.Acquire(ctx)
-		if err != nil {
-			return false, err
-		}
-		if acquired {
-			return true, nil
-		}
-
-		select {
-		case <-ctx.Done():
-			return false, ctx.Err()
-		case <-time.After(retryDelay):
-		}
-	}
-	return false, nil
 }
