@@ -2,9 +2,12 @@ package executor
 
 import (
 	"context"
+	"fmt"
 	"sync"
+	"time"
 
 	"github.com/chris-alexander-pop/system-design-library/pkg/errors"
+	"github.com/chris-alexander-pop/system-design-library/pkg/events"
 )
 
 // Task is a unit of work.
@@ -20,10 +23,16 @@ type Node struct {
 // DAGExecutor runs tasks respecting dependencies.
 type DAGExecutor struct {
 	nodes map[string]*Node
+	bus   events.Bus
 }
 
-func New() *DAGExecutor {
-	return &DAGExecutor{nodes: make(map[string]*Node)}
+// New creates a new DAGExecutor.
+// bus is optional (can be nil).
+func New(bus events.Bus) *DAGExecutor {
+	return &DAGExecutor{
+		nodes: make(map[string]*Node),
+		bus:   bus,
+	}
 }
 
 func (d *DAGExecutor) AddTask(id string, task Task, dependsOn ...string) {
@@ -57,9 +66,6 @@ func (d *DAGExecutor) Run(ctx context.Context) error {
 	}
 
 	// 3. Execute layer by layer (parallelizable)
-	// This simple implementation is sequential for now, or parallel per layer.
-	// Parallel version:
-
 	var mu sync.Mutex
 	var errs []error
 
@@ -113,11 +119,45 @@ func (d *DAGExecutor) Run(ctx context.Context) error {
 func (d *DAGExecutor) startTask(ctx context.Context, id string, doneCh chan<- string, mu *sync.Mutex, errs *[]error) {
 	node := d.nodes[id]
 	go func() {
-		// print execution?
-		if err := node.Task(ctx); err != nil {
+		// Emit Started
+		if d.bus != nil {
+			_ = d.bus.Publish(ctx, "bigdata.task.started", events.Event{
+				ID:        fmt.Sprintf("evt-%s-start-%d", id, time.Now().UnixNano()),
+				Type:      "bigdata.task.started",
+				Source:    "bigdata-executor",
+				Timestamp: time.Now(),
+				Payload:   map[string]string{"task_id": id},
+			})
+		}
+
+		err := node.Task(ctx)
+
+		if err != nil {
 			mu.Lock()
 			*errs = append(*errs, err)
 			mu.Unlock()
+
+			// Emit Failed
+			if d.bus != nil {
+				_ = d.bus.Publish(ctx, "bigdata.task.failed", events.Event{
+					ID:        fmt.Sprintf("evt-%s-fail-%d", id, time.Now().UnixNano()),
+					Type:      "bigdata.task.failed",
+					Source:    "bigdata-executor",
+					Timestamp: time.Now(),
+					Payload:   map[string]string{"task_id": id, "error": err.Error()},
+				})
+			}
+		} else {
+			// Emit Completed
+			if d.bus != nil {
+				_ = d.bus.Publish(ctx, "bigdata.task.completed", events.Event{
+					ID:        fmt.Sprintf("evt-%s-comp-%d", id, time.Now().UnixNano()),
+					Type:      "bigdata.task.completed",
+					Source:    "bigdata-executor",
+					Timestamp: time.Now(),
+					Payload:   map[string]string{"task_id": id},
+				})
+			}
 		}
 		doneCh <- id
 	}()
