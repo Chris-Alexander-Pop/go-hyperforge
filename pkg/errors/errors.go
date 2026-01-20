@@ -37,6 +37,7 @@ const (
 	CodeUnauthorized    = "UNAUTHORIZED"
 	CodeForbidden       = "FORBIDDEN"
 	CodeConflict        = "CONFLICT"
+	CodeUnimplemented   = "UNIMPLEMENTED"
 
 	// Aliases
 	CodeUnauthenticated  = CodeUnauthorized
@@ -114,6 +115,13 @@ func Conflict(msg string, err error) *AppError {
 	return New(CodeConflict, msg, err)
 }
 
+func Unimplemented(msg string, err error) *AppError {
+	if msg == "" {
+		msg = "not implemented"
+	}
+	return New(CodeUnimplemented, msg, err)
+}
+
 // HTTPStatus returns the HTTP status code for a given error.
 func HTTPStatus(err error) int {
 	var appErr *AppError
@@ -131,6 +139,8 @@ func HTTPStatus(err error) int {
 			return http.StatusConflict
 		case CodeInternal:
 			return http.StatusInternalServerError
+		case CodeUnimplemented:
+			return http.StatusNotImplemented
 		}
 	}
 	return http.StatusInternalServerError
@@ -153,6 +163,8 @@ func GRPCStatus(err error) *status.Status {
 			return status.New(codes.AlreadyExists, appErr.Message)
 		case CodeInternal:
 			return status.New(codes.Internal, appErr.Message)
+		case CodeUnimplemented:
+			return status.New(codes.Unimplemented, appErr.Message)
 		}
 	}
 	return status.New(codes.Unknown, err.Error())
