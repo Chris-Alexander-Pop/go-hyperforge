@@ -28,16 +28,11 @@ func New(cfg document.Config) (*Adapter, error) {
 	}
 
 	// Support for local DynamoDB (e.g. Docker)
+	var clientOpts []func(*dynamodb.Options)
 	if cfg.Host != "" && cfg.Port != 0 {
-		// Custom endpoint resolver for local testing
-		customResolver := aws.EndpointResolverWithOptionsFunc(func(service, region string, options ...interface{}) (aws.Endpoint, error) {
-			return aws.Endpoint{
-				PartitionID:   "aws",
-				URL:           fmt.Sprintf("http://%s:%d", cfg.Host, cfg.Port),
-				SigningRegion: region,
-			}, nil
+		clientOpts = append(clientOpts, func(o *dynamodb.Options) {
+			o.BaseEndpoint = aws.String(fmt.Sprintf("http://%s:%d", cfg.Host, cfg.Port))
 		})
-		opts = append(opts, config.WithEndpointResolverWithOptions(customResolver))
 	}
 
 	awsCfg, err := config.LoadDefaultConfig(context.Background(), opts...)
@@ -46,7 +41,7 @@ func New(cfg document.Config) (*Adapter, error) {
 	}
 
 	return &Adapter{
-		client: dynamodb.NewFromConfig(awsCfg),
+		client: dynamodb.NewFromConfig(awsCfg, clientOpts...),
 	}, nil
 }
 

@@ -62,14 +62,14 @@ func (s *Sender) Send(ctx context.Context, msg *email.Message) error {
 		input.FromEmailAddress = aws.String(msg.From)
 	}
 
-	for _, to := range msg.To {
-		input.Destination.ToAddresses = append(input.Destination.ToAddresses, to)
+	if len(msg.To) > 0 {
+		input.Destination.ToAddresses = append(input.Destination.ToAddresses, msg.To...)
 	}
-	for _, cc := range msg.CC {
-		input.Destination.CcAddresses = append(input.Destination.CcAddresses, cc)
+	if len(msg.CC) > 0 {
+		input.Destination.CcAddresses = append(input.Destination.CcAddresses, msg.CC...)
 	}
-	for _, bcc := range msg.BCC {
-		input.Destination.BccAddresses = append(input.Destination.BccAddresses, bcc)
+	if len(msg.BCC) > 0 {
+		input.Destination.BccAddresses = append(input.Destination.BccAddresses, msg.BCC...)
 	}
 
 	_, err := s.client.SendEmail(ctx, input)

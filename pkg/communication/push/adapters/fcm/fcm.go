@@ -24,7 +24,7 @@ func New(ctx context.Context, cfg push.Config) (*Sender, error) {
 
 	opts := []option.ClientOption{}
 	if cfg.FCMServiceAccount != "" {
-		opts = append(opts, option.WithCredentialsJSON([]byte(cfg.FCMServiceAccount)))
+		opts = append(opts, option.WithCredentialsJSON([]byte(cfg.FCMServiceAccount))) //lint:ignore SA1019 Required for service account auth
 	}
 
 	app, err := firebase.NewApp(ctx, nil, opts...)
@@ -76,7 +76,7 @@ func (s *Sender) Send(ctx context.Context, msg *push.Message) error {
 		}
 	}
 
-	br, err := s.client.SendMulticast(ctx, fcmMsg)
+	br, err := s.client.SendEachForMulticast(ctx, fcmMsg)
 	if err != nil {
 		return errors.Internal("failed to send fcm multicast", err)
 	}

@@ -35,7 +35,7 @@ type Adapter struct {
 func New(ctx context.Context, cfg Config) (*Adapter, error) {
 	var opts []option.ClientOption
 	if cfg.CredentialsFile != "" {
-		opts = append(opts, option.WithCredentialsFile(cfg.CredentialsFile))
+		opts = append(opts, option.WithCredentialsFile(cfg.CredentialsFile)) //lint:ignore SA1019 File path config required by user
 	}
 
 	app, err := firebase.NewApp(ctx, &firebase.Config{ProjectID: cfg.ProjectID}, opts...)

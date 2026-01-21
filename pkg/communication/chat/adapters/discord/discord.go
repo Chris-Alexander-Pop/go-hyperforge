@@ -62,7 +62,8 @@ func (s *Sender) Send(ctx context.Context, msg *chat.Message) error {
 	// Or we create complex message.
 
 	// Complex implementation to handle attachments roughly mapped to Embeds
-	for _, att := range msg.Attachments {
+	if len(msg.Attachments) > 0 {
+		att := msg.Attachments[0]
 		embed.Title = att.Title
 		embed.Description = att.Text // Use attachment text if present, or msg.Text
 		if att.Color != "" {
@@ -81,9 +82,6 @@ func (s *Sender) Send(ctx context.Context, msg *chat.Message) error {
 				Inline: f.Short,
 			})
 		}
-		// Discord supports multiple embeds but send helper usually takes one.
-		// We'll stop at first for basic support.
-		break
 	}
 
 	_, err := s.session.ChannelMessageSendEmbed(channelID, embed)
