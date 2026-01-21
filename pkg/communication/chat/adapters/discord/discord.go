@@ -66,10 +66,7 @@ func (s *Sender) Send(ctx context.Context, msg *chat.Message) error {
 		att := msg.Attachments[0]
 		embed.Title = att.Title
 		embed.Description = att.Text // Use attachment text if present, or msg.Text
-		if att.Color != "" {
-			// Parse hex color string to int? Discord expects int.
-			// skipping color parsing for brevity/robustness unless needed.
-		}
+
 		if att.ImageURL != "" {
 			embed.Image = &discordgo.MessageEmbedImage{
 				URL: att.ImageURL,

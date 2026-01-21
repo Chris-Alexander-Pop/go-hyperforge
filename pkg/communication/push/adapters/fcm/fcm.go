@@ -24,7 +24,7 @@ func New(ctx context.Context, cfg push.Config) (*Sender, error) {
 
 	opts := []option.ClientOption{}
 	if cfg.FCMServiceAccount != "" {
-		opts = append(opts, option.WithCredentialsJSON([]byte(cfg.FCMServiceAccount))) //lint:ignore SA1019 Required for service account auth
+		opts = append(opts, option.WithCredentialsJSON([]byte(cfg.FCMServiceAccount))) //lint:ignore SA1019 //nolint:staticcheck // Required for service account auth
 	}
 
 	app, err := firebase.NewApp(ctx, nil, opts...)
