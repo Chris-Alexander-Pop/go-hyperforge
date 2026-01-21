@@ -60,9 +60,9 @@
 ### Perception (`pkg/ai/perception`)
 | Package | Status | Enables Services | Description |
 |---------|--------|------------------|-------------|
-| `pkg/ai/perception/vision` | ❌ | media-analysis | Image Classification/OCR |
-| `pkg/ai/perception/speech` | ❌ | transcription | STT / TTS |
-| `pkg/ai/perception/ocr` | ❌ | document-parser | Document Intelligence |
+| `pkg/ai/perception/vision` | ✅ | media-analysis | Image Classification/OCR |
+| `pkg/ai/perception/speech` | ✅ | transcription | STT / TTS |
+| `pkg/ai/perception/ocr` | ✅ | document-parser | Document Intelligence |
 
 ---
 
@@ -157,22 +157,22 @@
 ### Auth
 | Package | Status | Enables Services | Description |
 |---------|--------|------------------|-------------|
-| `pkg/auth/adapters/cognito` | ❌ | identity-provider| AWS Cognito Adapter |
-| `pkg/auth/adapters/gcpidentity` | ❌ | identity-provider| GCP Identity Adapter |
-| `pkg/auth/adapters/entraid` | ❌ | identity-provider| Azure Entra ID Adapter |
-| `pkg/auth/session` | ❌ | api-gateway | Distributed Session Management |
-| `pkg/auth/mfa` | ❌ | auth-service | Multi-Factor Authentication |
-| `pkg/auth/webauthn` | ❌ | auth-service | Passkeys / Biometrics |
+| `pkg/auth/adapters/cognito` | ✅ | identity-provider| AWS Cognito Adapter |
+| `pkg/auth/adapters/gcpidentity` | ✅ | identity-provider| GCP Identity Adapter |
+| `pkg/auth/adapters/entraid` | ✅ | identity-provider| Azure Entra ID Adapter |
+| `pkg/auth/session` | ✅ | api-gateway | Distributed Session Management |
+| `pkg/auth/mfa` | ✅ | auth-service | Multi-Factor Authentication |
+| `pkg/auth/webauthn` | ✅ | auth-service | Passkeys / Biometrics |
 
 ### Protection
 | Package | Status | Enables Services | Description |
 |---------|--------|------------------|-------------|
-| `pkg/security/fraud` | ❌ | checkout | Fraud Detection/Risk Scoring |
-| `pkg/security/captcha` | ❌ | registration | Bot Protection |
-| `pkg/security/waf` | ❌ | edge-security | Web Application Firewall Control |
-| `pkg/security/crypto/kms` | ❌ | key-management | Key Management Service |
-| `pkg/security/secrets` | ❌ | vault | Secret Management Interface |
-| `pkg/security/scanning` | ❌ | compliance | Vulnerability Scanning (GuardDuty) |
+| `pkg/security/fraud` | ✅ | checkout | Fraud Detection/Risk Scoring |
+| `pkg/security/captcha` | ✅ | registration | Bot Protection |
+| `pkg/security/waf` | ✅ | edge-security | Web Application Firewall Control |
+| `pkg/security/crypto/kms` | ✅ | key-management | Key Management Service |
+| `pkg/security/secrets` | ✅ | vault | Secret Management Interface |
+| `pkg/security/scanning` | ✅ | compliance | Vulnerability Scanning (GuardDuty) |
 
 ---
 
