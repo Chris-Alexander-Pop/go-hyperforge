@@ -3,7 +3,9 @@
 // This package includes:
 //   - TOTP: Time-based One-Time Password (Google Authenticator compatible)
 //   - Recovery codes: Backup authentication codes
-package mfa
+//
+// Package otp provides one-time password utilities.
+package otp
 
 import (
 	"crypto/hmac"

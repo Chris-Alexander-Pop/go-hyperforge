@@ -36,6 +36,12 @@ type Claims struct {
 	Metadata map[string]interface{} `json:"-"`              // Catch-all
 }
 
+// IdentityProvider defines the interface for authentication providers.
+type IdentityProvider interface {
+	// Login authenticates a user with credentials.
+	Login(ctx context.Context, username, password string) (*Claims, error)
+}
+
 // Verifier is responsible for validating an access token / ID token.
 type Verifier interface {
 	Verify(ctx context.Context, token string) (*Claims, error)

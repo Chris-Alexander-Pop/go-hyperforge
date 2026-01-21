@@ -1,4 +1,4 @@
-package mfa
+package otp
 
 import (
 	"crypto/rand"
