@@ -12,7 +12,7 @@ import (
 
 // Agent runs autonomous tasks.
 type Agent struct {
-	llm      llm.Client
+	client   llm.Client
 	tools    map[string]Tool
 	maxSteps int
 }
@@ -31,7 +31,7 @@ func New(client llm.Client, tools []Tool) *Agent {
 		t[tool.Name()] = tool
 	}
 	return &Agent{
-		llm:      client,
+		client:   client,
 		tools:    t,
 		maxSteps: 10,
 	}
@@ -46,7 +46,8 @@ func (a *Agent) Run(ctx context.Context, task string) (string, error) {
 	}
 
 	for i := 0; i < a.maxSteps; i++ {
-		resp, err := a.llm.Chat(ctx, history, llm.Options{Temperature: 0})
+		// Use functional option for Temperature
+		resp, err := a.client.Chat(ctx, history, llm.WithTemperature(0))
 		if err != nil {
 			return "", err
 		}

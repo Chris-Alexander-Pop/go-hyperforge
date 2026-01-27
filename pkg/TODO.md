@@ -77,9 +77,16 @@
 ### Generative AI (`pkg/ai/genai`)
 | Package | Status | Enables Services | Description |
 |---------|--------|------------------|-------------|
-| `pkg/ai/genai/llm` | ✅ | chatbot | LLM Client Interface |
-| `pkg/ai/genai/llm/adapters/openai` | ✅ | chatbot | OpenAI Chat Adapter |
-| `pkg/ai/genai/llm/adapters/anthropic` | ✅ | chatbot | Anthropic Chat Adapter |
+| `pkg/ai/genai/llm` | ✅ | llm-core | LLM Client Interface |
+| `pkg/ai/genai/llm/adapters/openai` | ✅ | llm-core | OpenAI Adapter |
+| `pkg/ai/genai/llm/adapters/anthropic` | ✅ | llm-core | Anthropic Adapter |
+| `pkg/ai/genai/llm/adapters/gemini` | ✅ | llm-core | Google Gemini Adapter |
+| `pkg/ai/genai/llm/adapters/ollama` | ✅ | llm-core | Ollama Adapter (Local LLM) |
+| `pkg/ai/genai/llm/embeddings` | ✅ | embedding-service | Embedding Generation |
+| `pkg/ai/genai/llm/rag` | ✅ | rag-service | Retrieval Augmented Generation |
+| `pkg/ai/genai/llm/memory` | ✅ | context-manager | Conversation History |
+| `pkg/ai/genai/llm/chains` | ✅ | agent-orchestrator | LangChain-style chains |
+| `pkg/ai/genai/llm/tools` | ✅ | agent-runtime | Function Calling/Tool Registry |
 | `pkg/ai/genai/image` | ✅ | creative-tools | Image Generation Interface |
 | `pkg/ai/genai/image/adapters/openai` | ✅ | creative-tools | DALL-E Adapter |
 | `pkg/ai/genai/agents` | ✅ | autonomous-tasks| ReAct Agent Framework |

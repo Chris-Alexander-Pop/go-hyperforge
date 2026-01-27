@@ -1,4 +1,4 @@
-// Package openai provides an OpenAI Chat adapter.
+// Package openai provides an OpenAI Adapter.
 package openai
 
 import (
@@ -24,21 +24,29 @@ func New(apiKey string) *Client {
 	}
 }
 
-func (c *Client) Chat(ctx context.Context, messages []llm.Message, opts llm.Options) (*llm.Response, error) {
-	if opts.Model == "" {
-		opts.Model = "gpt-4"
+func (c *Client) Chat(ctx context.Context, messages []llm.Message, opts ...llm.GenerateOption) (*llm.Generation, error) {
+	options := llm.GenerateOptions{
+		Model:       "gpt-4-turbo-preview",
+		Temperature: 0.7,
+	}
+	for _, o := range opts {
+		o(&options)
 	}
 
-	body := map[string]interface{}{
-		"model":       opts.Model,
+	// Map LLM messages to OpenAI format
+	// OpenAI separates ToolCalls from Content slightly differently in API,
+	// but mostly it maps directly now.
+
+	reqBody := map[string]interface{}{
+		"model":       options.Model,
 		"messages":    messages,
-		"temperature": opts.Temperature,
+		"temperature": options.Temperature,
 	}
-	if opts.MaxTokens > 0 {
-		body["max_tokens"] = opts.MaxTokens
+	if len(options.Tools) > 0 {
+		reqBody["tools"] = options.Tools
 	}
 
-	jsonBody, _ := json.Marshal(body)
+	jsonBody, _ := json.Marshal(reqBody)
 	req, err := http.NewRequestWithContext(ctx, "POST", "https://api.openai.com/v1/chat/completions", bytes.NewBuffer(jsonBody))
 	if err != nil {
 		return nil, pkgerrors.Internal("failed to create request", err)
@@ -59,29 +67,24 @@ func (c *Client) Chat(ctx context.Context, messages []llm.Message, opts llm.Opti
 
 	var result struct {
 		Choices []struct {
-			Message llm.Message `json:"message"`
+			Message      llm.Message `json:"message"`
+			FinishReason string      `json:"finish_reason"`
 		} `json:"choices"`
-		Usage struct {
-			PromptTokens     int `json:"prompt_tokens"`
-			CompletionTokens int `json:"completion_tokens"`
-			TotalTokens      int `json:"total_tokens"`
-		} `json:"usage"`
+		Usage llm.Usage `json:"usage"`
 	}
+
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
 		return nil, pkgerrors.Internal("failed to parse response", err)
 	}
 
 	if len(result.Choices) == 0 {
-		return nil, pkgerrors.Internal("no choices returned", nil)
+		return nil, pkgerrors.Internal("no choices", nil)
 	}
 
-	return &llm.Response{
-		Message: result.Choices[0].Message,
-		Usage: llm.Usage{
-			PromptTokens:     result.Usage.PromptTokens,
-			CompletionTokens: result.Usage.CompletionTokens,
-			TotalTokens:      result.Usage.TotalTokens,
-		},
+	return &llm.Generation{
+		Message:      result.Choices[0].Message,
+		FinishReason: result.Choices[0].FinishReason,
+		Usage:        result.Usage,
 	}, nil
 }
 

@@ -1,2 +1,2 @@
-// Package anthropic provides an Anthropic Chat adapter (Claude).
+// Package anthropic provides an Anthropic Adapter.
 package anthropic

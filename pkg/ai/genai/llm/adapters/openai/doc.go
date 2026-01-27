@@ -1,2 +1,2 @@
-// Package openai provides an OpenAI Chat adapter.
+// Package openai provides an OpenAI Adapter.
 package openai
