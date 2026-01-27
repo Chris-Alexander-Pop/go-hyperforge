@@ -98,45 +98,63 @@
 
 ---
 
-## 4. Data & Analytics (`pkg/data`)
+## 4. Data & Analytics (`pkg/data`, `pkg/bigdata`)
 
-### Big Data & ETL
+### Big Data (`pkg/bigdata`)
 | Package | Status | Enables Services | Description |
 |---------|--------|------------------|-------------|
-| `pkg/data/etl/adapters/glue` | ❌ | etl-pipeline | AWS Glue Adapter |
-| `pkg/data/etl/adapters/datafactory` | ❌ | etl-pipeline | Azure Data Factory Adapter |
-| `pkg/data/etl/airflow` | ❌ | workflow-engine | Airflow Orchestration |
-| `pkg/data/processing/emr` | ❌ | big-data-job | AWS EMR Adapter |
-| `pkg/data/processing/dataproc` | ❌ | big-data-job | GCP Dataproc Adapter |
-| `pkg/data/processing/hdinsight` | ❌ | big-data-job | Azure HDInsight Adapter |
+| `pkg/bigdata/formats/avro` | ✅ | data-ingestion | Avro Format Support |
+| `pkg/bigdata/formats/parquet` | ✅ | data-ingestion | Parquet Format Support |
+| `pkg/bigdata/compute/spark` | ✅ | big-data-job | Spark Connect Client |
+| `pkg/bigdata/compute/mapreduce` | ✅ | big-data-job | MapReduce Implementation |
+| `pkg/bigdata/olap/duckdb` | ✅ | analytics | Embedded OLAP (DuckDB) |
+| `pkg/bigdata/adapters/bigquery` | ✅ | analytics | GCP BigQuery Adapter |
+| `pkg/bigdata/adapters/redshift` | ✅ | analytics | AWS Redshift Adapter |
+| `pkg/bigdata/adapters/synapse` | ✅ | analytics | Azure Synapse Adapter |
+| `pkg/bigdata/lake/hdfs` | ✅ | storage | HDFS Client |
+| `pkg/bigdata/pipeline/dag` | ✅ | workflow | DAG Executor |
+| `pkg/bigdata/pipeline/etl` | ✅ | etl | ETL Pipeline Framework |
 
-### Database
+### Database (`pkg/database`)
+
+#### SQL
+| Package | Status | Enables Services | Description |
+|---------|--------|------------------|-------------|
+| `pkg/database/sql/adapters/postgres` | ✅ | relational-db | PostgreSQL Adapter |
+| `pkg/database/sql/adapters/mysql` | ✅ | relational-db | MySQL Adapter |
+| `pkg/database/sql/adapters/sqlite` | ✅ | relational-db | SQLite Adapter |
+| `pkg/database/sql/adapters/mssql` | ✅ | relational-db | SQL Server Adapter |
+| `pkg/database/sql/adapters/clickhouse` | ✅ | analytics-db | ClickHouse Adapter |
+
+#### NoSQL
 | Package | Status | Enables Services | Description |
 |---------|--------|------------------|-------------|
 | `pkg/database/timeseries` | ✅ | telemetry | Time-series Interface |
 | `pkg/database/timeseries/adapters/timestream`| ✅ | telemetry | AWS Timestream Adapter |
 | `pkg/database/timeseries/adapters/influxdb` | ✅ | telemetry | InfluxDB Adapter |
 | `pkg/database/document` | ✅ | cms | Document DB Interface |
+| `pkg/database/document/adapters/dynamodb` | ✅ | highly-scalable | AWS DynamoDB Adapter |
+| `pkg/database/document/adapters/cosmosdb` | ✅ | multi-region | Azure CosmosDB Adapter |
+| `pkg/database/document/adapters/firestore` | ✅ | mobile-backend | GCP Firestore Adapter |
+| `pkg/database/document/adapters/mongodb` | ✅ | document-store | MongoDB Adapter |
 | `pkg/database/graph` | ✅ | recommendation | Graph DB Interface |
-| `pkg/database/adapters/dynamodb` | ✅ | highly-scalable | AWS DynamoDB Adapter |
-| `pkg/database/adapters/cosmosdb` | ✅ | multi-region | Azure CosmosDB Adapter |
-| `pkg/database/adapters/firestore` | ✅ | mobile-backend | GCP Firestore Adapter |
+| `pkg/database/kv/adapters/redis` | ✅ | cache/kv | Redis KV Adapter |
 
 ### Storage (File/Block/Object)
 | Package | Status | Enables Services | Description |
 |---------|--------|------------------|-------------|
 | `pkg/storage/blob` | ✅ | media-store | Object Storage (S3/GCS/Azure) |
-| `pkg/storage/file` | ❌ | shared-fs | Network File Systems (EFS/NFS) |
-| `pkg/storage/block` | ❌ | vm-disk | Block Storage (EBS) |
-| `pkg/storage/archive` | ❌ | backup | Cold Storage (Glacier) |
+| `pkg/storage/file` | ✅ | shared-fs | Network File Systems (EFS/NFS) |
+| `pkg/storage/block` | ✅ | vm-disk | Block Storage (EBS) |
+| `pkg/storage/archive` | ✅ | backup | Cold Storage (Glacier) |
 
 ### Search
 | Package | Status | Enables Services | Description |
 |---------|--------|------------------|-------------|
-| `pkg/data/search` | ❌ | resource-search | Search Interface |
-| `pkg/data/search/adapters/elasticsearch` | ❌ | resource-search | Elasticsearch Adapter |
-| `pkg/data/search/adapters/meilisearch` | ❌ | resource-search | Meilisearch Adapter |
-| `pkg/data/search/adapters/algolia` | ❌ | resource-search | Algolia Adapter |
+| `pkg/data/search` | ✅ | resource-search | Search Interface |
+| `pkg/data/search/adapters/elasticsearch` | ✅ | resource-search | Elasticsearch Adapter |
+| `pkg/data/search/adapters/meilisearch` | ✅ | resource-search | Meilisearch Adapter |
+| `pkg/data/search/adapters/algolia` | ✅ | resource-search | Algolia Adapter |
 
 ---
 
@@ -181,10 +199,10 @@
 ### Networking
 | Package | Status | Enables Services | Description |
 |---------|--------|------------------|-------------|
-| `pkg/network/loadbalancer/core` | ❌ | private-cloud | **Local** Load Balancing Logic |
+| `pkg/network/loadbalancer` | ✅ | private-cloud | Load Balancer Interface + Memory Adapter |
 | `pkg/network/loadbalancer/adapters/aws`| ❌ | cloud-infra | AWS ELB/ALB Management |
 | `pkg/network/loadbalancer/adapters/gcp`| ❌ | cloud-infra | GCP Load Balancing |
-| `pkg/network/dns` | ❌ | service-discovery| DNS Management (Route53/CloudDNS) |
+| `pkg/network/dns` | ✅ | service-discovery| DNS Management Interface + Memory Adapter |
 | `pkg/network/cdn` | ❌ | content-delivery | CDN Management (CloudFront/Akamai) |
 | `pkg/network/apigateway` | ❌ | api-routing | API Gateway Management |
 | `pkg/network/ip` | ❌ | geo-blocking | IP Intelligence / Geolocation |
@@ -192,6 +210,8 @@
 ### Compute
 | Package | Status | Enables Services | Description |
 |---------|--------|------------------|-------------|
+| `pkg/compute/vm` | ✅ | iaas | VM Management Interface + Memory Adapter |
+| `pkg/compute/container` | ✅ | paas | Container Runtime Interface + Memory Adapter |
 | `pkg/compute/serverless/lambda` | ❌ | faas | AWS Lambda Management |
 | `pkg/compute/serverless/gcf` | ❌ | faas | Google Cloud Functions |
 | `pkg/compute/container/k8s` | ❌ | paas | Kubernetes Client/Controller |
