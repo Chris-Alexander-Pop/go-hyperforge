@@ -109,6 +109,7 @@ require (
 	aidanwoods.dev/go-result v0.3.1 // indirect
 	cel.dev/expr v0.24.0 // indirect
 	cloud.google.com/go v0.123.0 // indirect
+	cloud.google.com/go/aiplatform v1.114.0 // indirect
 	cloud.google.com/go/auth v0.18.1 // indirect
 	cloud.google.com/go/auth/oauth2adapt v0.2.8 // indirect
 	cloud.google.com/go/compute/metadata v0.9.0 // indirect
@@ -151,6 +152,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/internal/s3shared v1.19.17 // indirect
 	github.com/aws/aws-sdk-go-v2/service/iot v1.72.1 // indirect
 	github.com/aws/aws-sdk-go-v2/service/iotdataplane v1.32.17 // indirect
+	github.com/aws/aws-sdk-go-v2/service/sagemaker v1.230.1 // indirect
 	github.com/aws/aws-sdk-go-v2/service/signin v1.0.5 // indirect
 	github.com/aws/aws-sdk-go-v2/service/sso v1.30.9 // indirect
 	github.com/aws/aws-sdk-go-v2/service/ssooidc v1.35.13 // indirect

@@ -47,15 +47,15 @@
 ### Machine Learning (`pkg/ai/ml`)
 | Package | Status | Enables Services | Description |
 |---------|--------|------------------|-------------|
-| `pkg/ai/ml/training` | ❌ | training-job | Training Protocol Abstractions |
-| `pkg/ai/ml/training/adapters/tensorflow`| ❌ | training-job | TensorFlow Training |
-| `pkg/ai/ml/training/adapters/pytorch` | ❌ | training-job | PyTorch Training |
-| `pkg/ai/ml/inference` | ❌ | inference-service | Model Serving Interface |
-| `pkg/ai/ml/feature` | ❌ | feature-store | Feature Store Client |
-| `pkg/ai/ml/sagemaker` | ❌ | training-job | AWS SageMaker Adapter |
-| `pkg/ai/ml/vertexai` | ❌ | training-job | GCP Vertex AI Adapter |
-| `pkg/ai/ml/azureml` | ❌ | training-job | Azure ML Adapter |
-| `pkg/ai/ml/mlflow` | ❌ | model-registry | MLflow Adapter |
+| `pkg/ai/ml/training` | ✅ | training-job | Training Protocol Abstractions |
+| `pkg/ai/ml/training/adapters/tensorflow`| ✅ | training-job | TensorFlow Training |
+| `pkg/ai/ml/training/adapters/pytorch` | ✅ | training-job | PyTorch Training |
+| `pkg/ai/ml/inference` | ✅ | inference-service | Model Serving Interface |
+| `pkg/ai/ml/feature` | ✅ | feature-store | Feature Store Client |
+| `pkg/ai/ml/sagemaker` | ✅ | training-job | AWS SageMaker Adapter |
+| `pkg/ai/ml/vertexai` | ✅ | training-job | GCP Vertex AI Adapter |
+| `pkg/ai/ml/azureml` | ✅ | training-job | Azure ML Adapter |
+| `pkg/ai/ml/mlflow` | ✅ | model-registry | MLflow Adapter |
 
 ### Perception (`pkg/ai/perception`)
 | Package | Status | Enables Services | Description |
