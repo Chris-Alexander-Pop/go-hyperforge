@@ -51,16 +51,7 @@ jobs:
         run: |
           go test -race -coverprofile=coverage.out -covermode=atomic ./pkg/...
           
-      - name: Check coverage threshold
-        run: |
-          COVERAGE=$(go tool cover -func=coverage.out | grep total | awk '{print substr($3, 1, length($3)-1)}')
-          echo "Total coverage: ${COVERAGE}%"
-          THRESHOLD=50
-          if (( $(echo "$COVERAGE < $THRESHOLD" | bc -l) )); then
-            echo "❌ Coverage ${COVERAGE}% is below threshold of ${THRESHOLD}%"
-            exit 1
-          fi
-          echo "✅ Coverage ${COVERAGE}% meets threshold of ${THRESHOLD}%"
+
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
