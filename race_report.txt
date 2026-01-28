@@ -1,0 +1,62 @@
+=== RUN   TestServiceRegistrySuite
+=== RUN   TestServiceRegistrySuite/TestWatch
+==================
+WARNING: DATA RACE
+Write at 0x00c000208860 by goroutine 10:
+  runtime.closechan()
+      /usr/lib/go/src/runtime/chan.go:414 +0x0
+  github.com/chris-alexander-pop/system-design-library/pkg/servicemesh/discovery/adapters/memory.(*Registry).Close()
+      /home/chris/Engineering/go-hyperforge/pkg/servicemesh/discovery/adapters/memory/memory.go:274 +0x2a4
+  github.com/chris-alexander-pop/system-design-library/pkg/servicemesh/discovery/tests.(*ServiceRegistrySuite).TearDownTest()
+      /home/chris/Engineering/go-hyperforge/pkg/servicemesh/discovery/tests/discovery_test.go:28 +0x5a
+  github.com/stretchr/testify/suite.Run.func1.1()
+      /home/chris/go/pkg/mod/github.com/stretchr/testify@v1.11.1/suite/suite.go:180 +0x301
+  runtime.deferreturn()
+      /usr/lib/go/src/runtime/panic.go:589 +0x5d
+  testing.tRunner()
+      /usr/lib/go/src/testing/testing.go:1934 +0x21c
+  testing.(*T).Run.gowrap1()
+      /usr/lib/go/src/testing/testing.go:1997 +0x44
+
+Previous read at 0x00c000208860 by goroutine 11:
+  runtime.chansend()
+      /usr/lib/go/src/runtime/chan.go:176 +0x0
+  github.com/chris-alexander-pop/system-design-library/pkg/servicemesh/discovery/adapters/memory.(*Registry).Watch.func1()
+      /home/chris/Engineering/go-hyperforge/pkg/servicemesh/discovery/adapters/memory/memory.go:204 +0x144
+
+Goroutine 10 (running) created at:
+  testing.(*T).Run()
+      /usr/lib/go/src/testing/testing.go:1997 +0x9d2
+  github.com/stretchr/testify/suite.runTests()
+      /home/chris/go/pkg/mod/github.com/stretchr/testify@v1.11.1/suite/suite.go:235 +0xd6
+  github.com/stretchr/testify/suite.Run()
+      /home/chris/go/pkg/mod/github.com/stretchr/testify@v1.11.1/suite/suite.go:225 +0xae4
+  github.com/chris-alexander-pop/system-design-library/pkg/servicemesh/discovery/tests.TestServiceRegistrySuite()
+      /home/chris/Engineering/go-hyperforge/pkg/servicemesh/discovery/tests/discovery_test.go:205 +0x3c
+  testing.tRunner()
+      /usr/lib/go/src/testing/testing.go:1934 +0x21c
+  testing.(*T).Run.gowrap1()
+      /usr/lib/go/src/testing/testing.go:1997 +0x44
+
+Goroutine 11 (finished) created at:
+  github.com/chris-alexander-pop/system-design-library/pkg/servicemesh/discovery/adapters/memory.(*Registry).Watch()
+      /home/chris/Engineering/go-hyperforge/pkg/servicemesh/discovery/adapters/memory/memory.go:197 +0x4ea
+  github.com/chris-alexander-pop/system-design-library/pkg/servicemesh/discovery/tests.(*ServiceRegistrySuite).TestWatch()
+      /home/chris/Engineering/go-hyperforge/pkg/servicemesh/discovery/tests/discovery_test.go:185 +0xba
+  runtime.call16()
+      /usr/lib/go/src/runtime/asm_amd64.s:774 +0x42
+  reflect.Value.Call()
+      /usr/lib/go/src/reflect/value.go:365 +0xb5
+  github.com/stretchr/testify/suite.Run.func1()
+      /home/chris/go/pkg/mod/github.com/stretchr/testify@v1.11.1/suite/suite.go:196 +0x68d
+  testing.tRunner()
+      /usr/lib/go/src/testing/testing.go:1934 +0x21c
+  testing.(*T).Run.gowrap1()
+      /usr/lib/go/src/testing/testing.go:1997 +0x44
+==================
+    testing.go:1617: race detected during execution of test
+--- FAIL: TestServiceRegistrySuite (0.00s)
+    --- FAIL: TestServiceRegistrySuite/TestWatch (0.00s)
+FAIL
+FAIL	github.com/chris-alexander-pop/system-design-library/pkg/servicemesh/discovery/tests	0.012s
+FAIL

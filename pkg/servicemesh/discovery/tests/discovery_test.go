@@ -185,6 +185,14 @@ func (s *ServiceRegistrySuite) TestWatch() {
 	ch, err := s.registry.Watch(s.ctx, "api")
 	s.Require().NoError(err)
 
+	// Consume initial state (should be empty)
+	select {
+	case services := <-ch:
+		s.Empty(services)
+	case <-time.After(100 * time.Millisecond):
+		s.Fail("timeout waiting for initial state")
+	}
+
 	// Register a service
 	_, err = s.registry.Register(s.ctx, discovery.RegisterOptions{
 		Name: "api", Address: "10.0.0.1", Port: 8080,

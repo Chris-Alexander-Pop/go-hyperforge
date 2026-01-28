@@ -103,6 +103,10 @@ func (r *Registry) Lookup(ctx context.Context, serviceName string, opts discover
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
+	return r.lookupLocked(ctx, serviceName, opts)
+}
+
+func (r *Registry) lookupLocked(ctx context.Context, serviceName string, opts discovery.QueryOptions) ([]*discovery.Service, error) {
 	ids, ok := r.byName[serviceName]
 	if !ok {
 		return []*discovery.Service{}, nil
@@ -191,20 +195,12 @@ func (r *Registry) Watch(ctx context.Context, serviceName string) (<-chan []*dis
 	}
 
 	ch := make(chan []*discovery.Service, 10)
-	r.watchers[serviceName] = append(r.watchers[serviceName], ch)
 
-	// Send initial state
-	go func() {
-		defer func() {
-			// Handle send on closed channel if Close() is called
-			_ = recover()
-		}()
-		services, _ := r.Lookup(ctx, serviceName, discovery.QueryOptions{})
-		select {
-		case ch <- services:
-		case <-ctx.Done():
-		}
-	}()
+	// Send initial state synchronously
+	services, _ := r.lookupLocked(ctx, serviceName, discovery.QueryOptions{})
+	ch <- services
+
+	r.watchers[serviceName] = append(r.watchers[serviceName], ch)
 
 	return ch, nil
 }
