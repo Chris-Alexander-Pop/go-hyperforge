@@ -15,12 +15,14 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"time"
 
 	functions "cloud.google.com/go/functions/apiv2"
 	"cloud.google.com/go/functions/apiv2/functionspb"
 	"github.com/chris-alexander-pop/system-design-library/pkg/compute/serverless"
 	pkgerrors "github.com/chris-alexander-pop/system-design-library/pkg/errors"
+	"golang.org/x/oauth2/google"
 	"google.golang.org/api/option"
 )
 
@@ -45,10 +47,22 @@ func New(cfg Config) (*Runtime, error) {
 
 	opts := []option.ClientOption{}
 	if cfg.CredentialsFile != "" {
-		opts = append(opts, option.WithCredentialsFile(cfg.CredentialsFile))
+		b, err := os.ReadFile(cfg.CredentialsFile)
+		if err != nil {
+			return nil, pkgerrors.Internal("failed to read credentials file", err)
+		}
+		creds, err := google.CredentialsFromJSON(ctx, b, functions.DefaultAuthScopes()...)
+		if err != nil {
+			return nil, pkgerrors.Internal("failed to parse credentials", err)
+		}
+		opts = append(opts, option.WithCredentials(creds))
 	}
 	if len(cfg.CredentialsJSON) > 0 {
-		opts = append(opts, option.WithCredentialsJSON(cfg.CredentialsJSON))
+		creds, err := google.CredentialsFromJSON(ctx, cfg.CredentialsJSON, functions.DefaultAuthScopes()...)
+		if err != nil {
+			return nil, pkgerrors.Internal("failed to parse credentials", err)
+		}
+		opts = append(opts, option.WithCredentials(creds))
 	}
 
 	client, err := functions.NewFunctionRESTClient(ctx, opts...)
@@ -256,7 +270,9 @@ func (r *Runtime) InvokeSimple(ctx context.Context, name string, payload []byte)
 	}
 	if result.FunctionError != "" {
 		var errResp struct{ Error string }
-		json.Unmarshal(result.Payload, &errResp)
+		if err := json.Unmarshal(result.Payload, &errResp); err != nil {
+			return nil, pkgerrors.Internal("failed to parse function error", err)
+		}
 		return nil, pkgerrors.Internal("function error: "+errResp.Error, nil)
 	}
 	return result.Payload, nil

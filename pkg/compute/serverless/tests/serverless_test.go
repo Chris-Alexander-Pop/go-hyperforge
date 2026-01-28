@@ -39,8 +39,9 @@ func (s *ServerlessRuntimeSuite) TestCreateAndGetFunction() {
 }
 
 func (s *ServerlessRuntimeSuite) TestCreateDuplicate() {
-	s.runtime.CreateFunction(s.ctx, serverless.CreateFunctionOptions{Name: "dup-fn"})
 	_, err := s.runtime.CreateFunction(s.ctx, serverless.CreateFunctionOptions{Name: "dup-fn"})
+	s.Require().NoError(err)
+	_, err = s.runtime.CreateFunction(s.ctx, serverless.CreateFunctionOptions{Name: "dup-fn"})
 	s.Error(err)
 }
 
@@ -51,9 +52,10 @@ func (s *ServerlessRuntimeSuite) TestGetNotFound() {
 
 func (s *ServerlessRuntimeSuite) TestListFunctions() {
 	for i := 0; i < 3; i++ {
-		s.runtime.CreateFunction(s.ctx, serverless.CreateFunctionOptions{
+		_, err := s.runtime.CreateFunction(s.ctx, serverless.CreateFunctionOptions{
 			Name: "fn-" + string(rune('a'+i)),
 		})
+		s.Require().NoError(err)
 	}
 
 	functions, err := s.runtime.ListFunctions(s.ctx)
@@ -62,10 +64,11 @@ func (s *ServerlessRuntimeSuite) TestListFunctions() {
 }
 
 func (s *ServerlessRuntimeSuite) TestUpdateFunction() {
-	s.runtime.CreateFunction(s.ctx, serverless.CreateFunctionOptions{
+	_, err := s.runtime.CreateFunction(s.ctx, serverless.CreateFunctionOptions{
 		Name:     "update-me",
 		MemoryMB: 128,
 	})
+	s.Require().NoError(err)
 
 	updated, err := s.runtime.UpdateFunction(s.ctx, "update-me", serverless.CreateFunctionOptions{
 		MemoryMB: 256,
@@ -75,9 +78,10 @@ func (s *ServerlessRuntimeSuite) TestUpdateFunction() {
 }
 
 func (s *ServerlessRuntimeSuite) TestDeleteFunction() {
-	s.runtime.CreateFunction(s.ctx, serverless.CreateFunctionOptions{Name: "delete-me"})
+	_, err := s.runtime.CreateFunction(s.ctx, serverless.CreateFunctionOptions{Name: "delete-me"})
+	s.Require().NoError(err)
 
-	err := s.runtime.DeleteFunction(s.ctx, "delete-me")
+	err = s.runtime.DeleteFunction(s.ctx, "delete-me")
 	s.Require().NoError(err)
 
 	_, err = s.runtime.GetFunction(s.ctx, "delete-me")
@@ -85,7 +89,8 @@ func (s *ServerlessRuntimeSuite) TestDeleteFunction() {
 }
 
 func (s *ServerlessRuntimeSuite) TestInvokeSync() {
-	s.runtime.CreateFunction(s.ctx, serverless.CreateFunctionOptions{Name: "echo"})
+	_, err := s.runtime.CreateFunction(s.ctx, serverless.CreateFunctionOptions{Name: "echo"})
+	s.Require().NoError(err)
 	s.runtime.RegisterHandler("echo", func(ctx context.Context, payload []byte) ([]byte, error) {
 		return append([]byte("response:"), payload...), nil
 	})
@@ -101,7 +106,8 @@ func (s *ServerlessRuntimeSuite) TestInvokeSync() {
 }
 
 func (s *ServerlessRuntimeSuite) TestInvokeSimple() {
-	s.runtime.CreateFunction(s.ctx, serverless.CreateFunctionOptions{Name: "simple"})
+	_, err := s.runtime.CreateFunction(s.ctx, serverless.CreateFunctionOptions{Name: "simple"})
+	s.Require().NoError(err)
 	s.runtime.RegisterHandler("simple", func(ctx context.Context, payload []byte) ([]byte, error) {
 		return []byte("ok"), nil
 	})
@@ -112,7 +118,8 @@ func (s *ServerlessRuntimeSuite) TestInvokeSimple() {
 }
 
 func (s *ServerlessRuntimeSuite) TestInvokeAsync() {
-	s.runtime.CreateFunction(s.ctx, serverless.CreateFunctionOptions{Name: "async-fn"})
+	_, err := s.runtime.CreateFunction(s.ctx, serverless.CreateFunctionOptions{Name: "async-fn"})
+	s.Require().NoError(err)
 
 	result, err := s.runtime.Invoke(s.ctx, serverless.InvokeOptions{
 		FunctionName:   "async-fn",
@@ -123,7 +130,8 @@ func (s *ServerlessRuntimeSuite) TestInvokeAsync() {
 }
 
 func (s *ServerlessRuntimeSuite) TestInvokeDryRun() {
-	s.runtime.CreateFunction(s.ctx, serverless.CreateFunctionOptions{Name: "dry-fn"})
+	_, err := s.runtime.CreateFunction(s.ctx, serverless.CreateFunctionOptions{Name: "dry-fn"})
+	s.Require().NoError(err)
 
 	result, err := s.runtime.Invoke(s.ctx, serverless.InvokeOptions{
 		FunctionName:   "dry-fn",
@@ -134,7 +142,8 @@ func (s *ServerlessRuntimeSuite) TestInvokeDryRun() {
 }
 
 func (s *ServerlessRuntimeSuite) TestInvokeWithError() {
-	s.runtime.CreateFunction(s.ctx, serverless.CreateFunctionOptions{Name: "error-fn"})
+	_, err := s.runtime.CreateFunction(s.ctx, serverless.CreateFunctionOptions{Name: "error-fn"})
+	s.Require().NoError(err)
 	s.runtime.RegisterHandler("error-fn", func(ctx context.Context, payload []byte) ([]byte, error) {
 		return nil, errors.New("something went wrong")
 	})

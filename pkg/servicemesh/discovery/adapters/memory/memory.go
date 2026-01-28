@@ -197,7 +197,7 @@ func (r *Registry) Watch(ctx context.Context, serviceName string) (<-chan []*dis
 	go func() {
 		defer func() {
 			// Handle send on closed channel if Close() is called
-			recover()
+			_ = recover()
 		}()
 		services, _ := r.Lookup(ctx, serviceName, discovery.QueryOptions{})
 		select {

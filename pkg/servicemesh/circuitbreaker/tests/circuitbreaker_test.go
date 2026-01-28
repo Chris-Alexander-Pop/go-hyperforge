@@ -2,6 +2,7 @@ package tests
 
 import (
 	"errors"
+	"sync"
 	"testing"
 	"time"
 
@@ -56,12 +57,14 @@ func (s *CircuitBreakerSuite) TestOpenCircuitRejectsRequests() {
 	})
 
 	// Open the circuit
-	cb.Execute(func() (interface{}, error) {
+	// Open the circuit
+	_, err := cb.Execute(func() (interface{}, error) {
 		return nil, errors.New("failure")
 	})
+	s.Error(err)
 
 	// Next request should be rejected immediately
-	_, err := cb.Execute(func() (interface{}, error) {
+	_, err = cb.Execute(func() (interface{}, error) {
 		return "should not run", nil
 	})
 
@@ -76,16 +79,18 @@ func (s *CircuitBreakerSuite) TestHalfOpenAfterTimeout() {
 	})
 
 	// Open the circuit
-	cb.Execute(func() (interface{}, error) {
+	// Open the circuit
+	_, err := cb.Execute(func() (interface{}, error) {
 		return nil, errors.New("failure")
 	})
+	s.Error(err)
 	s.Equal(circuitbreaker.StateOpen, cb.State())
 
 	// Wait for timeout
 	time.Sleep(60 * time.Millisecond)
 
 	// Next request should go through (half-open)
-	_, err := cb.Execute(func() (interface{}, error) {
+	_, err = cb.Execute(func() (interface{}, error) {
 		return "success", nil
 	})
 	s.NoError(err)
@@ -100,18 +105,21 @@ func (s *CircuitBreakerSuite) TestClosesAfterSuccessThreshold() {
 	})
 
 	// Open the circuit
-	cb.Execute(func() (interface{}, error) {
+	// Open the circuit
+	_, err := cb.Execute(func() (interface{}, error) {
 		return nil, errors.New("failure")
 	})
+	s.Error(err)
 
 	// Wait for timeout to transition to half-open
 	time.Sleep(20 * time.Millisecond)
 
 	// Succeed twice to close
 	for i := 0; i < 2; i++ {
-		cb.Execute(func() (interface{}, error) {
+		_, err := cb.Execute(func() (interface{}, error) {
 			return "success", nil
 		})
+		s.Require().NoError(err)
 	}
 
 	s.Equal(circuitbreaker.StateClosed, cb.State())
@@ -124,17 +132,20 @@ func (s *CircuitBreakerSuite) TestReopensOnHalfOpenFailure() {
 	})
 
 	// Open the circuit
-	cb.Execute(func() (interface{}, error) {
+	// Open the circuit
+	_, err := cb.Execute(func() (interface{}, error) {
 		return nil, errors.New("failure")
 	})
+	s.Error(err)
 
 	// Wait for timeout
 	time.Sleep(20 * time.Millisecond)
 
 	// Fail in half-open state
-	cb.Execute(func() (interface{}, error) {
+	_, err = cb.Execute(func() (interface{}, error) {
 		return nil, errors.New("failure again")
 	})
+	s.Error(err)
 
 	s.Equal(circuitbreaker.StateOpen, cb.State())
 }
@@ -146,21 +157,24 @@ func (s *CircuitBreakerSuite) TestSuccessResetsFailureCount() {
 
 	// Fail twice
 	for i := 0; i < 2; i++ {
-		cb.Execute(func() (interface{}, error) {
+		_, err := cb.Execute(func() (interface{}, error) {
 			return nil, errors.New("failure")
 		})
+		s.Error(err)
 	}
 
 	// Succeed once
-	cb.Execute(func() (interface{}, error) {
+	_, err := cb.Execute(func() (interface{}, error) {
 		return "success", nil
 	})
+	s.NoError(err)
 
 	// Fail twice more - should not open (count was reset)
 	for i := 0; i < 2; i++ {
-		cb.Execute(func() (interface{}, error) {
+		_, err := cb.Execute(func() (interface{}, error) {
 			return nil, errors.New("failure")
 		})
+		s.Error(err)
 	}
 
 	s.Equal(circuitbreaker.StateClosed, cb.State())
@@ -177,9 +191,10 @@ func (s *CircuitBreakerSuite) TestForceOpen() {
 func (s *CircuitBreakerSuite) TestForceClose() {
 	cb := circuitbreaker.New("test", circuitbreaker.Options{FailureThreshold: 1})
 
-	cb.Execute(func() (interface{}, error) {
+	_, err := cb.Execute(func() (interface{}, error) {
 		return nil, errors.New("failure")
 	})
+	s.Error(err)
 	s.Equal(circuitbreaker.StateOpen, cb.State())
 
 	cb.ForceClose()
@@ -190,9 +205,10 @@ func (s *CircuitBreakerSuite) TestMetrics() {
 	cb := circuitbreaker.New("test", circuitbreaker.Options{FailureThreshold: 5})
 
 	for i := 0; i < 3; i++ {
-		cb.Execute(func() (interface{}, error) {
+		_, err := cb.Execute(func() (interface{}, error) {
 			return nil, errors.New("failure")
 		})
+		s.Error(err)
 	}
 
 	metrics := cb.Metrics()
@@ -202,21 +218,27 @@ func (s *CircuitBreakerSuite) TestMetrics() {
 
 func (s *CircuitBreakerSuite) TestOnStateChange() {
 	var changes []circuitbreaker.State
+	var mu sync.Mutex
 
 	cb := circuitbreaker.New("test", circuitbreaker.Options{
 		FailureThreshold: 1,
 		OnStateChange: func(from, to circuitbreaker.State) {
+			mu.Lock()
+			defer mu.Unlock()
 			changes = append(changes, to)
 		},
 	})
 
-	cb.Execute(func() (interface{}, error) {
+	_, err := cb.Execute(func() (interface{}, error) {
 		return nil, errors.New("failure")
 	})
+	s.Error(err)
 
 	// Give callback time to execute
 	time.Sleep(10 * time.Millisecond)
 
+	mu.Lock()
+	defer mu.Unlock()
 	s.Contains(changes, circuitbreaker.StateOpen)
 }
 

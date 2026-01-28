@@ -171,7 +171,7 @@ func (r *Runtime) Invoke(ctx context.Context, opts serverless.InvokeOptions) (*s
 			go func() {
 				execCtx, cancel := context.WithTimeout(context.Background(), time.Duration(fn.TimeoutSeconds)*time.Second)
 				defer cancel()
-				handler(execCtx, opts.Payload)
+				_, _ = handler(execCtx, opts.Payload)
 			}()
 		}
 		result.StatusCode = 202

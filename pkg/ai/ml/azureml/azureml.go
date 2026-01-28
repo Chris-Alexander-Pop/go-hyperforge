@@ -180,7 +180,9 @@ func (t *Trainer) StartJob(ctx context.Context, cfg training.JobConfig) (*traini
 			Status string `json:"status"`
 		} `json:"properties"`
 	}
-	json.Unmarshal(respBody, &resp)
+	if err := json.Unmarshal(respBody, &resp); err != nil {
+		return nil, pkgerrors.Internal("failed to parse job response", err)
+	}
 
 	return &training.Job{
 		ID:         name,

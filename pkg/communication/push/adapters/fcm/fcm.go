@@ -8,6 +8,7 @@ import (
 	"github.com/chris-alexander-pop/system-design-library/pkg/communication/push"
 	"github.com/chris-alexander-pop/system-design-library/pkg/errors"
 	"github.com/chris-alexander-pop/system-design-library/pkg/validator"
+	"golang.org/x/oauth2/google"
 	"google.golang.org/api/option"
 )
 
@@ -24,7 +25,12 @@ func New(ctx context.Context, cfg push.Config) (*Sender, error) {
 
 	opts := []option.ClientOption{}
 	if cfg.FCMServiceAccount != "" {
-		opts = append(opts, option.WithCredentialsJSON([]byte(cfg.FCMServiceAccount))) //lint:ignore SA1019 //nolint:staticcheck // Required for service account auth
+		// Use default scopes for FCM/Firebase
+		creds, err := google.CredentialsFromJSON(ctx, []byte(cfg.FCMServiceAccount), "https://www.googleapis.com/auth/cloud-platform")
+		if err != nil {
+			return nil, errors.Internal("failed to parse fcm credentials", err)
+		}
+		opts = append(opts, option.WithCredentials(creds))
 	}
 
 	app, err := firebase.NewApp(ctx, nil, opts...)

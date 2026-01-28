@@ -105,7 +105,9 @@ func (t *Trainer) StartJob(ctx context.Context, config training.JobConfig) (*tra
 	outputDir := config.OutputPath
 	if outputDir == "" {
 		outputDir = filepath.Join(jobDir, "output")
-		os.MkdirAll(outputDir, 0755)
+		if err := os.MkdirAll(outputDir, 0755); err != nil {
+			return nil, pkgerrors.Internal("failed to create output directory", err)
+		}
 	}
 
 	job := &training.Job{

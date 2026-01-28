@@ -13,12 +13,14 @@ package gcp
 import (
 	"context"
 	"fmt"
+	"os"
 	"time"
 
 	compute "cloud.google.com/go/compute/apiv1"
 	"cloud.google.com/go/compute/apiv1/computepb"
 	pkgerrors "github.com/chris-alexander-pop/system-design-library/pkg/errors"
 	"github.com/chris-alexander-pop/system-design-library/pkg/network/loadbalancer"
+	"golang.org/x/oauth2/google"
 	"google.golang.org/api/option"
 )
 
@@ -53,10 +55,22 @@ func New(cfg Config) (*Manager, error) {
 
 	opts := []option.ClientOption{}
 	if cfg.CredentialsFile != "" {
-		opts = append(opts, option.WithCredentialsFile(cfg.CredentialsFile))
+		b, err := os.ReadFile(cfg.CredentialsFile)
+		if err != nil {
+			return nil, pkgerrors.Internal("failed to read credentials file", err)
+		}
+		creds, err := google.CredentialsFromJSON(ctx, b, compute.DefaultAuthScopes()...)
+		if err != nil {
+			return nil, pkgerrors.Internal("failed to parse credentials", err)
+		}
+		opts = append(opts, option.WithCredentials(creds))
 	}
 	if len(cfg.CredentialsJSON) > 0 {
-		opts = append(opts, option.WithCredentialsJSON(cfg.CredentialsJSON))
+		creds, err := google.CredentialsFromJSON(ctx, cfg.CredentialsJSON, compute.DefaultAuthScopes()...)
+		if err != nil {
+			return nil, pkgerrors.Internal("failed to parse credentials", err)
+		}
+		opts = append(opts, option.WithCredentials(creds))
 	}
 
 	backendClient, err := compute.NewBackendServicesRESTClient(ctx, opts...)
@@ -288,7 +302,7 @@ func (m *Manager) DeleteLoadBalancer(ctx context.Context, id string) error {
 		ForwardingRule: baseName + "-fwd",
 	})
 	if fwOp != nil {
-		fwOp.Wait(ctx)
+		_ = fwOp.Wait(ctx)
 	}
 
 	pxOp, _ := m.targetProxies.Delete(ctx, &computepb.DeleteTargetHttpProxyRequest{
@@ -296,7 +310,7 @@ func (m *Manager) DeleteLoadBalancer(ctx context.Context, id string) error {
 		TargetHttpProxy: baseName + "-proxy",
 	})
 	if pxOp != nil {
-		pxOp.Wait(ctx)
+		_ = pxOp.Wait(ctx)
 	}
 
 	umOp, _ := m.urlMapClient.Delete(ctx, &computepb.DeleteUrlMapRequest{
@@ -304,7 +318,7 @@ func (m *Manager) DeleteLoadBalancer(ctx context.Context, id string) error {
 		UrlMap:  baseName + "-urlmap",
 	})
 	if umOp != nil {
-		umOp.Wait(ctx)
+		_ = umOp.Wait(ctx)
 	}
 
 	beOp, _ := m.backendClient.Delete(ctx, &computepb.DeleteBackendServiceRequest{
@@ -312,7 +326,7 @@ func (m *Manager) DeleteLoadBalancer(ctx context.Context, id string) error {
 		BackendService: baseName + "-backend",
 	})
 	if beOp != nil {
-		beOp.Wait(ctx)
+		_ = beOp.Wait(ctx)
 	}
 
 	hcOp, _ := m.healthCheckClient.Delete(ctx, &computepb.DeleteHealthCheckRequest{
@@ -320,7 +334,7 @@ func (m *Manager) DeleteLoadBalancer(ctx context.Context, id string) error {
 		HealthCheck: baseName + "-hc",
 	})
 	if hcOp != nil {
-		hcOp.Wait(ctx)
+		_ = hcOp.Wait(ctx)
 	}
 
 	return nil

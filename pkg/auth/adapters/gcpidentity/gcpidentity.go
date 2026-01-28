@@ -3,12 +3,14 @@ package gcpidentity
 import (
 	"context"
 	"fmt"
+	"os"
 	"strings"
 
 	firebase "firebase.google.com/go/v4"
 	"firebase.google.com/go/v4/auth"
 	pkgauth "github.com/chris-alexander-pop/system-design-library/pkg/auth"
 	"github.com/chris-alexander-pop/system-design-library/pkg/errors"
+	"golang.org/x/oauth2/google"
 	"google.golang.org/api/option"
 )
 
@@ -35,7 +37,16 @@ type Adapter struct {
 func New(ctx context.Context, cfg Config) (*Adapter, error) {
 	var opts []option.ClientOption
 	if cfg.CredentialsFile != "" {
-		opts = append(opts, option.WithCredentialsFile(cfg.CredentialsFile)) //lint:ignore SA1019 //nolint:staticcheck // File path config required
+		b, err := os.ReadFile(cfg.CredentialsFile)
+		if err != nil {
+			return nil, errors.Internal("failed to read credentials file", err)
+		}
+		// Use default scopes for Firebase
+		creds, err := google.CredentialsFromJSON(ctx, b, "https://www.googleapis.com/auth/cloud-platform")
+		if err != nil {
+			return nil, errors.Internal("failed to parse credentials", err)
+		}
+		opts = append(opts, option.WithCredentials(creds))
 	}
 
 	app, err := firebase.NewApp(ctx, &firebase.Config{ProjectID: cfg.ProjectID}, opts...)

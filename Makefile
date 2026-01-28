@@ -43,6 +43,9 @@ lint:
 	@echo "🔍 Running staticcheck..."
 	@$$(go env GOPATH)/bin/staticcheck ./... || (echo "💡 Install staticcheck: go install honnef.co/go/tools/cmd/staticcheck@latest" && exit 1)
 	@echo "✅ Staticcheck passed"
+	@echo "🔍 Running golangci-lint..."
+	@$$(go env GOPATH)/bin/golangci-lint run ./... || (echo "💡 Install golangci-lint: go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest" && exit 1)
+	@echo "✅ golangci-lint passed"
 
 # Build all packages (verifies compilation)
 build:
@@ -102,6 +105,7 @@ tidy:
 install-tools:
 	@echo "📦 Installing development tools..."
 	go install honnef.co/go/tools/cmd/staticcheck@latest
+	go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
 	@echo "✅ Tools installed"
 
 # Install git hooks

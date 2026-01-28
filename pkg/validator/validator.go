@@ -52,10 +52,8 @@ func validatePhone(fl validator.FieldLevel) bool {
 func validatePasswordStrong(fl validator.FieldLevel) bool {
 	password := fl.Field().String()
 	// Length 8+
-	if len(password) < 8 {
-		return false
-	}
+	// Length 8+
 	// Needs Number, Special, Upper, etc. (Simplified for this example)
 	// Just generic complexity check is often better handled by zxcvbn, but for regex-ish:
-	return true
+	return len(password) >= 8
 }

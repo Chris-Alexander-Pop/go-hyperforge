@@ -247,7 +247,9 @@ func (r *Runtime) InvokeSimple(ctx context.Context, name string, payload []byte)
 	}
 	if result.FunctionError != "" {
 		var errResp struct{ ErrorMessage string }
-		json.Unmarshal(result.Payload, &errResp)
+		if err := json.Unmarshal(result.Payload, &errResp); err != nil {
+			return nil, pkgerrors.Internal("failed to parse function error", err)
+		}
 		return nil, pkgerrors.Internal("function error: "+errResp.ErrorMessage, nil)
 	}
 	return result.Payload, nil

@@ -36,10 +36,8 @@ func (s *Sender) Send(ctx context.Context, msg *email.Message) error {
 	m := mail.NewV3Mail()
 
 	fromEmail := msg.From
-	if fromEmail == "" {
-		// In a real scenario, we might fallback to a default from config
-		// For now, allow SendGrid to validation error if empty
-	}
+	// In a real scenario, we might fallback to a default from config
+	// For now, allow SendGrid to validation error if empty
 	m.SetFrom(mail.NewEmail("", fromEmail))
 
 	p := mail.NewPersonalization()

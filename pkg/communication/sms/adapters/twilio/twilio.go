@@ -47,8 +47,7 @@ func (s *Sender) Send(ctx context.Context, msg *sms.Message) error {
 	} else if s.from != "" {
 		params.SetFrom(s.from)
 	} else {
-		// Twilio might require a From number or Messaging Service SID
-		// If neither provided, this call will likely fail
+		return errors.InvalidArgument("twilio requires a 'From' number in the message or config", nil)
 	}
 
 	params.SetBody(msg.Body)

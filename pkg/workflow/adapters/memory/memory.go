@@ -10,6 +10,16 @@ import (
 	"github.com/google/uuid"
 )
 
+// copyExecution creates a shallow copy of the execution to avoid data races
+// when returning the object to callers while the engine might be updating it.
+func copyExecution(src *workflow.Execution) *workflow.Execution {
+	if src == nil {
+		return nil
+	}
+	dst := *src
+	return &dst
+}
+
 // Engine implements an in-memory workflow engine for testing.
 type Engine struct {
 	mu         sync.RWMutex
@@ -89,7 +99,7 @@ func (e *Engine) Start(ctx context.Context, opts workflow.StartOptions) (*workfl
 	// Simulate async execution
 	go e.simulateExecution(ctx, exec, opts.Timeout)
 
-	return exec, nil
+	return copyExecution(exec), nil
 }
 
 func (e *Engine) simulateExecution(ctx context.Context, exec *workflow.Execution, timeout time.Duration) {
@@ -132,7 +142,7 @@ func (e *Engine) GetExecution(ctx context.Context, executionID string) (*workflo
 		return nil, errors.NotFound("execution not found", nil)
 	}
 
-	return exec, nil
+	return copyExecution(exec), nil
 }
 
 func (e *Engine) ListExecutions(ctx context.Context, opts workflow.ListOptions) (*workflow.ListResult, error) {
@@ -151,7 +161,7 @@ func (e *Engine) ListExecutions(ctx context.Context, opts workflow.ListOptions) 
 		if opts.Status != "" && exec.Status != opts.Status {
 			continue
 		}
-		result.Executions = append(result.Executions, exec)
+		result.Executions = append(result.Executions, copyExecution(exec))
 	}
 
 	// Apply limit
@@ -210,7 +220,7 @@ func (e *Engine) Wait(ctx context.Context, executionID string) (*workflow.Execut
 	// Already completed
 	if exec.Status != workflow.StatusRunning && exec.Status != workflow.StatusPending {
 		e.mu.Unlock()
-		return exec, nil
+		return copyExecution(exec), nil
 	}
 
 	// Create waiter
@@ -220,7 +230,7 @@ func (e *Engine) Wait(ctx context.Context, executionID string) (*workflow.Execut
 
 	select {
 	case result := <-ch:
-		return result, nil
+		return copyExecution(result), nil
 	case <-ctx.Done():
 		return nil, ctx.Err()
 	}

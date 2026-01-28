@@ -43,7 +43,8 @@ func (a *Adapter) Login(ctx context.Context, username, password string) (*pkgaut
 	// Use ROPC flow (Resource Owner Password Credentials)
 	scopes := []string{"User.Read"} // Default scope
 
-	result, err := a.client.AcquireTokenByUsernamePassword(ctx, scopes, username, password) //lint:ignore SA1019 //nolint:staticcheck // ROPC flow required
+	//lint:ignore SA1019 ROPC flow required
+	result, err := a.client.AcquireTokenByUsernamePassword(ctx, scopes, username, password) //nolint:staticcheck
 	if err != nil {
 		return nil, errors.Unauthorized("entra id login failed", err)
 	}

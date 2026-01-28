@@ -11,12 +11,14 @@ package vertexai
 import (
 	"context"
 	"fmt"
+	"os"
 	"time"
 
 	aiplatform "cloud.google.com/go/aiplatform/apiv1"
 	"cloud.google.com/go/aiplatform/apiv1/aiplatformpb"
 	"github.com/chris-alexander-pop/system-design-library/pkg/ai/ml/training"
 	pkgerrors "github.com/chris-alexander-pop/system-design-library/pkg/errors"
+	"golang.org/x/oauth2/google"
 	"google.golang.org/api/option"
 	"google.golang.org/protobuf/types/known/structpb"
 )
@@ -43,10 +45,22 @@ func New(cfg Config) (*Trainer, error) {
 
 	opts := []option.ClientOption{}
 	if cfg.CredentialsFile != "" {
-		opts = append(opts, option.WithCredentialsFile(cfg.CredentialsFile))
+		b, err := os.ReadFile(cfg.CredentialsFile)
+		if err != nil {
+			return nil, pkgerrors.Internal("failed to read credentials file", err)
+		}
+		creds, err := google.CredentialsFromJSON(ctx, b, aiplatform.DefaultAuthScopes()...)
+		if err != nil {
+			return nil, pkgerrors.Internal("failed to parse credentials", err)
+		}
+		opts = append(opts, option.WithCredentials(creds))
 	}
 	if len(cfg.CredentialsJSON) > 0 {
-		opts = append(opts, option.WithCredentialsJSON(cfg.CredentialsJSON))
+		creds, err := google.CredentialsFromJSON(ctx, cfg.CredentialsJSON, aiplatform.DefaultAuthScopes()...)
+		if err != nil {
+			return nil, pkgerrors.Internal("failed to parse credentials", err)
+		}
+		opts = append(opts, option.WithCredentials(creds))
 	}
 
 	endpoint := fmt.Sprintf("%s-aiplatform.googleapis.com:443", cfg.Region)

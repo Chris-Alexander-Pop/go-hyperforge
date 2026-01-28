@@ -97,11 +97,9 @@ func (p *MFAProvider) Verify(ctx context.Context, userID, code string) (bool, er
 	totp := otp.NewTOTP(p.totpConfig)
 	valid := totp.Validate(enrollment.Secret, code)
 
-	if valid {
-		// In a real implementation, we might want to prevent replay attacks here
-		// by storing used codes or last used timestamp.
-		// For memory adapter, simple validation is enough.
-	}
+	// In a real implementation, we might want to prevent replay attacks here
+	// by storing used codes or last used timestamp.
+	// For memory adapter, simple validation is enough.
 
 	return valid, nil
 }

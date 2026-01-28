@@ -34,8 +34,8 @@ func TestParquetReadWrite(t *testing.T) {
 	reader := parquet.NewReader[User](bytes.NewReader(data), int64(len(data)))
 
 	readUsers, err := reader.Read(10)
-	if err != nil && err.Error() != "EOF" { // parquet-go might behave differently on EOF
-		// check logic
+	if err != nil && err.Error() != "EOF" {
+		t.Fatalf("Read failed: %v", err)
 	}
 
 	// If parquet-go reader returns io.EOF with partial data? No, usually explicitly returns available.

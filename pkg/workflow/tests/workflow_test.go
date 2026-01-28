@@ -50,7 +50,8 @@ func (s *WorkflowEngineSuite) TestGetWorkflowNotFound() {
 }
 
 func (s *WorkflowEngineSuite) TestStartExecution() {
-	s.engine.RegisterWorkflow(s.ctx, workflow.WorkflowDefinition{ID: "test-wf"})
+	err := s.engine.RegisterWorkflow(s.ctx, workflow.WorkflowDefinition{ID: "test-wf"})
+	s.Require().NoError(err)
 
 	exec, err := s.engine.Start(s.ctx, workflow.StartOptions{
 		WorkflowID: "test-wf",
@@ -67,8 +68,10 @@ func (s *WorkflowEngineSuite) TestStartExecutionWorkflowNotFound() {
 }
 
 func (s *WorkflowEngineSuite) TestGetExecution() {
-	s.engine.RegisterWorkflow(s.ctx, workflow.WorkflowDefinition{ID: "test-wf"})
-	exec, _ := s.engine.Start(s.ctx, workflow.StartOptions{WorkflowID: "test-wf"})
+	err := s.engine.RegisterWorkflow(s.ctx, workflow.WorkflowDefinition{ID: "test-wf"})
+	s.Require().NoError(err)
+	exec, err := s.engine.Start(s.ctx, workflow.StartOptions{WorkflowID: "test-wf"})
+	s.Require().NoError(err)
 
 	got, err := s.engine.GetExecution(s.ctx, exec.ID)
 	s.Require().NoError(err)
@@ -76,10 +79,12 @@ func (s *WorkflowEngineSuite) TestGetExecution() {
 }
 
 func (s *WorkflowEngineSuite) TestListExecutions() {
-	s.engine.RegisterWorkflow(s.ctx, workflow.WorkflowDefinition{ID: "test-wf"})
+	err := s.engine.RegisterWorkflow(s.ctx, workflow.WorkflowDefinition{ID: "test-wf"})
+	s.Require().NoError(err)
 
 	for i := 0; i < 3; i++ {
-		s.engine.Start(s.ctx, workflow.StartOptions{WorkflowID: "test-wf"})
+		_, err := s.engine.Start(s.ctx, workflow.StartOptions{WorkflowID: "test-wf"})
+		s.Require().NoError(err)
 	}
 
 	result, err := s.engine.ListExecutions(s.ctx, workflow.ListOptions{})
@@ -88,10 +93,12 @@ func (s *WorkflowEngineSuite) TestListExecutions() {
 }
 
 func (s *WorkflowEngineSuite) TestCancelExecution() {
-	s.engine.RegisterWorkflow(s.ctx, workflow.WorkflowDefinition{ID: "test-wf"})
-	exec, _ := s.engine.Start(s.ctx, workflow.StartOptions{WorkflowID: "test-wf"})
+	err := s.engine.RegisterWorkflow(s.ctx, workflow.WorkflowDefinition{ID: "test-wf"})
+	s.Require().NoError(err)
+	exec, err := s.engine.Start(s.ctx, workflow.StartOptions{WorkflowID: "test-wf"})
+	s.Require().NoError(err)
 
-	err := s.engine.Cancel(s.ctx, exec.ID)
+	err = s.engine.Cancel(s.ctx, exec.ID)
 	s.Require().NoError(err)
 
 	exec, _ = s.engine.GetExecution(s.ctx, exec.ID)
@@ -99,8 +106,10 @@ func (s *WorkflowEngineSuite) TestCancelExecution() {
 }
 
 func (s *WorkflowEngineSuite) TestWaitForCompletion() {
-	s.engine.RegisterWorkflow(s.ctx, workflow.WorkflowDefinition{ID: "test-wf"})
-	exec, _ := s.engine.Start(s.ctx, workflow.StartOptions{WorkflowID: "test-wf"})
+	err := s.engine.RegisterWorkflow(s.ctx, workflow.WorkflowDefinition{ID: "test-wf"})
+	s.Require().NoError(err)
+	exec, err := s.engine.Start(s.ctx, workflow.StartOptions{WorkflowID: "test-wf"})
+	s.Require().NoError(err)
 
 	ctx, cancel := context.WithTimeout(s.ctx, time.Second)
 	defer cancel()
@@ -224,7 +233,8 @@ func (s *SchedulerSuite) TestScheduleOnce() {
 
 func (s *SchedulerSuite) TestListJobs() {
 	for i := 0; i < 3; i++ {
-		s.sched.Schedule("job-"+string(rune('a'+i)), "@daily", func(ctx context.Context) error { return nil })
+		err := s.sched.Schedule("job-"+string(rune('a'+i)), "@daily", func(ctx context.Context) error { return nil })
+		s.Require().NoError(err)
 	}
 
 	jobs := s.sched.ListJobs()
@@ -232,9 +242,10 @@ func (s *SchedulerSuite) TestListJobs() {
 }
 
 func (s *SchedulerSuite) TestEnableDisableJob() {
-	s.sched.Schedule("toggle-job", "@hourly", func(ctx context.Context) error { return nil })
+	err := s.sched.Schedule("toggle-job", "@hourly", func(ctx context.Context) error { return nil })
+	s.Require().NoError(err)
 
-	err := s.sched.DisableJob("toggle-job")
+	err = s.sched.DisableJob("toggle-job")
 	s.Require().NoError(err)
 
 	job, _ := s.sched.GetJob("toggle-job")
@@ -249,10 +260,11 @@ func (s *SchedulerSuite) TestEnableDisableJob() {
 
 func (s *SchedulerSuite) TestRunNow() {
 	executed := false
-	s.sched.Schedule("run-now-job", "@daily", func(ctx context.Context) error {
+	err := s.sched.Schedule("run-now-job", "@daily", func(ctx context.Context) error {
 		executed = true
 		return nil
 	})
+	s.Require().NoError(err)
 
 	exec, err := s.sched.RunNow(s.ctx, "run-now-job")
 	s.Require().NoError(err)
@@ -261,9 +273,10 @@ func (s *SchedulerSuite) TestRunNow() {
 }
 
 func (s *SchedulerSuite) TestRunNowWithError() {
-	s.sched.Schedule("fail-job", "@daily", func(ctx context.Context) error {
+	err := s.sched.Schedule("fail-job", "@daily", func(ctx context.Context) error {
 		return errors.New("job failed")
 	})
+	s.Require().NoError(err)
 
 	exec, err := s.sched.RunNow(s.ctx, "fail-job")
 	s.Error(err)
