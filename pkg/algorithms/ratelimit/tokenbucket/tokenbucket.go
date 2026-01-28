@@ -8,6 +8,7 @@ import (
 
 	"github.com/chris-alexander-pop/system-design-library/pkg/algorithms/ratelimit"
 	"github.com/chris-alexander-pop/system-design-library/pkg/cache"
+	"github.com/chris-alexander-pop/system-design-library/pkg/concurrency"
 )
 
 // DistLimiter implements a distributed token bucket.
@@ -20,7 +21,7 @@ type DistLimiter struct {
 type tokenBucketState struct {
 	tokens     float64
 	lastRefill time.Time
-	mu         sync.Mutex
+	mu         *concurrency.SmartMutex
 }
 
 // NewDist creates a new distributed TokenBucket limiter.
@@ -33,6 +34,7 @@ func (l *DistLimiter) Allow(ctx context.Context, key string, limit int64, period
 	val, _ := l.states.LoadOrStore(stateKey, &tokenBucketState{
 		tokens:     float64(limit),
 		lastRefill: time.Now(),
+		mu:         concurrency.NewSmartMutex(concurrency.MutexConfig{Name: "tokenbucket-state"}),
 	})
 	state := val.(*tokenBucketState)
 
@@ -73,7 +75,7 @@ type InMemoryLimiter struct {
 	burst      int64
 	tokens     map[string]float64
 	lastUpdate map[string]time.Time
-	mu         sync.Mutex
+	mu         *concurrency.SmartMutex
 }
 
 // NewInMemory creates a new in-memory TokenBucket limiter.
@@ -83,6 +85,7 @@ func NewInMemory(rate float64, burst int64) *InMemoryLimiter {
 		burst:      burst,
 		tokens:     make(map[string]float64),
 		lastUpdate: make(map[string]time.Time),
+		mu:         concurrency.NewSmartMutex(concurrency.MutexConfig{Name: "inmemory-tokenbucket"}),
 	}
 }
 
