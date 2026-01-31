@@ -166,47 +166,97 @@ func (h *RedactHandler) Enabled(ctx context.Context, level slog.Level) bool {
 }
 
 func (h *RedactHandler) Handle(ctx context.Context, r slog.Record) error {
-	// We must walk all attributes and redact strings
+	// Check message first
+	msg := r.Message
+	newMsg := h.redactString(msg)
+	anyChanged := newMsg != msg
+
+	// First pass: Check if attributes need redaction
+	if !anyChanged {
+		r.Attrs(func(a slog.Attr) bool {
+			_, changed := h.redactAttr(a)
+			if changed {
+				anyChanged = true
+				return false // Stop iteration
+			}
+			return true
+		})
+	}
+
+	if !anyChanged {
+		return h.next.Handle(ctx, r)
+	}
+
+	// Second pass: Apply redaction
 	newAttrs := make([]slog.Attr, 0, r.NumAttrs())
 	r.Attrs(func(a slog.Attr) bool {
-		newAttrs = append(newAttrs, h.redactAttr(a))
+		attr, _ := h.redactAttr(a)
+		newAttrs = append(newAttrs, attr)
 		return true
 	})
 
 	// Create new record with redacted attributes
-	r2 := slog.NewRecord(r.Time, r.Level, h.redactString(r.Message), r.PC)
+	r2 := slog.NewRecord(r.Time, r.Level, newMsg, r.PC)
 	r2.AddAttrs(newAttrs...)
 
 	return h.next.Handle(ctx, r2)
 }
 
-func (h *RedactHandler) redactAttr(a slog.Attr) slog.Attr {
+func (h *RedactHandler) redactAttr(a slog.Attr) (slog.Attr, bool) {
 	// Recursive for groups
 	if a.Value.Kind() == slog.KindGroup {
 		groupAttrs := a.Value.Group()
 		newGroup := make([]slog.Attr, len(groupAttrs))
+		groupChanged := false
 		for i, sub := range groupAttrs {
-			newGroup[i] = h.redactAttr(sub)
+			var changed bool
+			newGroup[i], changed = h.redactAttr(sub)
+			if changed {
+				groupChanged = true
+			}
 		}
-		return slog.Attr{Key: a.Key, Value: slog.GroupValue(newGroup...)}
+		if groupChanged {
+			return slog.Attr{Key: a.Key, Value: slog.GroupValue(newGroup...)}, true
+		}
+		return a, false
 	}
 
 	if a.Value.Kind() == slog.KindString {
 		// Identify specific keys?
 		key := strings.ToLower(a.Key)
 		if strings.Contains(key, "token") || strings.Contains(key, "password") || strings.Contains(key, "secret") {
-			return slog.String(a.Key, "[REDACTED]")
+			return slog.String(a.Key, "[REDACTED]"), true
 		}
 
 		// Regex scan value
-		return slog.String(a.Key, h.redactString(a.Value.String()))
+		val := a.Value.String()
+		newVal := h.redactString(val)
+		if newVal != val {
+			return slog.String(a.Key, newVal), true
+		}
 	}
-	return a
+	return a, false
 }
 
 func (h *RedactHandler) redactString(s string) string {
-	s = emailRegex.ReplaceAllString(s, "[EMAIL]")
-	s = creditCardRegex.ReplaceAllString(s, "[CC]")
+	hasAt := strings.Contains(s, "@")
+	hasDigits := strings.ContainsAny(s, "0123456789")
+
+	if !hasAt && !hasDigits {
+		return s
+	}
+
+	if !hasAt && len(s) < 13 {
+		return s
+	}
+
+	if hasAt {
+		s = emailRegex.ReplaceAllString(s, "[EMAIL]")
+	}
+
+	if len(s) >= 13 && strings.ContainsAny(s, "0123456789") {
+		s = creditCardRegex.ReplaceAllString(s, "[CC]")
+	}
 	return s
 }
 
