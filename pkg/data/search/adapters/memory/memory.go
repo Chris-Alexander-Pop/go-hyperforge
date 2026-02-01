@@ -6,6 +6,7 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"unicode"
 
 	"github.com/chris-alexander-pop/system-design-library/pkg/data/search"
 	"github.com/chris-alexander-pop/system-design-library/pkg/errors"
@@ -20,10 +21,11 @@ type document struct {
 
 // index represents an in-memory search index.
 type index struct {
-	name      string
-	mapping   *search.IndexMapping
-	documents map[string]*document
-	createdAt time.Time
+	name          string
+	mapping       *search.IndexMapping
+	documents     map[string]*document
+	invertedIndex map[string]map[string]struct{}
+	createdAt     time.Time
 }
 
 // Engine implements an in-memory search engine for testing.
@@ -53,10 +55,11 @@ func (e *Engine) CreateIndex(ctx context.Context, indexName string, mapping *sea
 	}
 
 	e.indexes[indexName] = &index{
-		name:      indexName,
-		mapping:   mapping,
-		documents: make(map[string]*document),
-		createdAt: time.Now(),
+		name:          indexName,
+		mapping:       mapping,
+		documents:     make(map[string]*document),
+		invertedIndex: make(map[string]map[string]struct{}),
+		createdAt:     time.Now(),
 	}
 
 	return nil
@@ -102,9 +105,10 @@ func (e *Engine) indexLocked(indexName, docID string, doc interface{}) error {
 	if !exists {
 		// Auto-create index
 		idx = &index{
-			name:      indexName,
-			documents: make(map[string]*document),
-			createdAt: time.Now(),
+			name:          indexName,
+			documents:     make(map[string]*document),
+			invertedIndex: make(map[string]map[string]struct{}),
+			createdAt:     time.Now(),
 		}
 		e.indexes[indexName] = idx
 	}
@@ -116,11 +120,19 @@ func (e *Engine) indexLocked(indexName, docID string, doc interface{}) error {
 		data = map[string]interface{}{"_source": doc}
 	}
 
+	// Remove old document from inverted index if it exists
+	if oldDoc, exists := idx.documents[docID]; exists {
+		e.removeFromIndex(idx, docID, oldDoc.data)
+	}
+
 	idx.documents[docID] = &document{
 		id:        docID,
 		data:      data,
 		indexedAt: time.Now(),
 	}
+
+	// Add new document to inverted index
+	e.addToIndex(idx, docID, data)
 
 	return nil
 }
@@ -158,9 +170,13 @@ func (e *Engine) deleteLocked(indexName, docID string) error {
 		return errors.NotFound("index not found", nil)
 	}
 
-	if _, exists := idx.documents[docID]; !exists {
+	doc, exists := idx.documents[docID]
+	if !exists {
 		return errors.NotFound("document not found", nil)
 	}
+
+	// Remove from inverted index
+	e.removeFromIndex(idx, docID, doc.data)
 
 	delete(idx.documents, docID)
 	return nil
@@ -179,8 +195,74 @@ func (e *Engine) Search(ctx context.Context, indexName string, query search.Quer
 
 	var hits []search.Hit
 
-	// Simple text matching
-	for docID, doc := range idx.documents {
+	// Determine candidate documents
+	var candidateIDs []string
+	useInvertedIndex := false
+
+	if query.Text != "" {
+		tokens := e.tokenize(query.Text)
+		if len(tokens) > 0 {
+			useInvertedIndex = true
+			// Initialize candidates with the first token's documents
+			if docs, ok := idx.invertedIndex[tokens[0]]; ok {
+				candidateIDs = make([]string, 0, len(docs))
+				for id := range docs {
+					candidateIDs = append(candidateIDs, id)
+				}
+			}
+
+			// Intersect with remaining tokens
+			for i := 1; i < len(tokens); i++ {
+				token := tokens[i]
+				docs, ok := idx.invertedIndex[token]
+				if !ok {
+					// Token not found, intersection is empty
+					candidateIDs = nil
+					break
+				}
+
+				// Filter candidates
+				n := 0
+				for _, id := range candidateIDs {
+					if _, exists := docs[id]; exists {
+						candidateIDs[n] = id
+						n++
+					}
+				}
+				candidateIDs = candidateIDs[:n]
+
+				if len(candidateIDs) == 0 {
+					break
+				}
+			}
+		}
+	}
+
+	// Define iterator over candidates
+	var iterateDocs func(yield func(string, *document) bool)
+	if useInvertedIndex {
+		iterateDocs = func(yield func(string, *document) bool) {
+			for _, id := range candidateIDs {
+				if doc, ok := idx.documents[id]; ok {
+					if !yield(id, doc) {
+						return
+					}
+				}
+			}
+		}
+	} else {
+		// Fallback: iterate all documents
+		iterateDocs = func(yield func(string, *document) bool) {
+			for id, doc := range idx.documents {
+				if !yield(id, doc) {
+					return
+				}
+			}
+		}
+	}
+
+	// Perform matching on candidates
+	iterateDocs(func(docID string, doc *document) bool {
 		if e.matchesQuery(doc, query) {
 			score := e.calculateScore(doc, query)
 			hit := search.Hit{
@@ -195,7 +277,8 @@ func (e *Engine) Search(ctx context.Context, indexName string, query search.Quer
 
 			hits = append(hits, hit)
 		}
-	}
+		return true
+	})
 
 	// Sort by score (descending)
 	sort.Slice(hits, func(i, j int) bool {
@@ -525,4 +608,65 @@ func (e *Engine) Refresh(ctx context.Context, indexName string) error {
 
 func (e *Engine) Close() error {
 	return nil
+}
+
+// tokenize splits text into tokens, lowercased and cleaned.
+func (e *Engine) tokenize(text string) []string {
+	return strings.FieldsFunc(strings.ToLower(text), func(r rune) bool {
+		return !unicode.IsLetter(r) && !unicode.IsNumber(r)
+	})
+}
+
+// collectTokens recursively extracts tokens from data.
+func (e *Engine) collectTokens(data interface{}, tokens map[string]struct{}) {
+	switch v := data.(type) {
+	case string:
+		ts := e.tokenize(v)
+		for _, t := range ts {
+			tokens[t] = struct{}{}
+		}
+	case map[string]interface{}:
+		for _, val := range v {
+			e.collectTokens(val, tokens)
+		}
+	case []interface{}:
+		for _, val := range v {
+			e.collectTokens(val, tokens)
+		}
+	case []string:
+		for _, val := range v {
+			ts := e.tokenize(val)
+			for _, t := range ts {
+				tokens[t] = struct{}{}
+			}
+		}
+	}
+}
+
+// addToIndex adds document tokens to the inverted index.
+func (e *Engine) addToIndex(idx *index, docID string, data map[string]interface{}) {
+	tokens := make(map[string]struct{})
+	e.collectTokens(data, tokens)
+
+	for token := range tokens {
+		if idx.invertedIndex[token] == nil {
+			idx.invertedIndex[token] = make(map[string]struct{})
+		}
+		idx.invertedIndex[token][docID] = struct{}{}
+	}
+}
+
+// removeFromIndex removes document tokens from the inverted index.
+func (e *Engine) removeFromIndex(idx *index, docID string, data map[string]interface{}) {
+	tokens := make(map[string]struct{})
+	e.collectTokens(data, tokens)
+
+	for token := range tokens {
+		if docs, ok := idx.invertedIndex[token]; ok {
+			delete(docs, docID)
+			if len(docs) == 0 {
+				delete(idx.invertedIndex, token)
+			}
+		}
+	}
 }
