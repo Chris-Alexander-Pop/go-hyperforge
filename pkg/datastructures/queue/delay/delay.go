@@ -47,7 +47,7 @@ func (q *Queue[T]) Enqueue(value T, delay time.Duration) {
 	heap.Push(q, item)
 
 	// Signal new item
-	if !q.closed {
+	if !q.closed && item.Index == 0 {
 		select {
 		case q.notifyCh <- struct{}{}:
 		default:
