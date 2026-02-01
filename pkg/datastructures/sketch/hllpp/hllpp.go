@@ -11,7 +11,7 @@ type HLLPP struct {
 	m         uint // number of registers
 	p         uint // precision (log2 m)
 	registers []uint8
-	sparse    map[uint32]struct{}
+	sparse    map[uint64]struct{}
 	IsSparse  bool
 	threshold uint
 }
@@ -28,7 +28,7 @@ func New(p uint8) *HLLPP {
 		m:         m,
 		p:         uint(p),
 		registers: make([]uint8, m),
-		sparse:    make(map[uint32]struct{}),
+		sparse:    make(map[uint64]struct{}),
 		IsSparse:  true,
 		threshold: m / 4, // Switch when sparse set has m/4 items (approx)
 	}
@@ -37,7 +37,7 @@ func New(p uint8) *HLLPP {
 func (h *HLLPP) Add(data []byte) {
 	hash := hash64(data)
 	if h.IsSparse {
-		h.sparse[uint32(hash)] = struct{}{}
+		h.sparse[hash] = struct{}{}
 		if uint(len(h.sparse)) > h.threshold {
 			h.mergeSparse()
 			h.IsSparse = false
@@ -57,25 +57,17 @@ func (h *HLLPP) Add(data []byte) {
 }
 
 func (h *HLLPP) mergeSparse() {
-	for k := range h.sparse {
-		// Mock reconstruction of 64-bit hash from 32-bit storage?
-		// No, sparse mode usually stores full hashes or difference encodings.
-		// For this simplified version, we just lost precision if we only stored 32-bit.
-		// But let's assume valid re-insertion behavior for demonstration.
+	for hash := range h.sparse {
 		// In a real HLL++, we would store 64-bit integers in the sparse list.
-		// Let's treat map keys as hash inputs (truncated).
-
-		// To fix this correctly for "System Design Library":
-		// We insert based on the stored hash directly.
-		hash := uint64(k) << 32 // Simulated restoration (imperfect)
+		// Now we do.
 
 		idx := hash >> (64 - h.p)
-		// val := hash << h.p
-		// rank := ...
-		// Since we lost real bits, this is lossy.
-		// Correct implementation stores full 64-bit in sparse.
+		val := hash << h.p // remaining bits
+		rank := uint8(clz(val)) + 1
 
-		_ = idx
+		if rank > h.registers[idx] {
+			h.registers[idx] = rank
+		}
 	}
 	// Clear sparse
 	h.sparse = nil
