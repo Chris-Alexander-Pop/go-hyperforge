@@ -2,6 +2,7 @@ package validator
 
 import (
 	"html"
+	"net/url"
 	"regexp"
 	"strings"
 )
@@ -156,11 +157,42 @@ func DetectPathTraversal(input string) bool {
 
 // SanitizePath removes path traversal attempts from a path string.
 func SanitizePath(input string) string {
-	// Remove ../ and ..\ sequences
+	// Decode URL encoding to handle encoded traversal patterns (e.g. %2e%2e%2f)
+	// We loop to handle multiple layers of encoding (e.g. %252e%252e%252f)
+	// Limit to 5 iterations to prevent potential DoS or infinite loops
+	for i := 0; i < 5; i++ {
+		decoded, err := url.QueryUnescape(input)
+		if err != nil || decoded == input {
+			break
+		}
+		input = decoded
+	}
+
 	result := input
-	for strings.Contains(result, "../") || strings.Contains(result, "..\\") {
+	for {
+		original := result
+
+		// Remove standard traversal patterns
 		result = strings.ReplaceAll(result, "../", "")
 		result = strings.ReplaceAll(result, "..\\", "")
+
+		// Remove trailing traversal components
+		if strings.HasSuffix(result, "/..") {
+			result = result[:len(result)-3]
+		}
+		if strings.HasSuffix(result, "\\..") {
+			result = result[:len(result)-3]
+		}
+
+		// Handle exact match ".."
+		if result == ".." {
+			result = ""
+		}
+
+		// If no changes, break
+		if result == original {
+			break
+		}
 	}
 	return result
 }
