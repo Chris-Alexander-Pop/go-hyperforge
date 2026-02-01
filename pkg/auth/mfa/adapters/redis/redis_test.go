@@ -55,23 +55,67 @@ func TestVerifyReplayProtection(t *testing.T) {
 	require.NoError(t, err)
 
 	// 3. Verify (First time)
-	valid, err := provider.Verify(ctx, userID, code1)
-	assert.NoError(t, err)
-	assert.True(t, valid, "First verification should succeed")
-
-	// 4. Verify (Second time) - Replay
-	valid, err = provider.Verify(ctx, userID, code1)
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "code already used")
-	assert.False(t, valid, "Second verification should fail")
-
-	// 5. Verify different code
+	// Note: We use a different code (code2) because code1 was already used for enrollment.
+	// Since Skew=1, a code for the next period is also valid now.
 	code2, err := totp.GenerateCodeAt(secret, time.Now().Add(time.Duration(config.TOTPPeriod)*time.Second))
 	require.NoError(t, err)
 
-	if code2 != code1 {
-		valid, err = provider.Verify(ctx, userID, code2)
-		assert.NoError(t, err)
-		assert.True(t, valid, "Different code should succeed")
+	valid, err := provider.Verify(ctx, userID, code2)
+	assert.NoError(t, err)
+	assert.True(t, valid, "First verification with fresh code should succeed")
+
+	// 4. Verify (Second time) - Replay
+	valid, err = provider.Verify(ctx, userID, code2)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "code already used")
+	assert.False(t, valid, "Second verification should fail")
+}
+
+func TestEnrollmentReplayProtection(t *testing.T) {
+	ctx := context.Background()
+
+	// Start Miniredis
+	s, err := miniredis.Run()
+	require.NoError(t, err)
+	defer s.Close()
+
+	client := redis.NewClient(&redis.Options{
+		Addr: s.Addr(),
+	})
+	defer client.Close()
+
+	// Setup MFA Provider
+	config := mfa.Config{
+		TOTPIssuer: "TestApp",
+		TOTPDigits: 6,
+		TOTPPeriod: 30, // 30 seconds
 	}
+	provider := redisAdapter.New(client, config)
+
+	userID := "user-enrollment-replay-test"
+
+	// 1. Enroll
+	secret, _, err := provider.Enroll(ctx, userID)
+	require.NoError(t, err)
+
+	// 2. Generate a valid code
+	totp := otp.NewTOTP(otp.TOTPConfig{
+		Issuer: config.TOTPIssuer,
+		Digits: config.TOTPDigits,
+		Period: config.TOTPPeriod,
+	})
+
+	code1, err := totp.GenerateCode(secret)
+	require.NoError(t, err)
+
+	// 3. Complete Enrollment with the code
+	err = provider.CompleteEnrollment(ctx, userID, code1)
+	require.NoError(t, err)
+
+	// 4. Try to Verify with the SAME code immediately
+	// This should FAIL if replay protection covers enrollment.
+	valid, err := provider.Verify(ctx, userID, code1)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "code already used")
+	assert.False(t, valid, "Verification should fail for replayed code")
 }
