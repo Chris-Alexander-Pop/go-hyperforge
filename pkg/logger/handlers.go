@@ -205,8 +205,12 @@ func (h *RedactHandler) redactAttr(a slog.Attr) slog.Attr {
 }
 
 func (h *RedactHandler) redactString(s string) string {
-	s = emailRegex.ReplaceAllString(s, "[EMAIL]")
-	s = creditCardRegex.ReplaceAllString(s, "[CC]")
+	if strings.Contains(s, "@") {
+		s = emailRegex.ReplaceAllString(s, "[EMAIL]")
+	}
+	if strings.ContainsAny(s, "0123456789") {
+		s = creditCardRegex.ReplaceAllString(s, "[CC]")
+	}
 	return s
 }
 
