@@ -71,22 +71,53 @@ func (j *Job) Run(ctx context.Context) (map[string][]interface{}, error) {
 		shuffled[res.Key] = append(shuffled[res.Key], res.Value)
 	}
 
-	// Reduce Phase (Simplification: Sequential Reduce for now)
+	// Reduce Phase
 	results := make(map[string][]interface{})
-	for k, vals := range shuffled {
-		outCh := make(chan interface{})
-		var reduceOutput []interface{}
+	var resultsMu sync.Mutex
+	var reduceWg sync.WaitGroup
 
-		go func() {
-			defer close(outCh)
-			j.Reducer(k, vals, outCh)
-		}()
-
-		for out := range outCh {
-			reduceOutput = append(reduceOutput, out)
-		}
-		results[k] = reduceOutput
+	type reduceJob struct {
+		Key    string
+		Values []interface{}
 	}
+
+	// Use a channel to distribute reduce jobs to workers
+	reduceJobs := make(chan reduceJob)
+
+	// Start Workers
+	for i := 0; i < j.NumWorkers; i++ {
+		reduceWg.Add(1)
+		go func() {
+			defer reduceWg.Done()
+			for job := range reduceJobs {
+				outCh := make(chan interface{})
+
+				go func() {
+					defer close(outCh)
+					j.Reducer(job.Key, job.Values, outCh)
+				}()
+
+				var reduceOutput []interface{}
+				for out := range outCh {
+					reduceOutput = append(reduceOutput, out)
+				}
+
+				resultsMu.Lock()
+				results[job.Key] = reduceOutput
+				resultsMu.Unlock()
+			}
+		}()
+	}
+
+	// Feed jobs
+	go func() {
+		for k, vals := range shuffled {
+			reduceJobs <- reduceJob{Key: k, Values: vals}
+		}
+		close(reduceJobs)
+	}()
+
+	reduceWg.Wait()
 
 	return results, nil
 }
