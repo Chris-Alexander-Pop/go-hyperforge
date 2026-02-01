@@ -224,7 +224,9 @@ func (h *RedactHandler) redactAttr(a slog.Attr) (slog.Attr, bool) {
 	if a.Value.Kind() == slog.KindString {
 		// Identify specific keys?
 		key := strings.ToLower(a.Key)
-		if strings.Contains(key, "token") || strings.Contains(key, "password") || strings.Contains(key, "secret") {
+		if strings.Contains(key, "token") || strings.Contains(key, "password") || strings.Contains(key, "secret") ||
+			strings.Contains(key, "api_key") || strings.Contains(key, "apikey") || strings.Contains(key, "access_key") ||
+			strings.Contains(key, "authorization") || strings.Contains(key, "cookie") || strings.Contains(key, "bearer") {
 			return slog.String(a.Key, "[REDACTED]"), true
 		}
 
