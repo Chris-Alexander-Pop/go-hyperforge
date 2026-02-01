@@ -18,18 +18,18 @@ type Item[T any] struct {
 // Items are dequeued only after their ReadyTime has passed.
 // Uses container/heap internally for time precision (avoiding float64 score conversion).
 type Queue[T any] struct {
-	items  []*Item[T]
-	mu     sync.Mutex
-	wakeup *sync.Cond
-	closed bool
+	items    []*Item[T]
+	mu       sync.Mutex
+	notifyCh chan struct{}
+	closed   bool
 }
 
 // New creates a new Delay Queue.
 func New[T any]() *Queue[T] {
 	q := &Queue[T]{
-		items: make([]*Item[T], 0),
+		items:    make([]*Item[T], 0),
+		notifyCh: make(chan struct{}, 1),
 	}
-	q.wakeup = sync.NewCond(&q.mu)
 	return q
 }
 
@@ -45,7 +45,14 @@ func (q *Queue[T]) Enqueue(value T, delay time.Duration) {
 		Priority:  readyTime.UnixNano(),
 	}
 	heap.Push(q, item)
-	q.wakeup.Signal()
+
+	// Signal new item
+	if !q.closed {
+		select {
+		case q.notifyCh <- struct{}{}:
+		default:
+		}
+	}
 }
 
 // Dequeue blocks until an item is ready.
@@ -60,7 +67,10 @@ func (q *Queue[T]) Dequeue() (T, bool) {
 		}
 
 		if len(q.items) == 0 {
-			q.wakeup.Wait()
+			q.mu.Unlock()
+			// Wait for signal (item enqueued or closed)
+			<-q.notifyCh
+			q.mu.Lock()
 			continue
 		}
 
@@ -69,25 +79,38 @@ func (q *Queue[T]) Dequeue() (T, bool) {
 
 		if now.After(item.ReadyTime) || now.Equal(item.ReadyTime) {
 			heap.Pop(q)
+
+			// Signal if more items remain (baton passing)
+			if len(q.items) > 0 {
+				select {
+				case q.notifyCh <- struct{}{}:
+				default:
+				}
+			}
+
 			return item.Value, true
 		}
 
 		// Wait until ready
 		d := item.ReadyTime.Sub(now)
-		// We can't easily wait with timeout on sync.Cond.
-		// So we loop. Ideally we use a select with channel in a real runtime,
-		// but standard sync.Cond is "wait forever".
-		// To fix this for a "DelayQueue", users typically use a channel-based approach.
-		// Let's implement a channel-based poll for better UX.
-
-		// Unlocking and sleeping is risky with Cond (missed signal).
-		// We'll return invalid and let caller sleep, OR implement strict blocking properly.
-
-		// For this library, let's assume the user can simple poll TryDequeue or we switch to channel based.
-		// Let's assume standard implementation style: Unlock, Sleep, Lock loop.
 
 		q.mu.Unlock()
-		time.Sleep(d)
+
+		timer := time.NewTimer(d)
+		select {
+		case <-timer.C:
+			// Timer expired, loop back to check
+		case <-q.notifyCh:
+			// Woken up by new item or close
+			if !timer.Stop() {
+				// Drain channel if needed
+				select {
+				case <-timer.C:
+				default:
+				}
+			}
+		}
+
 		q.mu.Lock()
 	}
 }
@@ -99,8 +122,10 @@ func (q *Queue[T]) Len() int { return len(q.items) }
 func (q *Queue[T]) Close() {
 	q.mu.Lock()
 	defer q.mu.Unlock()
-	q.closed = true
-	q.wakeup.Broadcast()
+	if !q.closed {
+		q.closed = true
+		close(q.notifyCh)
+	}
 }
 
 // internal heap interface implementation
