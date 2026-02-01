@@ -34,6 +34,49 @@ func (p *MFAProvider) key(userID string) string {
 	return fmt.Sprintf("auth:mfa:%s", userID)
 }
 
+func (p *MFAProvider) usedKey(userID string, counter uint64) string {
+	return fmt.Sprintf("auth:mfa:used:%s:%d", userID, counter)
+}
+
+// redisEnrollment is a local struct to handle JSON serialization for Redis,
+// allowing access to fields hidden in mfa.Enrollment (like Secret and Recovery).
+type redisEnrollment struct {
+	UserID     string                 `json:"user_id"`
+	Type       string                 `json:"type"`
+	Secret     string                 `json:"secret"`
+	Enabled    bool                   `json:"enabled"`
+	Recovery   []string               `json:"recovery"`
+	Metadata   map[string]interface{} `json:"metadata,omitempty"`
+	CreatedAt  time.Time              `json:"created_at"`
+	LastUsedAt time.Time              `json:"last_used_at,omitempty"`
+}
+
+func toRedisEnrollment(e *mfa.Enrollment) *redisEnrollment {
+	return &redisEnrollment{
+		UserID:     e.UserID,
+		Type:       e.Type,
+		Secret:     e.Secret,
+		Enabled:    e.Enabled,
+		Recovery:   e.Recovery,
+		Metadata:   e.Metadata,
+		CreatedAt:  e.CreatedAt,
+		LastUsedAt: e.LastUsedAt,
+	}
+}
+
+func (r *redisEnrollment) toEnrollment() *mfa.Enrollment {
+	return &mfa.Enrollment{
+		UserID:     r.UserID,
+		Type:       r.Type,
+		Secret:     r.Secret,
+		Enabled:    r.Enabled,
+		Recovery:   r.Recovery,
+		Metadata:   r.Metadata,
+		CreatedAt:  r.CreatedAt,
+		LastUsedAt: r.LastUsedAt,
+	}
+}
+
 func (p *MFAProvider) Enroll(ctx context.Context, userID string) (string, []string, error) {
 	// 1. Generate TOTP Secret
 	totp := otp.NewTOTP(p.totpConfig)
@@ -59,7 +102,7 @@ func (p *MFAProvider) Enroll(ctx context.Context, userID string) (string, []stri
 		CreatedAt: time.Now(),
 	}
 
-	data, err := json.Marshal(enrollment)
+	data, err := json.Marshal(toRedisEnrollment(enrollment))
 	if err != nil {
 		return "", nil, errors.Internal("failed to marshal enrollment", err)
 	}
@@ -84,10 +127,11 @@ func (p *MFAProvider) CompleteEnrollment(ctx context.Context, userID, code strin
 			return err
 		}
 
-		var enrollment mfa.Enrollment
-		if err := json.Unmarshal(data, &enrollment); err != nil {
+		var re redisEnrollment
+		if err := json.Unmarshal(data, &re); err != nil {
 			return err
 		}
+		enrollment := re.toEnrollment()
 
 		if enrollment.Enabled {
 			return errors.Conflict("mfa already enabled", nil)
@@ -99,7 +143,7 @@ func (p *MFAProvider) CompleteEnrollment(ctx context.Context, userID, code strin
 		}
 
 		enrollment.Enabled = true
-		newData, err := json.Marshal(&enrollment)
+		newData, err := json.Marshal(toRedisEnrollment(enrollment))
 		if err != nil {
 			return err
 		}
@@ -135,20 +179,46 @@ func (p *MFAProvider) Verify(ctx context.Context, userID, code string) (bool, er
 		return false, errors.Internal("failed to get mfa enrollment", err)
 	}
 
-	var enrollment mfa.Enrollment
-	if err := json.Unmarshal(data, &enrollment); err != nil {
+	var re redisEnrollment
+	if err := json.Unmarshal(data, &re); err != nil {
 		return false, errors.Internal("failed to unmarshal enrollment", err)
 	}
+	enrollment := re.toEnrollment()
 
 	if !enrollment.Enabled {
 		return false, errors.Forbidden("mfa not enabled", nil)
 	}
 
 	totp := otp.NewTOTP(p.totpConfig)
-	valid := totp.Validate(enrollment.Secret, code)
-	// TODO: Prevent replay attacks using Redis cache of used codes
+	valid, counter := totp.ValidateReturningCounter(enrollment.Secret, code)
+	if !valid {
+		return false, nil
+	}
 
-	return valid, nil
+	// Prevent replay attacks using Redis cache of used codes
+	usedKey := p.usedKey(userID, counter)
+	exists, err := p.client.Exists(ctx, usedKey).Result()
+	if err != nil {
+		return false, errors.Internal("failed to check used code", err)
+	}
+	if exists > 0 {
+		return false, errors.Conflict("code already used", nil)
+	}
+
+	// Calculate expiration based on validity window
+	// The code becomes invalid when current_step > counter + skew.
+	// We need to keep the record until then.
+	expirationTime := time.Unix(int64(counter+uint64(p.totpConfig.Skew)+1)*int64(p.totpConfig.Period), 0)
+	ttl := time.Until(expirationTime)
+	if ttl < time.Second {
+		ttl = time.Second
+	}
+
+	if err := p.client.Set(ctx, usedKey, "1", ttl).Err(); err != nil {
+		return false, errors.Internal("failed to mark code as used", err)
+	}
+
+	return true, nil
 }
 
 func (p *MFAProvider) Recover(ctx context.Context, userID, code string) (bool, error) {
@@ -164,10 +234,11 @@ func (p *MFAProvider) Recover(ctx context.Context, userID, code string) (bool, e
 			return err
 		}
 
-		var enrollment mfa.Enrollment
-		if err := json.Unmarshal(data, &enrollment); err != nil {
+		var re redisEnrollment
+		if err := json.Unmarshal(data, &re); err != nil {
 			return err
 		}
+		enrollment := re.toEnrollment()
 
 		if !enrollment.Enabled {
 			return errors.Forbidden("mfa not enabled", nil)
@@ -192,7 +263,7 @@ func (p *MFAProvider) Recover(ctx context.Context, userID, code string) (bool, e
 		success = true
 		enrollment.Recovery = append(enrollment.Recovery[:foundIndex], enrollment.Recovery[foundIndex+1:]...)
 
-		newData, err := json.Marshal(&enrollment)
+		newData, err := json.Marshal(toRedisEnrollment(enrollment))
 		if err != nil {
 			return err
 		}

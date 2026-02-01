@@ -126,24 +126,37 @@ func (t *TOTP) generateCodeForCounter(secret string, counter uint64) (string, er
 
 // Validate checks if a code is valid for the given secret.
 func (t *TOTP) Validate(secret, code string) bool {
-	return t.ValidateAt(secret, code, time.Now())
+	valid, _ := t.ValidateReturningCounter(secret, code)
+	return valid
+}
+
+// ValidateReturningCounter checks if a code is valid and returns the matched counter.
+func (t *TOTP) ValidateReturningCounter(secret, code string) (bool, uint64) {
+	return t.ValidateAtReturningCounter(secret, code, time.Now())
 }
 
 // ValidateAt checks if a code is valid for a specific time.
 func (t *TOTP) ValidateAt(secret, code string, at time.Time) bool {
+	valid, _ := t.ValidateAtReturningCounter(secret, code, at)
+	return valid
+}
+
+// ValidateAtReturningCounter checks if a code is valid for a specific time and returns the matched counter.
+func (t *TOTP) ValidateAtReturningCounter(secret, code string, at time.Time) (bool, uint64) {
 	counter := uint64(at.Unix()) / uint64(t.config.Period)
 
 	// Check current and adjacent time steps
 	for i := -t.config.Skew; i <= t.config.Skew; i++ {
-		expected, err := t.generateCodeForCounter(secret, counter+uint64(i))
+		usedCounter := counter + uint64(i)
+		expected, err := t.generateCodeForCounter(secret, usedCounter)
 		if err != nil {
 			continue
 		}
 		if subtle(expected, code) {
-			return true
+			return true, usedCounter
 		}
 	}
-	return false
+	return false, 0
 }
 
 // ProvisioningURI returns the URI for QR code generation.
