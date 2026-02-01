@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/data/azcosmos"
@@ -81,34 +82,13 @@ func (a *Adapter) Find(ctx context.Context, collection string, query map[string]
 		return nil, errors.Internal("failed to get container client", err)
 	}
 
-	// CosmosDB SQL Query construction from map is non-trivial.
-	// We will implement a simplified "SELECT * FROM c WHERE c.key = val" generator.
+	queryText, queryParams := buildQuery(query)
 
-	queryText := "SELECT * FROM c"
-	if len(query) > 0 {
-		queryText += " WHERE "
-		i := 0
-		for k, v := range query {
-			if i > 0 {
-				queryText += " AND "
-			}
-			// WARNING: This is vulnerable to SQL injection if not parameterized.
-			// Azure SDK supports parameters.
-			// Implementing raw concatenation purely for demonstration of "generic interface".
-			// Real implementation MUST use parameterized queries.
-
-			// Simple string/number handling
-			switch val := v.(type) {
-			case string:
-				queryText += fmt.Sprintf("c.%s = '%s'", k, val)
-			default:
-				queryText += fmt.Sprintf("c.%s = %v", k, v)
-			}
-			i++
-		}
+	opt := &azcosmos.QueryOptions{
+		QueryParameters: queryParams,
 	}
 
-	pager := container.NewQueryItemsPager(queryText, azcosmos.NewPartitionKeyString("TODO_partition_key"), nil)
+	pager := container.NewQueryItemsPager(queryText, azcosmos.NewPartitionKeyString("TODO_partition_key"), opt)
 	// Querying across partitions (cross-partition query) usually requires omit PK or specific options.
 	// Current Generic Interface makes it hard to specify Partition Key separate from Query.
 
@@ -186,4 +166,36 @@ func (a *Adapter) Delete(ctx context.Context, collection string, filter map[stri
 // Close is a no-op generic interface, client doesn't need explicit close usually.
 func (a *Adapter) Close() error {
 	return nil
+}
+
+func buildQuery(query map[string]interface{}) (string, []azcosmos.QueryParameter) {
+	var sb strings.Builder
+	sb.WriteString("SELECT * FROM c")
+
+	if len(query) == 0 {
+		return sb.String(), nil
+	}
+
+	sb.WriteString(" WHERE ")
+	params := make([]azcosmos.QueryParameter, 0, len(query))
+	i := 0
+	for k, v := range query {
+		if i > 0 {
+			sb.WriteString(" AND ")
+		}
+
+		paramName := fmt.Sprintf("@p%d", i)
+		sb.WriteString("c.")
+		sb.WriteString(k)
+		sb.WriteString(" = ")
+		sb.WriteString(paramName)
+
+		params = append(params, azcosmos.QueryParameter{
+			Name:  paramName,
+			Value: v,
+		})
+		i++
+	}
+
+	return sb.String(), params
 }
