@@ -53,3 +53,13 @@ func BenchmarkBuildSystemPrompt(b *testing.B) {
 		_ = agent.buildSystemPrompt()
 	}
 }
+
+func BenchmarkParseAction(b *testing.B) {
+	agent := &Agent{}
+	text := "THOUGHT: I should search.\nACTION: Search\nINPUT: golang performance"
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_, _ = agent.parseAction(text)
+	}
+}
