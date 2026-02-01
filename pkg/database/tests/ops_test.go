@@ -82,11 +82,16 @@ func (s *OpsSuite) TestBulkOps() {
 	// Retrieve IDs (sqlite auto-inc)
 	var allUsers []User
 	db.Find(&allUsers)
-	// ids := []string{} // using string implementation of BulkDelete even though ID is uint... wait GORM handles this?
-	// BulkDelete takes []string. GORM Delete(model, ids) supports string slice even for int PK usually.
-	// But let's check implementation.
-	// To serve generic implementation, passing primary keys as interface{} slice is best, but our code uses []string.
-	// Let's stick to string conversion for test.
-	// Actually, let's skip BulkDelete ID Test for now if it requires type wrestling, or fix the implementation to interface{}.
-	// Fix implementation: Ops.BulkDelete should probably take interface{} for IDs.
+
+	ids := make([]interface{}, len(allUsers))
+	for i, u := range allUsers {
+		ids[i] = u.ID
+	}
+
+	err = ops.BulkDelete(ctx, db, &User{}, ids)
+	s.NoError(err)
+
+	var finalCount int64
+	db.Model(&User{}).Count(&finalCount)
+	s.Equal(int64(0), finalCount)
 }

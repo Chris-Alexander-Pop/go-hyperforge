@@ -15,7 +15,7 @@ func BulkUpsert(ctx context.Context, db *gorm.DB, data interface{}, conflicts cl
 
 // BulkDelete deletes records matching the given IDs.
 // Model MUST be provided for GORM to know the table and logic (e.g. soft delete).
-func BulkDelete(ctx context.Context, db *gorm.DB, model interface{}, ids []string) error {
+func BulkDelete(ctx context.Context, db *gorm.DB, model interface{}, ids []interface{}) error {
 	if len(ids) == 0 {
 		return nil
 	}
