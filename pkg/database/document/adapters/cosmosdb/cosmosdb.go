@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/data/azcosmos"
@@ -81,33 +82,13 @@ func (a *Adapter) Find(ctx context.Context, collection string, query map[string]
 		return nil, errors.Internal("failed to get container client", err)
 	}
 
-	// CosmosDB SQL Query construction from map is non-trivial.
-	// We will implement a simplified "SELECT * FROM c WHERE c.key = val" generator.
+	queryText, queryParams := buildQuery(query)
 
-	queryText := "SELECT * FROM c"
+	// Detect partition key from query
 	pk := azcosmos.NewPartitionKey() // Default to empty partition key (cross-partition query)
-	var queryParams []azcosmos.QueryParameter
-
-	if len(query) > 0 {
-		queryText += " WHERE "
-		i := 0
-		for k, v := range query {
-			if i > 0 {
-				queryText += " AND "
-			}
-
-			// Use parameterized queries to prevent SQL injection
-			paramName := fmt.Sprintf("@p%d", i)
-			queryText += fmt.Sprintf("c.%s = %s", k, paramName)
-			queryParams = append(queryParams, azcosmos.QueryParameter{Name: paramName, Value: v})
-
-			// If the query contains "id", assume it is the partition key
-			if k == "id" {
-				if strVal, ok := v.(string); ok {
-					pk = azcosmos.NewPartitionKeyString(strVal)
-				}
-			}
-			i++
+	if idVal, ok := query["id"]; ok {
+		if strVal, ok := idVal.(string); ok {
+			pk = azcosmos.NewPartitionKeyString(strVal)
 		}
 	}
 
@@ -187,4 +168,36 @@ func (a *Adapter) Delete(ctx context.Context, collection string, filter map[stri
 // Close is a no-op generic interface, client doesn't need explicit close usually.
 func (a *Adapter) Close() error {
 	return nil
+}
+
+func buildQuery(query map[string]interface{}) (string, []azcosmos.QueryParameter) {
+	var sb strings.Builder
+	sb.WriteString("SELECT * FROM c")
+
+	if len(query) == 0 {
+		return sb.String(), nil
+	}
+
+	sb.WriteString(" WHERE ")
+	params := make([]azcosmos.QueryParameter, 0, len(query))
+	i := 0
+	for k, v := range query {
+		if i > 0 {
+			sb.WriteString(" AND ")
+		}
+
+		paramName := fmt.Sprintf("@p%d", i)
+		sb.WriteString("c.")
+		sb.WriteString(k)
+		sb.WriteString(" = ")
+		sb.WriteString(paramName)
+
+		params = append(params, azcosmos.QueryParameter{
+			Name:  paramName,
+			Value: v,
+		})
+		i++
+	}
+
+	return sb.String(), params
 }
