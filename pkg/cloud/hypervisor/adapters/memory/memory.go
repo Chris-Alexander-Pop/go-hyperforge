@@ -12,14 +12,16 @@ import (
 
 // MemoryHypervisor is an in-memory implementation of the Hypervisor interface.
 type MemoryHypervisor struct {
-	vms map[string]hypervisor.VM
-	mu  *concurrency.SmartRWMutex
+	vms       map[string]hypervisor.VM
+	nameIndex map[string]string
+	mu        *concurrency.SmartRWMutex
 }
 
 // New creates a new MemoryHypervisor.
 func New() *MemoryHypervisor {
 	return &MemoryHypervisor{
-		vms: make(map[string]hypervisor.VM),
+		vms:       make(map[string]hypervisor.VM),
+		nameIndex: make(map[string]string),
 		mu: concurrency.NewSmartRWMutex(concurrency.MutexConfig{
 			Name: "memory-hypervisor",
 		}),
@@ -31,10 +33,8 @@ func (h *MemoryHypervisor) CreateVM(ctx context.Context, spec hypervisor.VMSpec)
 	defer h.mu.Unlock()
 
 	// Check for duplicate name
-	for _, vm := range h.vms {
-		if vm.Name == spec.Name {
-			return "", hypervisor.ErrVMAlreadyExists
-		}
+	if _, ok := h.nameIndex[spec.Name]; ok {
+		return "", hypervisor.ErrVMAlreadyExists
 	}
 
 	id := uuid.NewString()
@@ -48,6 +48,7 @@ func (h *MemoryHypervisor) CreateVM(ctx context.Context, spec hypervisor.VMSpec)
 	}
 
 	h.vms[id] = vm
+	h.nameIndex[spec.Name] = id
 
 	// Simulate provisioning delay
 	go func() {
@@ -103,11 +104,13 @@ func (h *MemoryHypervisor) DeleteVM(ctx context.Context, vmID string) error {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 
-	if _, ok := h.vms[vmID]; !ok {
+	vm, ok := h.vms[vmID]
+	if !ok {
 		return hypervisor.ErrVMNotFound
 	}
 
 	delete(h.vms, vmID)
+	delete(h.nameIndex, vm.Name)
 	return nil
 }
 
