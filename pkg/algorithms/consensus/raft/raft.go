@@ -114,6 +114,9 @@ func (n *Node) runCandidate() {
 	}
 	n.mu.Unlock()
 
+	// Channel to signal state change (Leader or Follower) to wake up the loop
+	notifyCh := make(chan struct{}, 1)
+
 	// Request Votes
 	votes := 1
 	for _, peer := range n.peers {
@@ -129,6 +132,11 @@ func (n *Node) runCandidate() {
 						n.nextIndex[p] = len(n.log)
 						n.matchIndex[p] = -1
 					}
+					// Notify state change
+					select {
+					case notifyCh <- struct{}{}:
+					default:
+					}
 				}
 				n.mu.Unlock()
 			} else if t > term {
@@ -136,13 +144,28 @@ func (n *Node) runCandidate() {
 				n.state = Follower
 				n.currentTerm = t
 				n.votedFor = ""
+				// Notify state change
+				select {
+				case notifyCh <- struct{}{}:
+				default:
+				}
 				n.mu.Unlock()
 			}
 		}(peer)
 	}
 
 	timeout := randomTimeout()
-	time.Sleep(timeout) // Wait for votes or timeout
+	timer := time.NewTimer(timeout)
+	defer timer.Stop()
+
+	select {
+	case <-n.stopCh:
+		return
+	case <-notifyCh:
+		return
+	case <-timer.C:
+		return
+	}
 }
 
 func (n *Node) runLeader() {
