@@ -94,7 +94,10 @@ func (e *Engine) GetIndex(ctx context.Context, indexName string) (*search.IndexI
 func (e *Engine) Index(ctx context.Context, indexName, docID string, doc interface{}) error {
 	e.mu.Lock()
 	defer e.mu.Unlock()
+	return e.indexLocked(indexName, docID, doc)
+}
 
+func (e *Engine) indexLocked(indexName, docID string, doc interface{}) error {
 	idx, exists := e.indexes[indexName]
 	if !exists {
 		// Auto-create index
@@ -146,7 +149,10 @@ func (e *Engine) Get(ctx context.Context, indexName, docID string) (*search.Hit,
 func (e *Engine) Delete(ctx context.Context, indexName, docID string) error {
 	e.mu.Lock()
 	defer e.mu.Unlock()
+	return e.deleteLocked(indexName, docID)
+}
 
+func (e *Engine) deleteLocked(indexName, docID string) error {
 	idx, exists := e.indexes[indexName]
 	if !exists {
 		return errors.NotFound("index not found", nil)
@@ -475,16 +481,19 @@ func (e *Engine) Bulk(ctx context.Context, indexName string, ops []search.BulkOp
 	start := time.Now()
 	result := &search.BulkResult{}
 
+	e.mu.Lock()
+	defer e.mu.Unlock()
+
 	for _, op := range ops {
 		var err error
 
 		switch op.Action {
 		case search.BulkActionIndex, search.BulkActionCreate:
-			err = e.Index(ctx, indexName, op.ID, op.Document)
+			err = e.indexLocked(indexName, op.ID, op.Document)
 		case search.BulkActionUpdate:
-			err = e.Index(ctx, indexName, op.ID, op.Document)
+			err = e.indexLocked(indexName, op.ID, op.Document)
 		case search.BulkActionDelete:
-			err = e.Delete(ctx, indexName, op.ID)
+			err = e.deleteLocked(indexName, op.ID)
 		}
 
 		if err != nil {
