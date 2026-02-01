@@ -138,8 +138,19 @@ func (p *MFAProvider) CompleteEnrollment(ctx context.Context, userID, code strin
 		}
 
 		totp := otp.NewTOTP(p.totpConfig)
-		if !totp.Validate(enrollment.Secret, code) {
+		valid, counter := totp.ValidateReturningCounter(enrollment.Secret, code)
+		if !valid {
 			return errors.InvalidArgument("invalid validation code", nil)
+		}
+
+		// Prevent replay attacks using Redis cache of used codes
+		usedKey := p.usedKey(userID, counter)
+		exists, err := p.client.Exists(ctx, usedKey).Result()
+		if err != nil {
+			return errors.Internal("failed to check used code", err)
+		}
+		if exists > 0 {
+			return errors.Conflict("code already used", nil)
 		}
 
 		enrollment.Enabled = true
@@ -150,6 +161,15 @@ func (p *MFAProvider) CompleteEnrollment(ctx context.Context, userID, code strin
 
 		_, err = tx.TxPipelined(ctx, func(pipe redis.Pipeliner) error {
 			pipe.Set(ctx, key, newData, 0)
+
+			// Calculate expiration based on validity window
+			expirationTime := time.Unix(int64(counter+uint64(p.totpConfig.Skew)+1)*int64(p.totpConfig.Period), 0)
+			ttl := time.Until(expirationTime)
+			if ttl < time.Second {
+				ttl = time.Second
+			}
+
+			pipe.Set(ctx, usedKey, "1", ttl)
 			return nil
 		})
 		return err
