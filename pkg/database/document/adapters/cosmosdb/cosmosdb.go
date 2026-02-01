@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
@@ -171,7 +172,18 @@ func (a *Adapter) Close() error {
 }
 
 func buildQuery(query map[string]interface{}) (string, []azcosmos.QueryParameter) {
+	// Pre-calculate estimated size to reduce re-allocations
+	// Base: "SELECT * FROM c" (15)
+	// Per param: " WHERE " (7) or " AND " (5) + "c." (2) + key (~10) + " = " (3) + "@p" (2) + digits (1-3)
+	// Approx 30-40 bytes per param is a safe upper bound estimate.
+	size := 15
+	if len(query) > 0 {
+		size += 7               // " WHERE "
+		size += len(query) * 40 // heuristic
+	}
+
 	var sb strings.Builder
+	sb.Grow(size)
 	sb.WriteString("SELECT * FROM c")
 
 	if len(query) == 0 {
@@ -186,7 +198,9 @@ func buildQuery(query map[string]interface{}) (string, []azcosmos.QueryParameter
 			sb.WriteString(" AND ")
 		}
 
-		paramName := fmt.Sprintf("@p%d", i)
+		// Optimization: Avoid fmt.Sprintf parsing overhead for simple param names
+		paramName := "@p" + strconv.Itoa(i)
+
 		sb.WriteString("c.")
 		sb.WriteString(k)
 		sb.WriteString(" = ")
