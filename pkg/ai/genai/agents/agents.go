@@ -90,15 +90,14 @@ func (a *Agent) Run(ctx context.Context, task string) (string, error) {
 }
 
 func (a *Agent) buildSystemPrompt() string {
-	toolsList := ""
+	var sb strings.Builder
+	sb.WriteString("You are an AI agent. Solve the user's task using the available tools.\nAvailable Tools:\n")
+
 	for _, t := range a.tools {
-		toolsList += fmt.Sprintf("- %s: %s\n", t.Name(), t.Description())
+		fmt.Fprintf(&sb, "- %s: %s\n", t.Name(), t.Description())
 	}
 
-	return fmt.Sprintf(`You are an AI agent. Solve the user's task using the available tools.
-Available Tools:
-%s
-
+	sb.WriteString(`
 Format your response as:
 THOUGHT: reason about what to do
 ACTION: ToolName
@@ -107,7 +106,9 @@ INPUT: input for the tool
 After getting an OBSERVATION, repeat the cycle.
 When you have the answer, output:
 FINAL ANSWER: the answer
-`, toolsList)
+`)
+
+	return sb.String()
 }
 
 func (a *Agent) parseAction(text string) (string, string) {
