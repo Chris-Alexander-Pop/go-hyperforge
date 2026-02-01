@@ -47,8 +47,9 @@ func (a *Adapter) Verify(ctx context.Context, tokenString string) (*auth.Claims,
 			c.Issuer = iss
 		}
 		if role, ok := claims["role"].(string); ok {
-			c.Roles = []string{role}
-		} else if roles, ok := claims["roles"].([]interface{}); ok {
+			c.Roles = append(c.Roles, role)
+		}
+		if roles, ok := claims["roles"].([]interface{}); ok {
 			for _, r := range roles {
 				c.Roles = append(c.Roles, fmt.Sprintf("%v", r))
 			}
