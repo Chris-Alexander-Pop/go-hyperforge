@@ -5,7 +5,7 @@
 // services that need to issue and validate their own tokens without relying on
 // an external Identity Provider (IdP).
 //
-// Configuration
+// # Configuration
 //
 // The package is configured via the Config struct, which supports environment
 // variable loading:
@@ -14,7 +14,7 @@
 //   - Expiration: Duration until token expiry (Default: 24h, env: JWT_EXPIRATION)
 //   - Issuer: The issuer claim value (Default: system-design-library, env: JWT_ISSUER)
 //
-// Usage
+// # Usage
 //
 // To use the adapter, initialize it with a configuration and use the Generate
 // method to create tokens and the Verify method to validate them.
@@ -41,7 +41,7 @@
 //	}
 //	fmt.Printf("User: %s, Role: %s\n", claims.Subject, claims.Role)
 //
-// Security
+// # Security
 //
 // This adapter uses HMAC-SHA256 (HS256) for signing. Ensure that the Secret
 // is sufficiently strong and kept confidential.
