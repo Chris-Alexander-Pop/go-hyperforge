@@ -94,7 +94,11 @@ func (a *Agent) buildSystemPrompt() string {
 	sb.WriteString("You are an AI agent. Solve the user's task using the available tools.\nAvailable Tools:\n")
 
 	for _, t := range a.tools {
-		fmt.Fprintf(&sb, "- %s: %s\n", t.Name(), t.Description())
+		sb.WriteString("- ")
+		sb.WriteString(t.Name())
+		sb.WriteString(": ")
+		sb.WriteString(t.Description())
+		sb.WriteByte('\n')
 	}
 
 	sb.WriteString(`
