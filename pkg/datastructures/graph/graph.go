@@ -2,6 +2,7 @@ package graph
 
 import (
 	"fmt"
+	"strings"
 	"sync"
 )
 
@@ -78,9 +79,9 @@ func (g *Graph[T]) DFS(start T, visit func(T)) {
 func (g *Graph[T]) String() string {
 	g.mu.RLock()
 	defer g.mu.RUnlock()
-	s := ""
+	var sb strings.Builder
 	for u, neighbors := range g.adj {
-		s += fmt.Sprintf("%v -> %v\n", u, neighbors)
+		fmt.Fprintf(&sb, "%v -> %v\n", u, neighbors)
 	}
-	return s
+	return sb.String()
 }
