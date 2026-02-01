@@ -2,9 +2,14 @@ package delay
 
 import (
 	"container/heap"
+	"context"
+	"errors"
 	"sync"
 	"time"
 )
+
+// ErrClosed is returned when the queue is closed.
+var ErrClosed = errors.New("queue closed")
 
 // Item represents a delayed task.
 type Item[T any] struct {
@@ -57,21 +62,42 @@ func (q *Queue[T]) Enqueue(value T, delay time.Duration) {
 
 // Dequeue blocks until an item is ready.
 func (q *Queue[T]) Dequeue() (T, bool) {
+	val, err := q.DequeueContext(context.Background())
+	if err != nil {
+		var zero T
+		return zero, false
+	}
+	return val, true
+}
+
+// DequeueContext blocks until an item is ready or the context is cancelled.
+func (q *Queue[T]) DequeueContext(ctx context.Context) (T, error) {
 	q.mu.Lock()
 	defer q.mu.Unlock()
 
 	for {
+		if ctx.Err() != nil {
+			var zero T
+			return zero, ctx.Err()
+		}
+
 		if q.closed {
 			var zero T
-			return zero, false
+			return zero, ErrClosed
 		}
 
 		if len(q.items) == 0 {
 			q.mu.Unlock()
-			// Wait for signal (item enqueued or closed)
-			<-q.notifyCh
-			q.mu.Lock()
-			continue
+			// Wait for signal (item enqueued or closed) or context
+			select {
+			case <-q.notifyCh:
+				q.mu.Lock()
+				continue
+			case <-ctx.Done():
+				q.mu.Lock()
+				var zero T
+				return zero, ctx.Err()
+			}
 		}
 
 		item := q.items[0]
@@ -88,7 +114,7 @@ func (q *Queue[T]) Dequeue() (T, bool) {
 				}
 			}
 
-			return item.Value, true
+			return item.Value, nil
 		}
 
 		// Wait until ready
@@ -109,6 +135,16 @@ func (q *Queue[T]) Dequeue() (T, bool) {
 				default:
 				}
 			}
+		case <-ctx.Done():
+			if !timer.Stop() {
+				select {
+				case <-timer.C:
+				default:
+				}
+			}
+			q.mu.Lock()
+			var zero T
+			return zero, ctx.Err()
 		}
 
 		q.mu.Lock()
