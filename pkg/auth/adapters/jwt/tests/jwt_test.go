@@ -16,10 +16,10 @@ func TestJWTAdapter(t *testing.T) {
 
 	adapter := jwt.New(cfg)
 	userID := "user-123"
-	role := "admin"
+	roles := []string{"admin", "editor"}
 
 	// 1. Generate Token
-	token, err := adapter.Generate(userID, role)
+	token, err := adapter.Generate(userID, roles)
 	if err != nil {
 		t.Fatalf("Generate failed: %v", err)
 	}
@@ -38,8 +38,14 @@ func TestJWTAdapter(t *testing.T) {
 	if claims.Subject != userID {
 		t.Errorf("Expected subject %s, got %s", userID, claims.Subject)
 	}
-	if claims.Role != role {
-		t.Errorf("Expected role %s, got %s", role, claims.Role)
+	if len(claims.Roles) != len(roles) {
+		t.Errorf("Expected %d roles, got %d", len(roles), len(claims.Roles))
+	} else {
+		for i, r := range roles {
+			if claims.Roles[i] != r {
+				t.Errorf("Expected role %s at index %d, got %s", r, i, claims.Roles[i])
+			}
+		}
 	}
 	if claims.Issuer != cfg.Issuer {
 		t.Errorf("Expected issuer %s, got %s", cfg.Issuer, claims.Issuer)

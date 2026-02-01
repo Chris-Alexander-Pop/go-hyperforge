@@ -32,8 +32,8 @@ type Claims struct {
 
 	// Extended
 	Email    string                 `json:"email,omitempty"`
-	Role     string                 `json:"role,omitempty"` // Standardize on "role" or "groups"
-	Metadata map[string]interface{} `json:"-"`              // Catch-all
+	Roles    []string               `json:"roles,omitempty"` // Standardize on "role" or "groups"
+	Metadata map[string]interface{} `json:"-"`               // Catch-all
 }
 
 // IdentityProvider defines the interface for authentication providers.

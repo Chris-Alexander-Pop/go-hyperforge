@@ -10,12 +10,12 @@ type contextKey string
 
 const (
 	ContextKeySubject contextKey = "auth.subject"
-	ContextKeyRole    contextKey = "auth.role"
+	ContextKeyRoles   contextKey = "auth.roles"
 )
 
-// Verifier checks a token and returns subject and role
+// Verifier checks a token and returns subject and roles
 type Verifier interface {
-	Verify(ctx context.Context, token string) (subject string, role string, err error)
+	Verify(ctx context.Context, token string) (subject string, roles []string, err error)
 }
 
 func AuthMiddleware(verifier Verifier) func(http.Handler) http.Handler {
@@ -34,7 +34,7 @@ func AuthMiddleware(verifier Verifier) func(http.Handler) http.Handler {
 			}
 
 			token := parts[1]
-			sub, role, err := verifier.Verify(r.Context(), token)
+			sub, roles, err := verifier.Verify(r.Context(), token)
 			if err != nil {
 				// Map detailed error if needed, for now 401
 				http.Error(w, "invalid token", http.StatusUnauthorized)
@@ -43,7 +43,7 @@ func AuthMiddleware(verifier Verifier) func(http.Handler) http.Handler {
 
 			// Set in Context
 			ctx := context.WithValue(r.Context(), ContextKeySubject, sub)
-			ctx = context.WithValue(ctx, ContextKeyRole, role)
+			ctx = context.WithValue(ctx, ContextKeyRoles, roles)
 
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
@@ -56,7 +56,7 @@ func GetSubject(ctx context.Context) string {
 	return s
 }
 
-func GetRole(ctx context.Context) string {
-	r, _ := ctx.Value(ContextKeyRole).(string)
+func GetRoles(ctx context.Context) []string {
+	r, _ := ctx.Value(ContextKeyRoles).([]string)
 	return r
 }
