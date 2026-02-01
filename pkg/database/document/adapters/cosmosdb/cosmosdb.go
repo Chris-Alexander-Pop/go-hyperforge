@@ -85,6 +85,9 @@ func (a *Adapter) Find(ctx context.Context, collection string, query map[string]
 	// We will implement a simplified "SELECT * FROM c WHERE c.key = val" generator.
 
 	queryText := "SELECT * FROM c"
+	pk := azcosmos.NewPartitionKey() // Default to empty partition key (cross-partition query)
+	var queryParams []azcosmos.QueryParameter
+
 	if len(query) > 0 {
 		queryText += " WHERE "
 		i := 0
@@ -92,27 +95,25 @@ func (a *Adapter) Find(ctx context.Context, collection string, query map[string]
 			if i > 0 {
 				queryText += " AND "
 			}
-			// WARNING: This is vulnerable to SQL injection if not parameterized.
-			// Azure SDK supports parameters.
-			// Implementing raw concatenation purely for demonstration of "generic interface".
-			// Real implementation MUST use parameterized queries.
 
-			// Simple string/number handling
-			switch val := v.(type) {
-			case string:
-				queryText += fmt.Sprintf("c.%s = '%s'", k, val)
-			default:
-				queryText += fmt.Sprintf("c.%s = %v", k, v)
+			// Use parameterized queries to prevent SQL injection
+			paramName := fmt.Sprintf("@p%d", i)
+			queryText += fmt.Sprintf("c.%s = %s", k, paramName)
+			queryParams = append(queryParams, azcosmos.QueryParameter{Name: paramName, Value: v})
+
+			// If the query contains "id", assume it is the partition key
+			if k == "id" {
+				if strVal, ok := v.(string); ok {
+					pk = azcosmos.NewPartitionKeyString(strVal)
+				}
 			}
 			i++
 		}
 	}
 
-	pager := container.NewQueryItemsPager(queryText, azcosmos.NewPartitionKeyString("TODO_partition_key"), nil)
-	// Querying across partitions (cross-partition query) usually requires omit PK or specific options.
-	// Current Generic Interface makes it hard to specify Partition Key separate from Query.
-
-	// This code likely needs `azcosmos.QueryOptions{PopulateIndexMetrics: ...}` or similar adjustment for cross-partition.
+	pager := container.NewQueryItemsPager(queryText, pk, &azcosmos.QueryOptions{
+		QueryParameters: queryParams,
+	})
 
 	var docs []document.Document
 	for pager.More() {
