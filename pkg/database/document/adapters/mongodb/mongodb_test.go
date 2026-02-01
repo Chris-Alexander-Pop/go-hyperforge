@@ -11,11 +11,11 @@ import (
 func TestNew_TLSConfiguration(t *testing.T) {
 	t.Run("MissingCAPath", func(t *testing.T) {
 		cfg := document.Config{
-			Driver:   database.DriverMongoDB,
-			Host:     "localhost",
-			Port:     27017,
-			UseTLS:   true,
-			CAPath:   "/non/existent/ca.pem",
+			Driver: database.DriverMongoDB,
+			Host:   "localhost",
+			Port:   27017,
+			UseTLS: true,
+			CAPath: "/non/existent/ca.pem",
 		}
 		_, err := New(cfg)
 		assert.Error(t, err)
