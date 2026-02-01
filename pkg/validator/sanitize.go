@@ -177,12 +177,8 @@ func SanitizePath(input string) string {
 		result = strings.ReplaceAll(result, "..\\", "")
 
 		// Remove trailing traversal components
-		if strings.HasSuffix(result, "/..") {
-			result = result[:len(result)-3]
-		}
-		if strings.HasSuffix(result, "\\..") {
-			result = result[:len(result)-3]
-		}
+		result = strings.TrimSuffix(result, "/..")
+		result = strings.TrimSuffix(result, "\\..")
 
 		// Handle exact match ".."
 		if result == ".." {
