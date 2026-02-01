@@ -42,14 +42,23 @@ func (a *Adapter) Verify(ctx context.Context, tokenString string) (*auth.Claims,
 
 	// Extract Claims
 	var claims struct {
-		Email    string `json:"email"`
-		Verified bool   `json:"email_verified"`
-		Role     string `json:"role"`
-		// Groups   []string `json:"groups"` // Optional
+		Email    string   `json:"email"`
+		Verified bool     `json:"email_verified"`
+		Role     string   `json:"role"`
+		Roles    []string `json:"roles"`
+		Groups   []string `json:"groups"` // Common alternative
 	}
 	if err := idToken.Claims(&claims); err != nil {
 		return nil, errors.Wrap(err, "failed to parse oidc claims")
 	}
+
+	// Consolidate roles
+	var allRoles []string
+	if claims.Role != "" {
+		allRoles = append(allRoles, claims.Role)
+	}
+	allRoles = append(allRoles, claims.Roles...)
+	allRoles = append(allRoles, claims.Groups...)
 
 	return &auth.Claims{
 		Subject:   idToken.Subject,
@@ -58,6 +67,6 @@ func (a *Adapter) Verify(ctx context.Context, tokenString string) (*auth.Claims,
 		ExpiresAt: idToken.Expiry.Unix(),
 		IssuedAt:  idToken.IssuedAt.Unix(),
 		Email:     claims.Email,
-		Role:      claims.Role, // Mapping might depend on provider (e.g. "cognito:groups")
+		Roles:     allRoles, // Mapping might depend on provider (e.g. "cognito:groups")
 	}, nil
 }

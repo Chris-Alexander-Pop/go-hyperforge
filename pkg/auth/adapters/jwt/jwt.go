@@ -47,10 +47,11 @@ func (a *Adapter) Verify(ctx context.Context, tokenString string) (*auth.Claims,
 			c.Issuer = iss
 		}
 		if role, ok := claims["role"].(string); ok {
-			c.Role = role
-		} else if roles, ok := claims["roles"].([]interface{}); ok && len(roles) > 0 {
-			// quick hack for array roles -> single role
-			c.Role = fmt.Sprintf("%v", roles[0])
+			c.Roles = []string{role}
+		} else if roles, ok := claims["roles"].([]interface{}); ok {
+			for _, r := range roles {
+				c.Roles = append(c.Roles, fmt.Sprintf("%v", r))
+			}
 		}
 
 		return c, nil
@@ -60,13 +61,13 @@ func (a *Adapter) Verify(ctx context.Context, tokenString string) (*auth.Claims,
 }
 
 // Generate creates a new token (Specific to Local adapter)
-func (a *Adapter) Generate(userID string, role string) (string, error) {
+func (a *Adapter) Generate(userID string, roles []string) (string, error) {
 	claims := jwt.MapClaims{
-		"sub":  userID,
-		"iss":  a.cfg.Issuer,
-		"role": role,
-		"exp":  time.Now().Add(a.cfg.Expiration).Unix(),
-		"iat":  time.Now().Unix(),
+		"sub":   userID,
+		"iss":   a.cfg.Issuer,
+		"roles": roles,
+		"exp":   time.Now().Add(a.cfg.Expiration).Unix(),
+		"iat":   time.Now().Unix(),
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	return token.SignedString([]byte(a.cfg.Secret))

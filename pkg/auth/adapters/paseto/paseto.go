@@ -26,11 +26,11 @@ func New(cfg Config) (*Adapter, error) {
 }
 
 // Generate creates an encrypted V4 Local token
-func (a *Adapter) Generate(userID string, role string, ttl time.Duration) (string, error) {
+func (a *Adapter) Generate(userID string, roles []string, ttl time.Duration) (string, error) {
 	token := paseto.NewToken()
 	token.SetSubject(userID)
-	if err := token.Set("role", role); err != nil {
-		return "", errors.Internal("failed to set token role", err)
+	if err := token.Set("roles", roles); err != nil {
+		return "", errors.Internal("failed to set token roles", err)
 	}
 	token.SetIssuedAt(time.Now())
 	token.SetNotBefore(time.Now())
@@ -51,14 +51,22 @@ func (a *Adapter) Verify(ctx context.Context, tokenString string) (*auth.Claims,
 
 	// Extract Claims
 	sub, _ := token.GetSubject()
-	role, _ := token.GetString("role")
 	iss, _ := token.GetIssuer()
 	exp, _ := token.GetExpiration()
 	iat, _ := token.GetIssuedAt()
 
+	var roles []string
+	if role, err := token.GetString("role"); err == nil {
+		roles = append(roles, role)
+	}
+	var rList []string
+	if err := token.Get("roles", &rList); err == nil {
+		roles = append(roles, rList...)
+	}
+
 	return &auth.Claims{
 		Subject:   sub,
-		Role:      role,
+		Roles:     roles,
 		Issuer:    iss,
 		ExpiresAt: exp.Unix(),
 		IssuedAt:  iat.Unix(),

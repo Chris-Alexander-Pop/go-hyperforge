@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"strings"
 
 	firebase "firebase.google.com/go/v4"
 	"firebase.google.com/go/v4/auth"
@@ -108,14 +107,12 @@ func (a *Adapter) Verify(ctx context.Context, token string) (*pkgauth.Claims, er
 
 	// Try to get role from claims or custom claims
 	if role, ok := t.Claims["role"].(string); ok {
-		claims.Role = role
-	} else if roles, ok := t.Claims["roles"].([]interface{}); ok {
-		// Just take the first one or join them
-		var s []string
+		claims.Roles = append(claims.Roles, role)
+	}
+	if roles, ok := t.Claims["roles"].([]interface{}); ok {
 		for _, r := range roles {
-			s = append(s, fmt.Sprintf("%v", r))
+			claims.Roles = append(claims.Roles, fmt.Sprintf("%v", r))
 		}
-		claims.Role = strings.Join(s, ",")
 	}
 
 	return claims, nil

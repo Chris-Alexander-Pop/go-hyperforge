@@ -15,12 +15,12 @@ func NewMiddlewareVerifier(v Verifier) *MiddlewareVerifier {
 	return &MiddlewareVerifier{v: v}
 }
 
-func (m *MiddlewareVerifier) Verify(ctx context.Context, token string) (string, string, error) {
+func (m *MiddlewareVerifier) Verify(ctx context.Context, token string) (string, []string, error) {
 	claims, err := m.v.Verify(ctx, token)
 	if err != nil {
-		return "", "", err
+		return "", nil, err
 	}
-	return claims.Subject, claims.Role, nil
+	return claims.Subject, claims.Roles, nil
 }
 
 // Interface check

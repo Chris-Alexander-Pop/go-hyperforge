@@ -24,13 +24,13 @@ func New(store cache.Cache, cfg Config) *Adapter {
 }
 
 // Generate creates an opaque reference token and stores session in cache
-func (a *Adapter) Generate(ctx context.Context, userID string, role string) (string, error) {
+func (a *Adapter) Generate(ctx context.Context, userID string, roles []string) (string, error) {
 	token := uuid.New().String()
 
 	// Create Claims to store
 	claims := auth.Claims{
 		Subject:   userID,
-		Role:      role,
+		Roles:     roles,
 		IssuedAt:  time.Now().Unix(),
 		ExpiresAt: time.Now().Add(a.cfg.TTL).Unix(),
 	}

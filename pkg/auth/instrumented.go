@@ -43,7 +43,7 @@ func (v *InstrumentedVerifier) Verify(ctx context.Context, token string) (*Claim
 
 	span.SetAttributes(
 		attribute.String("auth.subject", claims.Subject),
-		attribute.String("auth.role", claims.Role),
+		attribute.StringSlice("auth.roles", claims.Roles),
 	)
 	return claims, nil
 }
