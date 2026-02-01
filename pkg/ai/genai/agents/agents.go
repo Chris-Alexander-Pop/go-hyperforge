@@ -115,9 +115,10 @@ FINAL ANSWER: the answer
 	return sb.String()
 }
 
+var actionRegex = regexp.MustCompile(`ACTION:\s*(\w+)\s*INPUT:\s*(.*)`)
+
 func (a *Agent) parseAction(text string) (string, string) {
-	re := regexp.MustCompile(`ACTION:\s*(\w+)\s*INPUT:\s*(.*)`)
-	matches := re.FindStringSubmatch(text)
+	matches := actionRegex.FindStringSubmatch(text)
 	if len(matches) == 3 {
 		return strings.TrimSpace(matches[1]), strings.TrimSpace(matches[2])
 	}
