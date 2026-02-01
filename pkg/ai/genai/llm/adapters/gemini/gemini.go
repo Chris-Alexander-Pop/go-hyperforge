@@ -3,6 +3,7 @@ package gemini
 
 import (
 	"context"
+	"strings"
 
 	"github.com/chris-alexander-pop/system-design-library/pkg/ai/genai/llm"
 	pkgerrors "github.com/chris-alexander-pop/system-design-library/pkg/errors"
@@ -92,17 +93,17 @@ func (c *Client) Chat(ctx context.Context, messages []llm.Message, opts ...llm.G
 	}
 
 	// Extract text
-	text := ""
+	var sb strings.Builder
 	for _, part := range resp.Candidates[0].Content.Parts {
 		if t, ok := part.(genai.Text); ok {
-			text += string(t)
+			sb.WriteString(string(t))
 		}
 	}
 
 	return &llm.Generation{
 		Message: llm.Message{
 			Role:    llm.RoleAssistant,
-			Content: text,
+			Content: sb.String(),
 		},
 		FinishReason: string(resp.Candidates[0].FinishReason),
 		// Token usage is in resp.UsageMetadata
