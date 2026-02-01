@@ -80,8 +80,13 @@ func (g *Graph[T]) String() string {
 	g.mu.RLock()
 	defer g.mu.RUnlock()
 	var sb strings.Builder
+	// Estimate size: assume average line length of 20 bytes per vertex
+	sb.Grow(len(g.adj) * 20)
 	for u, neighbors := range g.adj {
-		fmt.Fprintf(&sb, "%v -> %v\n", u, neighbors)
+		fmt.Fprint(&sb, u)
+		sb.WriteString(" -> ")
+		fmt.Fprint(&sb, neighbors)
+		sb.WriteString("\n")
 	}
 	return sb.String()
 }
