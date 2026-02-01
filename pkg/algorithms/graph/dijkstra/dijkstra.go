@@ -3,6 +3,7 @@ package dijkstra
 import (
 	"container/heap"
 	"math"
+	"slices"
 )
 
 // Graph is a map of node -> neighbors (node -> weight).
@@ -33,13 +34,14 @@ func ShortestPath(g Graph, start, end string) *PathResult {
 			path := []string{}
 			curr := end
 			for curr != "" {
-				path = append([]string{curr}, path...) // Prepend
+				path = append(path, curr)
 				curr = previous[curr]
 				if curr == start {
-					path = append([]string{start}, path...)
+					path = append(path, start)
 					break
 				}
 			}
+			slices.Reverse(path)
 			return &PathResult{Distance: distances[end], Path: path}
 		}
 
