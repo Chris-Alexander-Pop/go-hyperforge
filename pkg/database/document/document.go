@@ -38,6 +38,13 @@ type Config struct {
 	// Connection Pool Settings
 	MaxOpenConns int `env:"DOC_MAX_OPEN_CONNS" env-default:"10"`
 	MaxIdleConns int `env:"DOC_MAX_IDLE_CONNS" env-default:"5"`
+
+	// TLS Settings
+	UseTLS             bool   `env:"DOC_USE_TLS"`
+	InsecureSkipVerify bool   `env:"DOC_INSECURE_SKIP_VERIFY"`
+	CAPath             string `env:"DOC_CA_PATH"`
+	CertPath           string `env:"DOC_CERT_PATH"`
+	KeyPath            string `env:"DOC_KEY_PATH"`
 }
 
 // Interface defines the standard document database methods.
