@@ -131,8 +131,9 @@ func (p *MFAProvider) Recover(ctx context.Context, userID, code string) (bool, e
 		// unless we persist the used state.
 
 		// For simplicity in this memory adapter:
+		hashedCode := otp.HashRecoveryCode(code)
 		for i, hash := range enrollment.Recovery {
-			if hash == code { // Assuming simple equality for now, normally we'd hash the input 'code' and compare
+			if hash == hashedCode {
 				// Remove it or mark it
 				enrollment.Recovery = append(enrollment.Recovery[:i], enrollment.Recovery[i+1:]...)
 				return true, nil
