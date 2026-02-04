@@ -19,3 +19,8 @@
 **Vulnerability:** The `HSTS` and `CORS` middlewares generated invalid headers (e.g., `Strict-Transport-Security: max-age=` and `Access-Control-Max-Age: 86.4µs`) due to incorrect integer-to-string conversions. `string(rune(int))` creates a unicode character from the integer value, not a string representation of the number. `time.Duration(int).String()` formats as a duration string with units, not raw seconds.
 **Learning:** Type conversion in Go requires care. `string(int)` treats the integer as a rune, and `time.Duration`'s string representation is human-readable, not protocol-compliant for raw seconds. The lack of unit tests for these middleware components allowed the bug to remain undetected.
 **Prevention:** Use `strconv.Itoa` or `fmt.Sprintf` for number-to-string conversion. Always implement unit tests that assert the exact string value of security headers to ensure compliance with HTTP specifications.
+
+## 2026-02-04 - SQL Injection in DDL Construction
+**Vulnerability:** The `CreateRangePartition` function in `pkg/database/partitioning/ddl.go` constructed SQL queries using `fmt.Sprintf` with user-supplied strings inside single quotes (`'%s'`). This allowed attackers to escape the string literal via a single quote and inject arbitrary SQL.
+**Learning:** DDL statements (like `CREATE TABLE`) often don't support parameterized queries (prepared statements) for all values, leading developers to fallback to string formatting. This is a common trap.
+**Prevention:** When parameterized queries are not possible, ALWAYS use a dedicated escaping function (like `quoteLiteral`) that handles the specific escaping rules of the database dialect (e.g., doubling single quotes). Never trust string concatenation for SQL.
