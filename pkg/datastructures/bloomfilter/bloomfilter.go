@@ -14,6 +14,7 @@ import (
 	"hash"
 	"hash/fnv"
 	"math"
+	"unsafe"
 
 	"github.com/chris-alexander-pop/system-design-library/pkg/concurrency"
 )
@@ -73,11 +74,14 @@ func NewWithSize(numBits, numHash uint) *BloomFilter {
 
 // Add adds an element to the filter.
 func (bf *BloomFilter) Add(data []byte) {
+	// Calculate hash outside the lock to minimize contention and duration
+	h1, h2 := doubleHash(data)
+
 	bf.mu.Lock()
 	defer bf.mu.Unlock()
 
-	h1, h2 := doubleHash(data)
 	numBits := bf.numBits
+	// Inline calculation of positions to avoid slice allocation
 	for i := uint(0); i < bf.numHash; i++ {
 		// h(i) = h1 + i*h2 (mod numBits)
 		pos := (uint(h1) + i*uint(h2)) % numBits
@@ -90,16 +94,18 @@ func (bf *BloomFilter) Add(data []byte) {
 
 // AddString adds a string to the filter.
 func (bf *BloomFilter) AddString(s string) {
-	bf.Add([]byte(s))
+	bf.Add(stringToBytes(s))
 }
 
 // Contains tests if an element might be in the filter.
 // Returns false if definitely not in set, true if probably in set.
 func (bf *BloomFilter) Contains(data []byte) bool {
+	// Calculate hash outside the lock
+	h1, h2 := doubleHash(data)
+
 	bf.mu.RLock()
 	defer bf.mu.RUnlock()
 
-	h1, h2 := doubleHash(data)
 	numBits := bf.numBits
 	for i := uint(0); i < bf.numHash; i++ {
 		// h(i) = h1 + i*h2 (mod numBits)
@@ -115,7 +121,7 @@ func (bf *BloomFilter) Contains(data []byte) bool {
 
 // ContainsString tests if a string might be in the filter.
 func (bf *BloomFilter) ContainsString(s string) bool {
-	return bf.Contains([]byte(s))
+	return bf.Contains(stringToBytes(s))
 }
 
 // EstimatedFalsePositiveRate returns the current estimated false positive rate.
@@ -148,7 +154,6 @@ func (bf *BloomFilter) Clear() {
 	bf.count = 0
 }
 
-
 // doubleHash computes two 64-bit hash values for double hashing.
 func doubleHash(data []byte) (uint64, uint64) {
 	h := fnv.New128a()
@@ -163,6 +168,12 @@ func doubleHash(data []byte) (uint64, uint64) {
 		uint64(sum[12])<<24 | uint64(sum[13])<<16 | uint64(sum[14])<<8 | uint64(sum[15])
 
 	return h1, h2
+}
+
+// stringToBytes converts a string to a byte slice without allocation.
+// The returned byte slice must not be modified.
+func stringToBytes(s string) []byte {
+	return unsafe.Slice(unsafe.StringData(s), len(s))
 }
 
 // Union merges another Bloom filter into this one.
