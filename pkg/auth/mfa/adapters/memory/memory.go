@@ -2,6 +2,9 @@ package memory
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
+	"strings"
 	"time"
 
 	"github.com/chris-alexander-pop/system-design-library/pkg/auth/mfa"
@@ -117,26 +120,15 @@ func (p *MFAProvider) Recover(ctx context.Context, userID, code string) (bool, e
 	}
 
 	// Check recovery codes
-	recoverySet := otp.NewRecoveryCodeSet(enrollment.Recovery)
-	if recoverySet.Validate(code) {
-		// Update used codes in storage
-		// This part is tricky because RecoveryCodeSet tracks usage in memory but we need to persist it back to enrollment.
-		// Since we recreate the set from hashes every time, we need a way to mark them as used in the source.
+	normalized := strings.ReplaceAll(strings.ToLower(code), "-", "")
+	hash := sha256.Sum256([]byte(normalized))
+	hashedCode := hex.EncodeToString(hash[:])
 
-		// Let's implement a simple check loop here instead of using the Set logic which is transient
-		// Let's implement a simple check loop here instead of using the Set logic which is transient
-
-		// This uses the RecoveryCodeSet logic, but we need to update our stored hashes.
-		// Actually, RecoveryCodeSet isn't quite right for "hashed" storage if it doesn't support marking them as used permanently
-		// unless we persist the used state.
-
-		// For simplicity in this memory adapter:
-		for i, hash := range enrollment.Recovery {
-			if hash == code { // Assuming simple equality for now, normally we'd hash the input 'code' and compare
-				// Remove it or mark it
-				enrollment.Recovery = append(enrollment.Recovery[:i], enrollment.Recovery[i+1:]...)
-				return true, nil
-			}
+	for i, h := range enrollment.Recovery {
+		if h == hashedCode {
+			// Remove it or mark it
+			enrollment.Recovery = append(enrollment.Recovery[:i], enrollment.Recovery[i+1:]...)
+			return true, nil
 		}
 	}
 

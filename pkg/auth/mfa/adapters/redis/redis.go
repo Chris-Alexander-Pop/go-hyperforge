@@ -2,8 +2,11 @@ package redis
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/chris-alexander-pop/system-design-library/pkg/auth/mfa"
@@ -265,10 +268,14 @@ func (p *MFAProvider) Recover(ctx context.Context, userID, code string) (bool, e
 		}
 
 		// Check and consume recovery code
+		// Logic updated to hash the input code before comparing
+		normalized := strings.ReplaceAll(strings.ToLower(code), "-", "")
+		hash := sha256.Sum256([]byte(normalized))
+		hashedCode := hex.EncodeToString(hash[:])
+
 		foundIndex := -1
-		for i, hash := range enrollment.Recovery {
-			// In real impl invoke hashing of input 'code'
-			if hash == code {
+		for i, h := range enrollment.Recovery {
+			if h == hashedCode {
 				foundIndex = i
 				break
 			}

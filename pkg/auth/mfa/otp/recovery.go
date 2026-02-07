@@ -2,6 +2,7 @@ package otp
 
 import (
 	"crypto/rand"
+	"crypto/sha256"
 	"encoding/hex"
 	"strings"
 
@@ -53,7 +54,10 @@ func (m *RecoveryCodeManager) GenerateCodes() (displayCodes []string, hashedCode
 
 		raw := hex.EncodeToString(code)
 		displayCodes[i] = m.formatCode(raw)
-		hashedCodes[i] = raw // In production, hash these before storing
+
+		// Hash the raw code before returning it for storage
+		hash := sha256.Sum256([]byte(raw))
+		hashedCodes[i] = hex.EncodeToString(hash[:])
 	}
 
 	return displayCodes, hashedCodes, nil
@@ -105,15 +109,19 @@ func NewRecoveryCodeSet(hashedCodes []string) *RecoveryCodeSet {
 func (s *RecoveryCodeSet) Validate(code string) bool {
 	normalized := strings.ReplaceAll(strings.ToLower(code), "-", "")
 
+	// Hash the input code to compare with stored hashes
+	hash := sha256.Sum256([]byte(normalized))
+	hashedInput := hex.EncodeToString(hash[:])
+
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	used, exists := s.codes[normalized]
+	used, exists := s.codes[hashedInput]
 	if !exists || used {
 		return false
 	}
 
-	s.codes[normalized] = true // Mark as used
+	s.codes[hashedInput] = true // Mark as used
 	return true
 }
 
