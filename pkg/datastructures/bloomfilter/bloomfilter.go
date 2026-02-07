@@ -14,6 +14,7 @@ import (
 	"hash"
 	"hash/fnv"
 	"math"
+	"unsafe"
 
 	"github.com/chris-alexander-pop/system-design-library/pkg/concurrency"
 )
@@ -73,11 +74,13 @@ func NewWithSize(numBits, numHash uint) *BloomFilter {
 
 // Add adds an element to the filter.
 func (bf *BloomFilter) Add(data []byte) {
+	h1, h2 := doubleHash(data)
+
 	bf.mu.Lock()
 	defer bf.mu.Unlock()
 
-	positions := bf.hashPositions(data)
-	for _, pos := range positions {
+	for i := uint(0); i < bf.numHash; i++ {
+		pos := (uint(h1) + i*uint(h2)) % bf.numBits
 		wordIdx := pos / 64
 		bitIdx := pos % 64
 		bf.bits[wordIdx] |= 1 << bitIdx
@@ -87,17 +90,19 @@ func (bf *BloomFilter) Add(data []byte) {
 
 // AddString adds a string to the filter.
 func (bf *BloomFilter) AddString(s string) {
-	bf.Add([]byte(s))
+	bf.Add(unsafeBytes(s))
 }
 
 // Contains tests if an element might be in the filter.
 // Returns false if definitely not in set, true if probably in set.
 func (bf *BloomFilter) Contains(data []byte) bool {
+	h1, h2 := doubleHash(data)
+
 	bf.mu.RLock()
 	defer bf.mu.RUnlock()
 
-	positions := bf.hashPositions(data)
-	for _, pos := range positions {
+	for i := uint(0); i < bf.numHash; i++ {
+		pos := (uint(h1) + i*uint(h2)) % bf.numBits
 		wordIdx := pos / 64
 		bitIdx := pos % 64
 		if bf.bits[wordIdx]&(1<<bitIdx) == 0 {
@@ -109,7 +114,7 @@ func (bf *BloomFilter) Contains(data []byte) bool {
 
 // ContainsString tests if a string might be in the filter.
 func (bf *BloomFilter) ContainsString(s string) bool {
-	return bf.Contains([]byte(s))
+	return bf.Contains(unsafeBytes(s))
 }
 
 // EstimatedFalsePositiveRate returns the current estimated false positive rate.
@@ -142,25 +147,12 @@ func (bf *BloomFilter) Clear() {
 	bf.count = 0
 }
 
-// hashPositions computes the bit positions for the given data.
-// Uses double hashing to generate k positions from 2 hash functions.
-func (bf *BloomFilter) hashPositions(data []byte) []uint {
-	h1, h2 := doubleHash(data)
-
-	positions := make([]uint, bf.numHash)
-	for i := uint(0); i < bf.numHash; i++ {
-		// h(i) = h1 + i*h2 (mod numBits)
-		positions[i] = (uint(h1) + i*uint(h2)) % bf.numBits
-	}
-
-	return positions
-}
-
 // doubleHash computes two 64-bit hash values for double hashing.
 func doubleHash(data []byte) (uint64, uint64) {
 	h := fnv.New128a()
 	h.Write(data)
-	sum := h.Sum(nil)
+	var buf [16]byte
+	sum := h.Sum(buf[:0])
 
 	// Split 128-bit hash into two 64-bit hashes
 	h1 := uint64(sum[0])<<56 | uint64(sum[1])<<48 | uint64(sum[2])<<40 | uint64(sum[3])<<32 |
@@ -192,3 +184,10 @@ func (bf *BloomFilter) Union(other *BloomFilter) bool {
 
 // Helper for custom hash functions
 type HashFactory func() hash.Hash64
+
+func unsafeBytes(s string) []byte {
+	if s == "" {
+		return nil
+	}
+	return unsafe.Slice(unsafe.StringData(s), len(s))
+}
