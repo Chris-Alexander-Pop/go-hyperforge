@@ -1,8 +1,8 @@
 package hllpp
 
 import (
-	"hash/fnv"
 	"math"
+	"math/bits"
 )
 
 // HLLPP is a simplified HyperLogLog++ implementation.
@@ -103,25 +103,20 @@ func (h *HLLPP) Count() uint64 {
 	return uint64(est)
 }
 
+const (
+	offset64 = 14695981039346656037
+	prime64  = 1099511628211
+)
+
 func hash64(data []byte) uint64 {
-	h := fnv.New64a()
-	h.Write(data)
-	return h.Sum64()
+	hash := uint64(offset64)
+	for _, b := range data {
+		hash ^= uint64(b)
+		hash *= prime64
+	}
+	return hash
 }
 
 func clz(x uint64) int {
-	zeros := 0
-	for (x & 0x8000000000000000) == 0 {
-		zeros++
-		x <<= 1
-		if zeros >= 64 {
-			break
-		}
-	}
-	// if x==0 ?
-	// standard clz logic
-	if x == 0 {
-		return 64
-	}
-	return zeros
+	return bits.LeadingZeros64(x)
 }
