@@ -4,6 +4,7 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -172,7 +173,7 @@ func SecurityHeaders(cfg SecurityHeadersConfig) func(http.Handler) http.Handler 
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			// HSTS
 			if cfg.HSTSEnabled {
-				hsts := "max-age=" + string(rune(cfg.HSTSMaxAge))
+				hsts := "max-age=" + strconv.Itoa(cfg.HSTSMaxAge)
 				if cfg.HSTSIncludeSubdomains {
 					hsts += "; includeSubDomains"
 				}
@@ -319,7 +320,7 @@ func CORS(cfg CORSConfig) func(http.Handler) http.Handler {
 
 				// Max-Age
 				if cfg.MaxAge > 0 {
-					w.Header().Set("Access-Control-Max-Age", time.Duration(cfg.MaxAge).String())
+					w.Header().Set("Access-Control-Max-Age", strconv.Itoa(cfg.MaxAge))
 				}
 
 				w.WriteHeader(http.StatusNoContent)
