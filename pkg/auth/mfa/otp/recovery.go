@@ -2,6 +2,7 @@ package otp
 
 import (
 	"crypto/rand"
+	"crypto/sha256"
 	"encoding/hex"
 	"strings"
 
@@ -53,7 +54,7 @@ func (m *RecoveryCodeManager) GenerateCodes() (displayCodes []string, hashedCode
 
 		raw := hex.EncodeToString(code)
 		displayCodes[i] = m.formatCode(raw)
-		hashedCodes[i] = raw // In production, hash these before storing
+		hashedCodes[i] = Hash(raw) // Hashed for storage
 	}
 
 	return displayCodes, hashedCodes, nil
@@ -81,6 +82,13 @@ func (m *RecoveryCodeManager) NormalizeCode(code string) string {
 	return strings.ReplaceAll(strings.ToLower(code), "-", "")
 }
 
+// Hash computes the SHA-256 hash of a recovery code after normalization.
+func Hash(code string) string {
+	normalized := strings.ReplaceAll(strings.ToLower(code), "-", "")
+	hash := sha256.Sum256([]byte(normalized))
+	return hex.EncodeToString(hash[:])
+}
+
 // RecoveryCodeSet is a thread-safe set of recovery codes.
 // Each code can only be used once.
 type RecoveryCodeSet struct {
@@ -103,17 +111,17 @@ func NewRecoveryCodeSet(hashedCodes []string) *RecoveryCodeSet {
 // Validate checks if a code is valid and marks it as used.
 // Returns true if the code was valid and unused.
 func (s *RecoveryCodeSet) Validate(code string) bool {
-	normalized := strings.ReplaceAll(strings.ToLower(code), "-", "")
+	hashed := Hash(code)
 
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	used, exists := s.codes[normalized]
+	used, exists := s.codes[hashed]
 	if !exists || used {
 		return false
 	}
 
-	s.codes[normalized] = true // Mark as used
+	s.codes[hashed] = true // Mark as used
 	return true
 }
 

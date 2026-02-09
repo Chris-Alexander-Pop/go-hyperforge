@@ -123,16 +123,10 @@ func (p *MFAProvider) Recover(ctx context.Context, userID, code string) (bool, e
 		// This part is tricky because RecoveryCodeSet tracks usage in memory but we need to persist it back to enrollment.
 		// Since we recreate the set from hashes every time, we need a way to mark them as used in the source.
 
-		// Let's implement a simple check loop here instead of using the Set logic which is transient
-		// Let's implement a simple check loop here instead of using the Set logic which is transient
-
-		// This uses the RecoveryCodeSet logic, but we need to update our stored hashes.
-		// Actually, RecoveryCodeSet isn't quite right for "hashed" storage if it doesn't support marking them as used permanently
-		// unless we persist the used state.
-
 		// For simplicity in this memory adapter:
+		hashedInput := otp.Hash(code)
 		for i, hash := range enrollment.Recovery {
-			if hash == code { // Assuming simple equality for now, normally we'd hash the input 'code' and compare
+			if hash == hashedInput {
 				// Remove it or mark it
 				enrollment.Recovery = append(enrollment.Recovery[:i], enrollment.Recovery[i+1:]...)
 				return true, nil
