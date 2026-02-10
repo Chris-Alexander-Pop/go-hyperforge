@@ -42,11 +42,12 @@ func (s *Sender) Send(ctx context.Context, msg *sms.Message) error {
 	params := &twilioApi.CreateMessageParams{}
 	params.SetTo(msg.To)
 
-	if msg.From != "" {
+	switch {
+	case msg.From != "":
 		params.SetFrom(msg.From)
-	} else if s.from != "" {
+	case s.from != "":
 		params.SetFrom(s.from)
-	} else {
+	default:
 		return errors.InvalidArgument("twilio requires a 'From' number in the message or config", nil)
 	}
 

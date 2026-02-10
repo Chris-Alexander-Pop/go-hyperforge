@@ -1,0 +1,46 @@
+run:
+  timeout: 10m
+  tests: false
+
+linters:
+  enable:
+    - errcheck
+    - gosimple
+    - govet
+    - ineffassign
+    - staticcheck
+    - typecheck
+    - unused
+    - gofmt
+    - goimports
+    - misspell
+    - revive
+    - gocyclo
+    - goconst
+    - gocritic
+    - unconvert
+    - unparam
+    - nakedret
+    - prealloc
+
+linters-settings:
+  gocyclo:
+    min-complexity: 20
+  revive:
+    severity: warning
+    rules:
+      - name: exported
+        disabled: false
+      - name: package-comments
+        disabled: false
+  gocritic:
+    enabled-tags:
+      - diagnostic
+      - experimental
+      - opinionated
+      - performance
+      - style
+    disabled-checks:
+      - whyNoLint
+      - wrapperFunc
+      - hugeParam

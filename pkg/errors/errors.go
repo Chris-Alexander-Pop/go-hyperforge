@@ -63,7 +63,7 @@ func (e *AppError) Unwrap() error {
 }
 
 // New creates a new AppError
-func New(code string, message string, err error) *AppError {
+func New(code, message string, err error) *AppError {
 	return &AppError{
 		Code:    code,
 		Message: message,

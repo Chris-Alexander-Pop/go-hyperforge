@@ -40,9 +40,6 @@ vet:
 
 # Run staticcheck (install with: go install honnef.co/go/tools/cmd/staticcheck@latest)
 lint:
-	@echo "🔍 Running staticcheck..."
-	@$$(go env GOPATH)/bin/staticcheck ./... || (echo "💡 Install staticcheck: go install honnef.co/go/tools/cmd/staticcheck@latest" && exit 1)
-	@echo "✅ Staticcheck passed"
 	@echo "🔍 Running golangci-lint..."
 	@$$(go env GOPATH)/bin/golangci-lint run ./... || (echo "💡 Install golangci-lint: go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest" && exit 1)
 	@echo "✅ golangci-lint passed"
