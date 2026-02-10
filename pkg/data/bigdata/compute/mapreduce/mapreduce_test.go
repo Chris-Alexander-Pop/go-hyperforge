@@ -71,7 +71,9 @@ func BenchmarkMapReduce(b *testing.B) {
 	// Mapper generates multiple unique keys per input to create a large number of keys
 	mapper := func(key string, value interface{}, out chan<- KeyValue) {
 		var docId int
-		fmt.Sscanf(key, "doc-%d", &docId)
+		if _, err := fmt.Sscanf(key, "doc-%d", &docId); err != nil {
+			return
+		}
 		// Emit 100 keys per input.
 		// Construct keys such that we have many unique keys.
 		for i := 0; i < 100; i++ {

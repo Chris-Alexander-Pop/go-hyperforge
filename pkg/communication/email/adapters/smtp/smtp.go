@@ -19,7 +19,7 @@ type Sender struct {
 }
 
 // New creates a new SMTP sender.
-func New(cfg email.Config) (*Sender, error) {
+func New(cfg email.Config) (email.Sender, error) {
 	if err := validator.New().ValidateStruct(cfg); err != nil {
 		return nil, errors.InvalidArgument("invalid config", err)
 	}

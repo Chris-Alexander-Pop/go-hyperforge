@@ -18,7 +18,7 @@ type Provider struct {
 }
 
 // New creates a new PayPal provider.
-func New(cfg payment.Config) (*Provider, error) {
+func New(cfg payment.Config) (payment.Provider, error) {
 	if err := validator.New().ValidateStruct(cfg); err != nil {
 		return nil, errors.InvalidArgument("invalid config", err)
 	}

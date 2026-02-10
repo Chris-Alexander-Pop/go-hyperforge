@@ -32,7 +32,7 @@ func TestEmailMemoryAdapter(t *testing.T) {
 	err := sender.Send(ctx, msg)
 	require.NoError(t, err)
 
-	sent := sender.SentMessages()
+	sent := sender.(*emailmem.Sender).SentMessages()
 	require.Len(t, sent, 1)
 	assert.Equal(t, msg, sent[0])
 }
@@ -51,7 +51,7 @@ func TestSMSMemoryAdapter(t *testing.T) {
 	err := sender.Send(ctx, msg)
 	require.NoError(t, err)
 
-	sent := sender.SentMessages()
+	sent := sender.(*smsmem.Sender).SentMessages()
 	require.Len(t, sent, 1)
 	assert.Equal(t, msg, sent[0])
 }
@@ -70,7 +70,7 @@ func TestPushMemoryAdapter(t *testing.T) {
 	err := sender.Send(ctx, msg)
 	require.NoError(t, err)
 
-	sent := sender.SentMessages()
+	sent := sender.(*pushmem.Sender).SentMessages()
 	require.Len(t, sent, 1)
 	assert.Equal(t, msg, sent[0])
 }
@@ -88,7 +88,7 @@ func TestChatMemoryAdapter(t *testing.T) {
 	err := sender.Send(ctx, msg)
 	require.NoError(t, err)
 
-	sent := sender.SentMessages()
+	sent := sender.(*chatmem.Sender).SentMessages()
 	require.Len(t, sent, 1)
 	assert.Equal(t, msg, sent[0])
 }

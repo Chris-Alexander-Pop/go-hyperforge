@@ -15,8 +15,14 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
+// Adapter implements the document.Interface for MongoDB.
+type Adapter struct {
+	db     *mongo.Database
+	client *mongo.Client
+}
+
 // New creates a new MongoDB connection and returns the Database instance
-func New(cfg document.Config) (*mongo.Database, error) {
+func New(cfg document.Config) (document.Interface, error) {
 	if cfg.Driver != database.DriverMongoDB {
 		return nil, errors.New(errors.CodeInvalidArgument, fmt.Sprintf("invalid driver %s for mongodb adapter", cfg.Driver), nil)
 	}
@@ -81,5 +87,74 @@ func New(cfg document.Config) (*mongo.Database, error) {
 		return nil, errors.Wrap(err, "failed to ping mongodb")
 	}
 
-	return client.Database(cfg.Database), nil
+	return &Adapter{
+		db:     client.Database(cfg.Database),
+		client: client,
+	}, nil
+}
+
+// Insert adds a new document to the collection.
+func (a *Adapter) Insert(ctx context.Context, collection string, doc document.Document) error {
+	_, err := a.db.Collection(collection).InsertOne(ctx, doc)
+	if err != nil {
+		return errors.Wrap(err, "failed to insert document")
+	}
+	return nil
+}
+
+// Find retrieves documents matching the query.
+func (a *Adapter) Find(ctx context.Context, collection string, query map[string]interface{}) ([]document.Document, error) {
+	cursor, err := a.db.Collection(collection).Find(ctx, query)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to find documents")
+	}
+	defer cursor.Close(ctx)
+
+	var docs []document.Document
+	if err := cursor.All(ctx, &docs); err != nil {
+		return nil, errors.Wrap(err, "failed to decode documents")
+	}
+	return docs, nil
+}
+
+// Update modifies documents matching the filter.
+func (a *Adapter) Update(ctx context.Context, collection string, filter map[string]interface{}, update map[string]interface{}) error {
+	// Standardize update if not already an operator
+	isOperator := false
+	for k := range update {
+		if len(k) > 0 && k[0] == '$' {
+			isOperator = true
+			break
+		}
+	}
+
+	var updateDoc interface{}
+	if !isOperator {
+		updateDoc = map[string]interface{}{"$set": update}
+	} else {
+		updateDoc = update
+	}
+
+	_, err := a.db.Collection(collection).UpdateMany(ctx, filter, updateDoc)
+	if err != nil {
+		return errors.Wrap(err, "failed to update documents")
+	}
+	return nil
+}
+
+// Delete removes documents matching the filter.
+func (a *Adapter) Delete(ctx context.Context, collection string, filter map[string]interface{}) error {
+	_, err := a.db.Collection(collection).DeleteMany(ctx, filter)
+	if err != nil {
+		return errors.Wrap(err, "failed to delete documents")
+	}
+	return nil
+}
+
+// Close releases resources.
+func (a *Adapter) Close() error {
+	if err := a.client.Disconnect(context.Background()); err != nil {
+		return errors.Wrap(err, "failed to disconnect mongodb client")
+	}
+	return nil
 }

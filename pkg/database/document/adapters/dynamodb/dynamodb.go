@@ -22,7 +22,7 @@ type Adapter struct {
 }
 
 // New creates a new DynamoDB adapter.
-func New(cfg document.Config) (*Adapter, error) {
+func New(cfg document.Config) (document.Interface, error) {
 	opts := []func(*config.LoadOptions) error{
 		config.WithRegion(cfg.Region),
 	}

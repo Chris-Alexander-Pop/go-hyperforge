@@ -16,7 +16,7 @@ type Store struct {
 }
 
 // New creates a new LocalStore
-func New(cfg blob.Config) (*Store, error) {
+func New(cfg blob.Config) (blob.Store, error) {
 	if cfg.LocalDir == "" {
 		return nil, errors.New(errors.CodeInvalidArgument, "local dir is required", nil)
 	}

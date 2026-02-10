@@ -18,12 +18,12 @@ type Adapter struct {
 }
 
 // New creates a new in-memory SQLite database.
-func New() (*Adapter, error) {
+func New() (sql.SQL, error) {
 	return NewWithConfig(sql.Config{})
 }
 
 // NewWithConfig creates a new in-memory SQLite database with custom configuration.
-func NewWithConfig(cfg sql.Config) (*Adapter, error) {
+func NewWithConfig(cfg sql.Config) (sql.SQL, error) {
 	// Use unique in-memory databases per instance
 	dsn := fmt.Sprintf("file:%s?mode=memory&cache=shared", cfg.Name)
 	if cfg.Name == "" {

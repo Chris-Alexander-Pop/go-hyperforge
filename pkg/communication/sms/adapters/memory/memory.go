@@ -14,7 +14,7 @@ type Sender struct {
 }
 
 // New creates a new memory SMS sender.
-func New() *Sender {
+func New() sms.Sender {
 	return &Sender{
 		sentMessages: make([]*sms.Message, 0),
 		mu: concurrency.NewSmartRWMutex(concurrency.MutexConfig{

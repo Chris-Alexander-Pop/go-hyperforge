@@ -18,7 +18,7 @@ type Sender struct {
 }
 
 // New creates a new FCM sender.
-func New(ctx context.Context, cfg push.Config) (*Sender, error) {
+func New(ctx context.Context, cfg push.Config) (push.Sender, error) {
 	if err := validator.New().ValidateStruct(cfg); err != nil {
 		return nil, errors.InvalidArgument("invalid config", err)
 	}

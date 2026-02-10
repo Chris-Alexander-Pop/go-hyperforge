@@ -86,7 +86,7 @@ type Broker struct {
 }
 
 // New creates a new Redis Streams broker.
-func New(cfg Config) (*Broker, error) {
+func New(cfg Config) (messaging.Broker, error) {
 	opts := &redis.Options{
 		Addr:     cfg.Addr,
 		Password: cfg.Password,

@@ -16,7 +16,7 @@ type Tracker struct {
 }
 
 // New creates a new in-memory tracker.
-func New(cfg analytics.Config) *Tracker {
+func New(cfg analytics.Config) analytics.Tracker {
 	// Validate precision or set default
 	if cfg.Precision < 4 || cfg.Precision > 18 {
 		cfg.Precision = 14

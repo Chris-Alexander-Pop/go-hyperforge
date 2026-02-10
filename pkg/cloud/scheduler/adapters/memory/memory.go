@@ -15,7 +15,8 @@ type MemoryScheduler struct {
 }
 
 // New creates a new MemoryScheduler.
-func New() *MemoryScheduler {
+// New creates a new MemoryScheduler.
+func New() scheduler.Scheduler {
 	return &MemoryScheduler{
 		hostIDs: []string{},
 		mu: concurrency.NewSmartRWMutex(concurrency.MutexConfig{

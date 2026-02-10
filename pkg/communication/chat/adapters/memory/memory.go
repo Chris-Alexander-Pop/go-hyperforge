@@ -14,7 +14,7 @@ type Sender struct {
 }
 
 // New creates a new memory chat sender.
-func New() *Sender {
+func New() chat.Sender {
 	return &Sender{
 		sentMessages: make([]*chat.Message, 0),
 		mu: concurrency.NewSmartRWMutex(concurrency.MutexConfig{

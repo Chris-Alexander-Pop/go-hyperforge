@@ -69,7 +69,7 @@ type Broker struct {
 }
 
 // New creates a new RabbitMQ broker.
-func New(cfg Config) (*Broker, error) {
+func New(cfg Config) (messaging.Broker, error) {
 	conn, err := amqp.Dial(cfg.URL)
 	if err != nil {
 		return nil, messaging.ErrConnectionFailed(err)

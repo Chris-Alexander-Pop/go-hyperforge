@@ -26,7 +26,7 @@ type Adapter struct {
 }
 
 // New creates a new Cognito adapter.
-func New(ctx context.Context, cfg Config) (*Adapter, error) {
+func New(ctx context.Context, cfg Config) (auth.IdentityProvider, error) {
 	awsCfg, err := config.LoadDefaultConfig(ctx, config.WithRegion(cfg.Region))
 	if err != nil {
 		return nil, errors.Internal("failed to load aws config", err)

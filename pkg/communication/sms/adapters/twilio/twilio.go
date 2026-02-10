@@ -17,7 +17,7 @@ type Sender struct {
 }
 
 // New creates a new Twilio sender.
-func New(cfg sms.Config) (*Sender, error) {
+func New(cfg sms.Config) (sms.Sender, error) {
 	if err := validator.New().ValidateStruct(cfg); err != nil {
 		return nil, errors.InvalidArgument("invalid config", err)
 	}

@@ -15,7 +15,7 @@ type Sender struct {
 }
 
 // New creates a new memory email sender.
-func New() *Sender {
+func New() email.Sender {
 	return &Sender{
 		sentMessages: make([]*email.Message, 0),
 		mu: concurrency.NewSmartRWMutex(concurrency.MutexConfig{

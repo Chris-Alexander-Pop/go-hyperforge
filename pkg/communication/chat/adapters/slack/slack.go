@@ -15,7 +15,7 @@ type Sender struct {
 }
 
 // New creates a new Slack sender.
-func New(cfg chat.Config) (*Sender, error) {
+func New(cfg chat.Config) (chat.Sender, error) {
 	if err := validator.New().ValidateStruct(cfg); err != nil {
 		return nil, errors.InvalidArgument("invalid config", err)
 	}

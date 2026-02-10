@@ -23,7 +23,7 @@ type Store struct {
 }
 
 // New creates a new S3Store
-func New(ctx context.Context, cfg blob.Config) (*Store, error) {
+func New(ctx context.Context, cfg blob.Config) (blob.Store, error) {
 	if cfg.Bucket == "" {
 		return nil, errors.New(errors.CodeInvalidArgument, "bucket name is required", nil)
 	}

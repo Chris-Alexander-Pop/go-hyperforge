@@ -15,7 +15,7 @@ type Adapter struct {
 }
 
 // New creates a new in-memory document store.
-func New() *Adapter {
+func New() document.Interface {
 	return &Adapter{
 		collections: make(map[string][]document.Document),
 		mu:          concurrency.NewSmartRWMutex(concurrency.MutexConfig{Name: "memory-document"}),

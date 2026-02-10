@@ -5,6 +5,7 @@ import (
 
 	"github.com/chris-alexander-pop/system-design-library/pkg/concurrency"
 	"github.com/chris-alexander-pop/system-design-library/pkg/errors"
+	"github.com/chris-alexander-pop/system-design-library/pkg/security/secrets"
 )
 
 // SecretManager implements secrets.SecretManager using in-memory storage.
@@ -14,7 +15,7 @@ type SecretManager struct {
 }
 
 // New creates a new in-memory secret manager.
-func New() *SecretManager {
+func New() secrets.SecretManager {
 	return &SecretManager{
 		secrets: make(map[string]string),
 		mu:      concurrency.NewSmartRWMutex(concurrency.MutexConfig{Name: "memory-secret-manager"}),

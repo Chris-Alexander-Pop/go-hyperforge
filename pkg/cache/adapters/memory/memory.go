@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"time"
 
+	"github.com/chris-alexander-pop/system-design-library/pkg/cache"
 	"github.com/chris-alexander-pop/system-design-library/pkg/concurrency"
 	"github.com/chris-alexander-pop/system-design-library/pkg/errors"
 )
@@ -19,7 +20,7 @@ type MemoryCache struct {
 	mu    *concurrency.SmartRWMutex
 }
 
-func New() *MemoryCache {
+func New() cache.Cache {
 	return &MemoryCache{
 		items: make(map[string]item),
 		mu:    concurrency.NewSmartRWMutex(concurrency.MutexConfig{Name: "memory-cache"}),

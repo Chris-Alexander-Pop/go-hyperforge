@@ -31,7 +31,7 @@ type Engine struct {
 }
 
 // New creates a new in-memory workflow engine.
-func New() *Engine {
+func New() workflow.WorkflowEngine {
 	return &Engine{
 		workflows:  make(map[string]*workflow.WorkflowDefinition),
 		executions: make(map[string]*workflow.Execution),

@@ -14,7 +14,8 @@ type MemoryProvisioner struct {
 	mu    *concurrency.SmartRWMutex
 }
 
-func New() *MemoryProvisioner {
+// New creates a new in-memory provisioner.
+func New() provisioning.Provisioner {
 	return &MemoryProvisioner{
 		hosts: make(map[string]cloud.HostStatus),
 		mu: concurrency.NewSmartRWMutex(concurrency.MutexConfig{
