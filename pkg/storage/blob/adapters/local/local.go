@@ -5,6 +5,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/chris-alexander-pop/system-design-library/pkg/errors"
 	"github.com/chris-alexander-pop/system-design-library/pkg/storage/blob"
@@ -27,15 +28,43 @@ func New(cfg blob.Config) (blob.Store, error) {
 	}
 
 	return &Store{
-		baseDir: cfg.LocalDir,
+		baseDir: filepath.Clean(cfg.LocalDir),
 	}, nil
 }
 
-func (s *Store) Upload(ctx context.Context, key string, data io.Reader) error {
+// resolvePath ensures the key resolves to a path within the base directory
+func (s *Store) resolvePath(key string) (string, error) {
+	// Join baseDir and key, then clean the path
 	fullPath := filepath.Join(s.baseDir, key)
+
+	// Special case for root directory
+	if s.baseDir == string(os.PathSeparator) {
+		return fullPath, nil
+	}
+
+	// Verify the path is within the base directory
+	// We check if fullPath starts with baseDir + Separator to prevent "dir" matching "dir-suffix"
+	// We also allow fullPath == baseDir if that's valid (usually not for file operations but harmless for directory checks)
+	if !strings.HasPrefix(fullPath, s.baseDir+string(os.PathSeparator)) && fullPath != s.baseDir {
+		return "", errors.New(errors.CodeInvalidArgument, "invalid key path: potential path traversal detected", nil)
+	}
+
+	return fullPath, nil
+}
+
+func (s *Store) Upload(ctx context.Context, key string, data io.Reader) error {
+	fullPath, err := s.resolvePath(key)
+	if err != nil {
+		return err
+	}
 
 	// Ensure parent dir exists
 	dir := filepath.Dir(fullPath)
+	// Additional check: verify parent dir is also within baseDir (resolvePath handles fullPath so this should be safe)
+	if !strings.HasPrefix(dir, s.baseDir) {
+		return errors.New(errors.CodeInvalidArgument, "invalid parent directory", nil)
+	}
+
 	if err := os.MkdirAll(dir, 0755); err != nil {
 		return errors.Internal("failed to ensure blob dir", err)
 	}
@@ -54,7 +83,10 @@ func (s *Store) Upload(ctx context.Context, key string, data io.Reader) error {
 }
 
 func (s *Store) Download(ctx context.Context, key string) (io.ReadCloser, error) {
-	fullPath := filepath.Join(s.baseDir, key)
+	fullPath, err := s.resolvePath(key)
+	if err != nil {
+		return nil, err
+	}
 
 	f, err := os.Open(fullPath)
 	if err != nil {
@@ -68,9 +100,12 @@ func (s *Store) Download(ctx context.Context, key string) (io.ReadCloser, error)
 }
 
 func (s *Store) Delete(ctx context.Context, key string) error {
-	fullPath := filepath.Join(s.baseDir, key)
+	fullPath, err := s.resolvePath(key)
+	if err != nil {
+		return err
+	}
 
-	err := os.Remove(fullPath)
+	err = os.Remove(fullPath)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return errors.NotFound("blob not found", err)
@@ -82,5 +117,10 @@ func (s *Store) Delete(ctx context.Context, key string) error {
 
 func (s *Store) URL(key string) string {
 	// For local store, this might just be the file path or a mock URL
-	return "file://" + filepath.Join(s.baseDir, key)
+	fullPath, err := s.resolvePath(key)
+	if err != nil {
+		// Return empty string or invalid URL indicator if path is unsafe
+		return ""
+	}
+	return "file://" + fullPath
 }
