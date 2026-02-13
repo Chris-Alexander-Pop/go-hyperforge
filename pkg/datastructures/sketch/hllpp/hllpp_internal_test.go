@@ -1,6 +1,7 @@
 package hllpp
 
 import (
+	"hash/fnv"
 	"testing"
 )
 
@@ -48,5 +49,25 @@ func TestMergeSparsePrecision(t *testing.T) {
 	// With the fix, register 0 should stay 0.
 	if h.registers[0] != 0 {
 		t.Errorf("Expected register 0 to be 0, but got %d. This implies the old buggy logic might still be active or a collision occurred.", h.registers[0])
+	}
+}
+
+func TestHashCorrectness(t *testing.T) {
+	inputs := []string{"test", "hello", "world", "1", "2", "3", "", "a very long string to test hashing properly"}
+
+	for _, s := range inputs {
+		data := []byte(s)
+
+		// Standard FNV
+		f := fnv.New64a()
+		f.Write(data)
+		expected := f.Sum64()
+
+		// My implementation
+		actual := hash64(data)
+
+		if actual != expected {
+			t.Errorf("Hash mismatch for %q: expected %x, got %x", s, expected, actual)
+		}
 	}
 }
