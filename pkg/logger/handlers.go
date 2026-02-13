@@ -168,13 +168,22 @@ func (h *RedactHandler) Enabled(ctx context.Context, level slog.Level) bool {
 func (h *RedactHandler) Handle(ctx context.Context, r slog.Record) error {
 	// Check message first
 	msg := r.Message
-	newMsg := h.redactString(msg)
-	anyChanged := newMsg != msg
+	var newMsg string
+	var anyChanged bool
+
+	if h.shouldRedactString(msg) {
+		newMsg = h.redactString(msg)
+		anyChanged = newMsg != msg
+	} else {
+		newMsg = msg
+		anyChanged = false
+	}
 
 	// First pass: Check if attributes need redaction
 	if !anyChanged {
 		r.Attrs(func(a slog.Attr) bool {
-			_, changed := h.redactAttr(a)
+			// checkOnly=true prevents allocations and expensive operations
+			_, changed := h.redactAttr(a, true)
 			if changed {
 				anyChanged = true
 				return false // Stop iteration
@@ -190,7 +199,7 @@ func (h *RedactHandler) Handle(ctx context.Context, r slog.Record) error {
 	// Second pass: Apply redaction
 	newAttrs := make([]slog.Attr, 0, r.NumAttrs())
 	r.Attrs(func(a slog.Attr) bool {
-		attr, _ := h.redactAttr(a)
+		attr, _ := h.redactAttr(a, false)
 		newAttrs = append(newAttrs, attr)
 		return true
 	})
@@ -202,15 +211,26 @@ func (h *RedactHandler) Handle(ctx context.Context, r slog.Record) error {
 	return h.next.Handle(ctx, r2)
 }
 
-func (h *RedactHandler) redactAttr(a slog.Attr) (slog.Attr, bool) {
+func (h *RedactHandler) redactAttr(a slog.Attr, checkOnly bool) (slog.Attr, bool) {
 	// Recursive for groups
 	if a.Value.Kind() == slog.KindGroup {
 		groupAttrs := a.Value.Group()
+
+		// If checking only, avoid allocating newGroup slice
+		if checkOnly {
+			for _, sub := range groupAttrs {
+				if _, changed := h.redactAttr(sub, true); changed {
+					return slog.Attr{}, true
+				}
+			}
+			return a, false
+		}
+
 		newGroup := make([]slog.Attr, len(groupAttrs))
 		groupChanged := false
 		for i, sub := range groupAttrs {
 			var changed bool
-			newGroup[i], changed = h.redactAttr(sub)
+			newGroup[i], changed = h.redactAttr(sub, false)
 			if changed {
 				groupChanged = true
 			}
@@ -227,11 +247,21 @@ func (h *RedactHandler) redactAttr(a slog.Attr) (slog.Attr, bool) {
 		if strings.Contains(key, "token") || strings.Contains(key, "password") || strings.Contains(key, "secret") ||
 			strings.Contains(key, "api_key") || strings.Contains(key, "apikey") || strings.Contains(key, "access_key") ||
 			strings.Contains(key, "authorization") || strings.Contains(key, "cookie") || strings.Contains(key, "bearer") {
+			if checkOnly {
+				return slog.Attr{}, true
+			}
 			return slog.String(a.Key, "[REDACTED]"), true
 		}
 
 		// Regex scan value
 		val := a.Value.String()
+		if checkOnly {
+			if h.shouldRedactString(val) {
+				return slog.Attr{}, true
+			}
+			return a, false
+		}
+
 		newVal := h.redactString(val)
 		if newVal != val {
 			return slog.String(a.Key, newVal), true
@@ -240,18 +270,28 @@ func (h *RedactHandler) redactAttr(a slog.Attr) (slog.Attr, bool) {
 	return a, false
 }
 
-func (h *RedactHandler) redactString(s string) string {
+func (h *RedactHandler) shouldRedactString(s string) bool {
 	hasAt := strings.Contains(s, "@")
-	hasDigits := strings.ContainsAny(s, "0123456789")
+	if hasAt {
+		return true
+	}
+	// Basic length check for CC (min 13 digits)
+	if len(s) < 13 {
+		return false
+	}
+	// Check for digits if it's long enough
+	if strings.ContainsAny(s, "0123456789") {
+		return true
+	}
+	return false
+}
 
-	if !hasAt && !hasDigits {
+func (h *RedactHandler) redactString(s string) string {
+	if !h.shouldRedactString(s) {
 		return s
 	}
 
-	if !hasAt && len(s) < 13 {
-		return s
-	}
-
+	hasAt := strings.Contains(s, "@")
 	if hasAt {
 		s = emailRegex.ReplaceAllString(s, "[EMAIL]")
 	}
