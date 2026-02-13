@@ -119,3 +119,70 @@ func TestEnrollmentReplayProtection(t *testing.T) {
 	assert.Contains(t, err.Error(), "code already used")
 	assert.False(t, valid, "Verification should fail for replayed code")
 }
+
+func TestRecoveryCodes(t *testing.T) {
+	ctx := context.Background()
+
+	// Start Miniredis
+	s, err := miniredis.Run()
+	require.NoError(t, err)
+	defer s.Close()
+
+	client := redis.NewClient(&redis.Options{
+		Addr: s.Addr(),
+	})
+	defer client.Close()
+
+	// Setup MFA Provider
+	config := mfa.Config{
+		TOTPIssuer: "TestApp",
+		TOTPDigits: 6,
+		TOTPPeriod: 30, // 30 seconds
+	}
+	provider := redisAdapter.New(client, config)
+
+	userID := "user-recovery-test"
+
+	// 1. Enroll
+	secret, recoveryCodes, err := provider.Enroll(ctx, userID)
+	require.NoError(t, err)
+	require.Len(t, recoveryCodes, 10)
+
+	// 2. Complete Enrollment
+	totp := otp.NewTOTP(otp.TOTPConfig{
+		Issuer: config.TOTPIssuer,
+		Digits: config.TOTPDigits,
+		Period: config.TOTPPeriod,
+	})
+	code, err := totp.GenerateCode(secret)
+	require.NoError(t, err)
+	err = provider.CompleteEnrollment(ctx, userID, code)
+	require.NoError(t, err)
+
+	// 3. Recover with a valid code
+	// Recovery codes are formatted like "abcd-efgh...". We need to normalize?
+	// The provider returns formatted codes.
+	// The Normalize function removes dashes and lowercases.
+	// Let's assume the user enters the code AS DISPLAYED (with dashes) or without.
+	// We'll test with the exact string returned by Enroll.
+
+	validCode := recoveryCodes[0]
+	// Remove formatting to simulate user input if they typed it without dashes?
+	// Actually, our Recover logic checks hash against stored hash.
+	// HashRecoveryCode normalizes input.
+	// So input can be "AAAA-BBBB" or "aaaabbbb".
+
+	success, err := provider.Recover(ctx, userID, validCode)
+	require.NoError(t, err)
+	assert.True(t, success, "Recovery with valid code should succeed")
+
+	// 4. Recover with the same code again (should fail)
+	success, err = provider.Recover(ctx, userID, validCode)
+	require.NoError(t, err)
+	assert.False(t, success, "Recovery with used code should fail")
+
+	// 5. Recover with invalid code
+	success, err = provider.Recover(ctx, userID, "invalid-code")
+	require.NoError(t, err)
+	assert.False(t, success, "Recovery with invalid code should fail")
+}

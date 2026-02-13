@@ -2,7 +2,9 @@ package otp
 
 import (
 	"crypto/rand"
+	"crypto/sha256"
 	"encoding/hex"
+	"fmt"
 	"strings"
 
 	"github.com/chris-alexander-pop/system-design-library/pkg/concurrency"
@@ -24,8 +26,8 @@ type RecoveryCodeConfig struct {
 func DefaultRecoveryCodeConfig() RecoveryCodeConfig {
 	return RecoveryCodeConfig{
 		Count:     10,
-		Length:    8, // 16 hex characters
-		GroupSize: 4,
+		Length:    10, // 20 hex characters (increased for security)
+		GroupSize: 5,  // Adjusted group size
 	}
 }
 
@@ -53,7 +55,7 @@ func (m *RecoveryCodeManager) GenerateCodes() (displayCodes []string, hashedCode
 
 		raw := hex.EncodeToString(code)
 		displayCodes[i] = m.formatCode(raw)
-		hashedCodes[i] = raw // In production, hash these before storing
+		hashedCodes[i] = HashRecoveryCode(raw)
 	}
 
 	return displayCodes, hashedCodes, nil
@@ -81,6 +83,13 @@ func (m *RecoveryCodeManager) NormalizeCode(code string) string {
 	return strings.ReplaceAll(strings.ToLower(code), "-", "")
 }
 
+// HashRecoveryCode normalizes and hashes the recovery code using SHA-256.
+func HashRecoveryCode(code string) string {
+	normalized := strings.ReplaceAll(strings.ToLower(code), "-", "")
+	hash := sha256.Sum256([]byte(normalized))
+	return fmt.Sprintf("%x", hash)
+}
+
 // RecoveryCodeSet is a thread-safe set of recovery codes.
 // Each code can only be used once.
 type RecoveryCodeSet struct {
@@ -103,17 +112,17 @@ func NewRecoveryCodeSet(hashedCodes []string) *RecoveryCodeSet {
 // Validate checks if a code is valid and marks it as used.
 // Returns true if the code was valid and unused.
 func (s *RecoveryCodeSet) Validate(code string) bool {
-	normalized := strings.ReplaceAll(strings.ToLower(code), "-", "")
+	hashed := HashRecoveryCode(code)
 
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	used, exists := s.codes[normalized]
+	used, exists := s.codes[hashed]
 	if !exists || used {
 		return false
 	}
 
-	s.codes[normalized] = true // Mark as used
+	s.codes[hashed] = true // Mark as used
 	return true
 }
 

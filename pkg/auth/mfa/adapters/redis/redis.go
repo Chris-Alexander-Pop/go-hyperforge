@@ -266,9 +266,9 @@ func (p *MFAProvider) Recover(ctx context.Context, userID, code string) (bool, e
 
 		// Check and consume recovery code
 		foundIndex := -1
+		hashedCode := otp.HashRecoveryCode(code)
 		for i, hash := range enrollment.Recovery {
-			// In real impl invoke hashing of input 'code'
-			if hash == code {
+			if hash == hashedCode {
 				foundIndex = i
 				break
 			}
