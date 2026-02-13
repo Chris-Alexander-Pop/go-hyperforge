@@ -12,6 +12,9 @@
 
 set -e
 
+# Ensure Go binaries are in PATH
+export PATH=$PATH:$(go env GOPATH)/bin:/usr/local/go/bin
+
 echo "🔒 Running pre-push quality gates..."
 echo ""
 
