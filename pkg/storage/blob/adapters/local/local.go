@@ -5,6 +5,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/chris-alexander-pop/system-design-library/pkg/errors"
 	"github.com/chris-alexander-pop/system-design-library/pkg/storage/blob"
@@ -26,13 +27,40 @@ func New(cfg blob.Config) (blob.Store, error) {
 		return nil, errors.Wrap(err, "failed to create blob directory")
 	}
 
+	absDir, err := filepath.Abs(cfg.LocalDir)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to resolve absolute path for local dir")
+	}
+
 	return &Store{
-		baseDir: cfg.LocalDir,
+		baseDir: filepath.Clean(absDir),
 	}, nil
 }
 
-func (s *Store) Upload(ctx context.Context, key string, data io.Reader) error {
+func (s *Store) validatePath(key string) (string, error) {
+	// Join performs Clean implicitly
 	fullPath := filepath.Join(s.baseDir, key)
+
+	// Ensure the path is within the base directory
+	// We append a separator to ensure we don't match partial directory names
+	// e.g. /tmp/data vs /tmp/database
+	prefix := s.baseDir
+	if !strings.HasSuffix(prefix, string(os.PathSeparator)) {
+		prefix += string(os.PathSeparator)
+	}
+
+	if !strings.HasPrefix(fullPath, prefix) {
+		return "", errors.New(errors.CodeInvalidArgument, "invalid path: path traversal detected", nil)
+	}
+
+	return fullPath, nil
+}
+
+func (s *Store) Upload(ctx context.Context, key string, data io.Reader) error {
+	fullPath, err := s.validatePath(key)
+	if err != nil {
+		return err
+	}
 
 	// Ensure parent dir exists
 	dir := filepath.Dir(fullPath)
@@ -54,7 +82,10 @@ func (s *Store) Upload(ctx context.Context, key string, data io.Reader) error {
 }
 
 func (s *Store) Download(ctx context.Context, key string) (io.ReadCloser, error) {
-	fullPath := filepath.Join(s.baseDir, key)
+	fullPath, err := s.validatePath(key)
+	if err != nil {
+		return nil, err
+	}
 
 	f, err := os.Open(fullPath)
 	if err != nil {
@@ -68,9 +99,12 @@ func (s *Store) Download(ctx context.Context, key string) (io.ReadCloser, error)
 }
 
 func (s *Store) Delete(ctx context.Context, key string) error {
-	fullPath := filepath.Join(s.baseDir, key)
+	fullPath, err := s.validatePath(key)
+	if err != nil {
+		return err
+	}
 
-	err := os.Remove(fullPath)
+	err = os.Remove(fullPath)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return errors.NotFound("blob not found", err)
@@ -82,5 +116,7 @@ func (s *Store) Delete(ctx context.Context, key string) error {
 
 func (s *Store) URL(key string) string {
 	// For local store, this might just be the file path or a mock URL
+	// Note: We don't strictly validate here as it's just generating a string,
+	// but usage of this URL should be careful.
 	return "file://" + filepath.Join(s.baseDir, key)
 }
