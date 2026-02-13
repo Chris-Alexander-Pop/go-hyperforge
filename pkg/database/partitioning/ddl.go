@@ -16,6 +16,12 @@ func quoteIdentifier(s string) string {
 	return fmt.Sprintf("\"%s\"", strings.ReplaceAll(s, "\"", "\"\""))
 }
 
+// quoteLiteral sanitizes a SQL string literal
+func quoteLiteral(s string) string {
+	// Simple sanitization: escape single quotes by doubling them
+	return strings.ReplaceAll(s, "'", "''")
+}
+
 // CreateRangePartition creates a range partition on a table
 // Example: CreateRangePartition(db, "orders", "created_at", "2023-01-01", "2023-02-01")
 func CreateRangePartition(db *gorm.DB, table, column, start, end string) error {
@@ -26,8 +32,12 @@ func CreateRangePartition(db *gorm.DB, table, column, start, end string) error {
 	qPart := quoteIdentifier(partitionName)
 	// qColumn := quoteIdentifier(column) // Not strictly needed in the CREATE TABLE syntax used below
 
+	// Escape string literals to prevent SQL injection
+	qStart := quoteLiteral(start)
+	qEnd := quoteLiteral(end)
+
 	sql := fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s PARTITION OF %s FOR VALUES FROM ('%s') TO ('%s');",
-		qPart, qTable, start, end)
+		qPart, qTable, qStart, qEnd)
 
 	if err := db.Exec(sql).Error; err != nil {
 		return errors.Wrap(err, "failed to create range partition")
