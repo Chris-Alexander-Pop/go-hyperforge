@@ -15,9 +15,9 @@ type captureLogger struct {
 	lastQuery string
 }
 
-func (c *captureLogger) LogMode(level logger.LogLevel) logger.Interface { return c }
-func (c *captureLogger) Info(ctx context.Context, s string, args ...interface{}) {}
-func (c *captureLogger) Warn(ctx context.Context, s string, args ...interface{}) {}
+func (c *captureLogger) LogMode(level logger.LogLevel) logger.Interface           { return c }
+func (c *captureLogger) Info(ctx context.Context, s string, args ...interface{})  {}
+func (c *captureLogger) Warn(ctx context.Context, s string, args ...interface{})  {}
 func (c *captureLogger) Error(ctx context.Context, s string, args ...interface{}) {}
 func (c *captureLogger) Trace(ctx context.Context, begin time.Time, fc func() (string, int64), err error) {
 	sql, _ := fc()

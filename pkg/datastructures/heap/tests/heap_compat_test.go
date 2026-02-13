@@ -2,8 +2,8 @@ package heap_test
 
 import (
 	stdheap "container/heap"
-	"testing"
 	myheap "github.com/chris-alexander-pop/system-design-library/pkg/datastructures/heap"
+	"testing"
 )
 
 func TestHeapInterfaceCompatibility(t *testing.T) {
