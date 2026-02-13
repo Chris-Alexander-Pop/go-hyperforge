@@ -1,8 +1,6 @@
 package quicksort
 
 import (
-	"math/rand"
-
 	"golang.org/x/exp/constraints"
 )
 
@@ -13,9 +11,25 @@ func Sort[T constraints.Ordered](s []T) {
 		return
 	}
 
-	// Randomized pivot for better average performance
-	pivotIdx := rand.Intn(len(s))
-	s[pivotIdx], s[len(s)-1] = s[len(s)-1], s[pivotIdx]
+	// Median-of-three pivot selection
+	// Reduces the chance of worst-case performance on sorted arrays
+	// and eliminates the global lock contention of math/rand.Intn
+	mid := len(s) / 2
+	low, high := 0, len(s)-1
+
+	if s[mid] < s[low] {
+		s[low], s[mid] = s[mid], s[low]
+	}
+	if s[high] < s[low] {
+		s[low], s[high] = s[high], s[low]
+	}
+	if s[high] < s[mid] {
+		s[mid], s[high] = s[high], s[mid]
+	}
+
+	// s[mid] is now the median of s[low], s[mid], s[high].
+	// Swap it with s[high] to use it as the pivot.
+	s[mid], s[high] = s[high], s[mid]
 
 	p := partition(s)
 
