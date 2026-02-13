@@ -186,6 +186,7 @@ func (q *Queue[T]) Pop() interface{} {
 	old := q.items
 	n := len(old)
 	item := old[n-1]
+	old[n-1] = nil // Avoid memory leak
 	item.Index = -1
 	q.items = old[0 : n-1]
 	return item
