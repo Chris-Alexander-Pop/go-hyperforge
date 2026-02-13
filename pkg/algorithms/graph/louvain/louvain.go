@@ -56,7 +56,7 @@ func Detect(g Graph) []Community {
 		commMap[c] = append(commMap[c], n)
 	}
 
-	var res []Community
+	res := make([]Community, 0, len(commMap))
 	for _, nodes := range commMap {
 		res = append(res, Community{Nodes: nodes})
 	}

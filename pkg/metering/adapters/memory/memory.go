@@ -57,7 +57,7 @@ func (m *MemoryMetering) GetUsage(ctx context.Context, filter metering.UsageFilt
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 
-	var results []metering.UsageEvent
+	results := make([]metering.UsageEvent, 0, len(m.usage))
 	for _, e := range m.usage {
 		if filter.TenantID != "" && e.TenantID != filter.TenantID {
 			continue

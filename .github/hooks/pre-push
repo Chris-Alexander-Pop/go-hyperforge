@@ -38,7 +38,17 @@ if ! git diff --quiet; then
 fi
 echo ""
 
-# 2. Run go vet
+# 2. Run golangci-lint
+echo "📋 Running golangci-lint..."
+if ! golangci-lint run ./... 2>&1; then
+    echo -e "${RED}❌ golangci-lint failed${NC}"
+    FAILED=1
+else
+    echo -e "${GREEN}✅ golangci-lint OK${NC}"
+fi
+echo ""
+
+# 3. Run go vet
 echo "📋 Running go vet..."
 if ! go vet ./... 2>&1; then
     echo -e "${RED}❌ go vet failed${NC}"
@@ -48,7 +58,7 @@ else
 fi
 echo ""
 
-# 3. Build check
+# 4. Build check
 echo "📋 Verifying build..."
 if ! go build ./... 2>&1; then
     echo -e "${RED}❌ Build failed${NC}"
@@ -58,7 +68,7 @@ else
 fi
 echo ""
 
-# 4. Run tests
+# 5. Run tests
 echo "📋 Running tests..."
 if ! go test -race ./pkg/... ./templates/... ./services/... 2>&1; then
     echo -e "${RED}❌ Tests failed${NC}"

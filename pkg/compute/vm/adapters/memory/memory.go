@@ -41,8 +41,8 @@ func (m *Manager) Create(ctx context.Context, opts vm.CreateOptions) (*vm.Instan
 		State:          vm.InstanceStateRunning,
 		InstanceType:   instanceType,
 		ImageID:        opts.ImageID,
-		PublicIP:       fmt.Sprintf("54.%d.%d.%d", rnd(1, 255), rnd(1, 255), rnd(1, 255)),
-		PrivateIP:      fmt.Sprintf("10.0.%d.%d", rnd(0, 255), rnd(1, 255)),
+		PublicIP:       fmt.Sprintf("54.%d.%d.%d", rndIPPart(1), rndIPPart(1), rndIPPart(1)),
+		PrivateIP:      fmt.Sprintf("10.0.%d.%d", rndIPPart(0), rndIPPart(1)),
 		Zone:           opts.Zone,
 		VPCSubnetID:    opts.SubnetID,
 		SecurityGroups: opts.SecurityGroupIDs,
@@ -58,8 +58,8 @@ func (m *Manager) Create(ctx context.Context, opts vm.CreateOptions) (*vm.Instan
 	return instance, nil
 }
 
-func rnd(min, max int) int {
-	return min + int(time.Now().UnixNano()%int64(max-min+1))
+func rndIPPart(min int) int {
+	return min + int(time.Now().UnixNano()%int64(255-min+1))
 }
 
 func (m *Manager) Get(ctx context.Context, instanceID string) (*vm.Instance, error) {

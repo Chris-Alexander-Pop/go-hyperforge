@@ -298,7 +298,7 @@ func (e *Engine) buildSearchQuery(q search.Query) map[string]interface{} {
 
 	// Build query
 	var must []interface{}
-	var filter []interface{}
+	filter := make([]interface{}, 0, len(q.Filters))
 
 	// Text query
 	if q.Text != "" {

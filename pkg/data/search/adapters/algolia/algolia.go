@@ -239,7 +239,7 @@ func (e *Engine) Search(ctx context.Context, indexName string, query search.Quer
 }
 
 func (e *Engine) buildFilters(filters []search.Filter) string {
-	var parts []string
+	parts := make([]string, 0, len(filters))
 
 	for _, f := range filters {
 		var filterStr string

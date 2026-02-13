@@ -130,7 +130,7 @@ func (u *Updater) CheckForUpdate(ctx context.Context, currentVersion string) (*U
 	u.reportProgress(UpdateProgress{State: StateChecking})
 
 	manifestURL := u.config.StorageURL + u.config.ManifestPath
-	req, err := http.NewRequestWithContext(ctx, "GET", manifestURL, nil)
+	req, err := http.NewRequestWithContext(ctx, "GET", manifestURL, http.NoBody)
 	if err != nil {
 		return nil, false, pkgerrors.Internal("failed to create request", err)
 	}
@@ -208,7 +208,7 @@ func (u *Updater) downloadFile(ctx context.Context, file UpdateFile) ([]byte, er
 	var lastErr error
 
 	for attempt := 0; attempt < u.config.MaxRetries; attempt++ {
-		req, err := http.NewRequestWithContext(ctx, "GET", file.URL, nil)
+		req, err := http.NewRequestWithContext(ctx, "GET", file.URL, http.NoBody)
 		if err != nil {
 			return nil, pkgerrors.Internal("failed to create request", err)
 		}

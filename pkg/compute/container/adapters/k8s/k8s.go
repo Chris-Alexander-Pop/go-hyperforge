@@ -199,8 +199,8 @@ func (r *Runtime) List(ctx context.Context, opts container.ListOptions) ([]*cont
 	}
 
 	result := make([]*container.Container, len(pods.Items))
-	for i, pod := range pods.Items {
-		result[i] = mapPodToContainer(&pod)
+	for i := range pods.Items {
+		result[i] = mapPodToContainer(&pods.Items[i])
 	}
 
 	return result, nil

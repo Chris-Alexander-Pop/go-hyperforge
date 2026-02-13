@@ -144,15 +144,20 @@ func (s *Saga) Execute(ctx context.Context, input interface{}) (*Execution, erro
 		}
 		exec.Steps = append(exec.Steps, stepResult)
 
-		// Apply timeout if specified
-		stepCtx := ctx
-		if step.Timeout > 0 {
-			var cancel context.CancelFunc
-			stepCtx, cancel = context.WithTimeout(ctx, step.Timeout)
-			defer cancel()
-		}
+		var output interface{}
+		err := func() error {
+			// Apply timeout if specified
+			stepCtx := ctx
+			if step.Timeout > 0 {
+				var cancel context.CancelFunc
+				stepCtx, cancel = context.WithTimeout(ctx, step.Timeout)
+				defer cancel()
+			}
 
-		output, err := step.Action(stepCtx, data)
+			var innerErr error
+			output, innerErr = step.Action(stepCtx, data)
+			return innerErr
+		}()
 		stepResult.CompletedAt = time.Now()
 
 		if err != nil {

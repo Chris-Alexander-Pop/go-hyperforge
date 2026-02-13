@@ -2,6 +2,7 @@ package kafka
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/IBM/sarama"
@@ -20,14 +21,14 @@ type consumer struct {
 }
 
 // newConsumer creates a new Kafka consumer.
-func newConsumer(b *Broker, topic, group string, consumerGroup sarama.ConsumerGroup) (*consumer, error) {
+func newConsumer(b *Broker, topic, group string, consumerGroup sarama.ConsumerGroup) *consumer {
 	return &consumer{
 		broker:        b,
 		topic:         topic,
 		group:         group,
 		consumerGroup: consumerGroup,
 		mu:            concurrency.NewSmartMutex(concurrency.MutexConfig{Name: "KafkaConsumer"}),
-	}, nil
+	}
 }
 
 func (c *consumer) Consume(ctx context.Context, handler messaging.MessageHandler) error {
@@ -122,7 +123,7 @@ func convertKafkaMessage(kafkaMsg *sarama.ConsumerMessage) *messaging.Message {
 
 	// If no message ID was in headers, generate one from partition+offset
 	if msg.ID == "" {
-		msg.ID = time.Now().Format("20060102150405") + "-" + string(rune(kafkaMsg.Partition)) + "-" + string(rune(kafkaMsg.Offset))
+		msg.ID = fmt.Sprintf("%s-%d-%d", time.Now().Format("20060102150405"), kafkaMsg.Partition, kafkaMsg.Offset)
 	}
 
 	return msg

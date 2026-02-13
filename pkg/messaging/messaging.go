@@ -190,9 +190,9 @@ type consumeOptions struct {
 }
 
 // WithMaxMessages sets the maximum number of messages to receive.
-func WithMaxMessages(max int) ConsumeOption {
+func WithMaxMessages(n int) ConsumeOption {
 	return func(o *consumeOptions) {
-		o.MaxMessages = max
+		o.MaxMessages = n
 	}
 }
 

@@ -88,10 +88,7 @@ type Broker struct {
 
 // New creates a new Kafka broker.
 func New(cfg Config) (*Broker, error) {
-	saramaCfg, err := buildSaramaConfig(cfg)
-	if err != nil {
-		return nil, messaging.ErrInvalidConfig(err.Error(), err)
-	}
+	saramaCfg := buildSaramaConfig(cfg)
 
 	// Parse brokers if provided as comma-separated string
 	brokers := cfg.Brokers
@@ -112,7 +109,7 @@ func New(cfg Config) (*Broker, error) {
 	}, nil
 }
 
-func buildSaramaConfig(cfg Config) (*sarama.Config, error) {
+func buildSaramaConfig(cfg Config) *sarama.Config {
 	saramaCfg := sarama.NewConfig()
 
 	// Version
@@ -183,7 +180,7 @@ func buildSaramaConfig(cfg Config) (*sarama.Config, error) {
 		}
 	}
 
-	return saramaCfg, nil
+	return saramaCfg
 }
 
 // Producer creates a new Kafka producer for the specified topic.
@@ -225,7 +222,7 @@ func (b *Broker) Consumer(topic string, group string) (messaging.Consumer, error
 		return nil, messaging.ErrConnectionFailed(err)
 	}
 
-	return newConsumer(b, topic, group, consumerGroup)
+	return newConsumer(b, topic, group, consumerGroup), nil
 }
 
 // Close shuts down the Kafka broker connection.

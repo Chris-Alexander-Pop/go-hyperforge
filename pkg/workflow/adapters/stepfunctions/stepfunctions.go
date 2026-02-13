@@ -101,7 +101,8 @@ func (e *Engine) RegisterWorkflow(ctx context.Context, def workflow.WorkflowDefi
 
 func convertStates(states []workflow.State) map[string]interface{} {
 	result := make(map[string]interface{})
-	for _, s := range states {
+	for i := range states {
+		s := &states[i]
 		state := map[string]interface{}{
 			"Type": s.Type,
 		}

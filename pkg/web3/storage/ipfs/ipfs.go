@@ -113,7 +113,7 @@ func (c *Client) AddJSON(ctx context.Context, data interface{}) (string, error) 
 // Get retrieves content from IPFS by CID.
 func (c *Client) Get(ctx context.Context, cid string) ([]byte, error) {
 	url := fmt.Sprintf("%s/api/v0/cat?arg=%s", c.apiURL, cid)
-	req, err := http.NewRequestWithContext(ctx, "POST", url, nil)
+	req, err := http.NewRequestWithContext(ctx, "POST", url, http.NoBody)
 	if err != nil {
 		return nil, pkgerrors.Internal("failed to create request", err)
 	}
@@ -148,7 +148,7 @@ func (c *Client) GetURL(cid string) string {
 // Pin pins content to prevent garbage collection.
 func (c *Client) Pin(ctx context.Context, cid string) error {
 	url := fmt.Sprintf("%s/api/v0/pin/add?arg=%s", c.apiURL, cid)
-	req, err := http.NewRequestWithContext(ctx, "POST", url, nil)
+	req, err := http.NewRequestWithContext(ctx, "POST", url, http.NoBody)
 	if err != nil {
 		return pkgerrors.Internal("failed to create request", err)
 	}
@@ -170,7 +170,7 @@ func (c *Client) Pin(ctx context.Context, cid string) error {
 // Unpin removes a pin from content.
 func (c *Client) Unpin(ctx context.Context, cid string) error {
 	url := fmt.Sprintf("%s/api/v0/pin/rm?arg=%s", c.apiURL, cid)
-	req, err := http.NewRequestWithContext(ctx, "POST", url, nil)
+	req, err := http.NewRequestWithContext(ctx, "POST", url, http.NoBody)
 	if err != nil {
 		return pkgerrors.Internal("failed to create request", err)
 	}
@@ -187,7 +187,7 @@ func (c *Client) Unpin(ctx context.Context, cid string) error {
 // ListPins returns all pinned CIDs.
 func (c *Client) ListPins(ctx context.Context) ([]string, error) {
 	url := fmt.Sprintf("%s/api/v0/pin/ls", c.apiURL)
-	req, err := http.NewRequestWithContext(ctx, "POST", url, nil)
+	req, err := http.NewRequestWithContext(ctx, "POST", url, http.NoBody)
 	if err != nil {
 		return nil, pkgerrors.Internal("failed to create request", err)
 	}
@@ -218,7 +218,7 @@ func (c *Client) ListPins(ctx context.Context) ([]string, error) {
 // ID returns the node's peer ID and addresses.
 func (c *Client) ID(ctx context.Context) (map[string]interface{}, error) {
 	url := fmt.Sprintf("%s/api/v0/id", c.apiURL)
-	req, err := http.NewRequestWithContext(ctx, "POST", url, nil)
+	req, err := http.NewRequestWithContext(ctx, "POST", url, http.NoBody)
 	if err != nil {
 		return nil, pkgerrors.Internal("failed to create request", err)
 	}

@@ -97,10 +97,11 @@ func (e *Engine) GetIndex(ctx context.Context, indexName string) (*search.IndexI
 func (e *Engine) Index(ctx context.Context, indexName, docID string, doc interface{}) error {
 	e.mu.Lock()
 	defer e.mu.Unlock()
-	return e.indexLocked(indexName, docID, doc)
+	e.indexLocked(indexName, docID, doc)
+	return nil
 }
 
-func (e *Engine) indexLocked(indexName, docID string, doc interface{}) error {
+func (e *Engine) indexLocked(indexName, docID string, doc interface{}) {
 	idx, exists := e.indexes[indexName]
 	if !exists {
 		// Auto-create index
@@ -133,8 +134,6 @@ func (e *Engine) indexLocked(indexName, docID string, doc interface{}) error {
 
 	// Add new document to inverted index
 	e.addToIndex(idx, docID, data)
-
-	return nil
 }
 
 func (e *Engine) Get(ctx context.Context, indexName, docID string) (*search.Hit, error) {
@@ -193,92 +192,8 @@ func (e *Engine) Search(ctx context.Context, indexName string, query search.Quer
 		return nil, errors.NotFound("index not found", nil)
 	}
 
-	var hits []search.Hit
-
-	// Determine candidate documents
-	var candidateIDs []string
-	useInvertedIndex := false
-
-	if query.Text != "" {
-		tokens := e.tokenize(query.Text)
-		if len(tokens) > 0 {
-			useInvertedIndex = true
-			// Initialize candidates with the first token's documents
-			if docs, ok := idx.invertedIndex[tokens[0]]; ok {
-				candidateIDs = make([]string, 0, len(docs))
-				for id := range docs {
-					candidateIDs = append(candidateIDs, id)
-				}
-			}
-
-			// Intersect with remaining tokens
-			for i := 1; i < len(tokens); i++ {
-				token := tokens[i]
-				docs, ok := idx.invertedIndex[token]
-				if !ok {
-					// Token not found, intersection is empty
-					candidateIDs = nil
-					break
-				}
-
-				// Filter candidates
-				n := 0
-				for _, id := range candidateIDs {
-					if _, exists := docs[id]; exists {
-						candidateIDs[n] = id
-						n++
-					}
-				}
-				candidateIDs = candidateIDs[:n]
-
-				if len(candidateIDs) == 0 {
-					break
-				}
-			}
-		}
-	}
-
-	// Define iterator over candidates
-	var iterateDocs func(yield func(string, *document) bool)
-	if useInvertedIndex {
-		iterateDocs = func(yield func(string, *document) bool) {
-			for _, id := range candidateIDs {
-				if doc, ok := idx.documents[id]; ok {
-					if !yield(id, doc) {
-						return
-					}
-				}
-			}
-		}
-	} else {
-		// Fallback: iterate all documents
-		iterateDocs = func(yield func(string, *document) bool) {
-			for id, doc := range idx.documents {
-				if !yield(id, doc) {
-					return
-				}
-			}
-		}
-	}
-
-	// Perform matching on candidates
-	iterateDocs(func(docID string, doc *document) bool {
-		if e.matchesQuery(doc, query) {
-			score := e.calculateScore(doc, query)
-			hit := search.Hit{
-				ID:     docID,
-				Score:  score,
-				Source: doc.data,
-			}
-
-			if query.Highlight {
-				hit.Highlights = e.generateHighlights(doc, query)
-			}
-
-			hits = append(hits, hit)
-		}
-		return true
-	})
+	candidateIDs, useInvertedIndex := e.getCandidateIDs(idx, query.Text)
+	hits := e.getHits(idx, candidateIDs, useInvertedIndex, query)
 
 	// Sort by score (descending)
 	sort.Slice(hits, func(i, j int) bool {
@@ -291,32 +206,7 @@ func (e *Engine) Search(ctx context.Context, indexName string, query search.Quer
 	}
 
 	total := int64(len(hits))
-
-	// Apply pagination
-	from := query.From
-	if from < 0 {
-		from = 0
-	}
-	if from >= len(hits) {
-		hits = []search.Hit{}
-	} else {
-		hits = hits[from:]
-	}
-
-	size := query.Size
-	if size <= 0 {
-		size = 10
-	}
-	if size > len(hits) {
-		size = len(hits)
-	}
-	hits = hits[:size]
-
-	// Calculate max score
-	var maxScore float64
-	if len(hits) > 0 {
-		maxScore = hits[0].Score
-	}
+	hits, maxScore := e.paginateHits(hits, query)
 
 	return &search.SearchResult{
 		Hits:     hits,
@@ -325,6 +215,121 @@ func (e *Engine) Search(ctx context.Context, indexName string, query search.Quer
 		Took:     time.Since(start),
 		Facets:   e.calculateFacets(idx, query),
 	}, nil
+}
+
+func (e *Engine) getCandidateIDs(idx *index, queryText string) ([]string, bool) {
+	if queryText == "" {
+		return nil, false
+	}
+
+	tokens := e.tokenize(queryText)
+	if len(tokens) == 0 {
+		return nil, false
+	}
+
+	// Initialize candidates with the first token's documents
+	docs, ok := idx.invertedIndex[tokens[0]]
+	if !ok {
+		return nil, true
+	}
+
+	candidateIDs := make([]string, 0, len(docs))
+	for id := range docs {
+		candidateIDs = append(candidateIDs, id)
+	}
+
+	// Intersect with remaining tokens
+	for i := 1; i < len(tokens); i++ {
+		token := tokens[i]
+		docs, ok := idx.invertedIndex[token]
+		if !ok {
+			return nil, true
+		}
+
+		// Filter candidates
+		n := 0
+		for _, id := range candidateIDs {
+			if _, exists := docs[id]; exists {
+				candidateIDs[n] = id
+				n++
+			}
+		}
+		candidateIDs = candidateIDs[:n]
+
+		if len(candidateIDs) == 0 {
+			break
+		}
+	}
+
+	return candidateIDs, true
+}
+
+func (e *Engine) getHits(idx *index, candidateIDs []string, useInvertedIndex bool, query search.Query) []search.Hit {
+	var hits []search.Hit
+
+	iterateDocs := func(yield func(string, *document) bool) {
+		if useInvertedIndex {
+			for _, id := range candidateIDs {
+				if doc, ok := idx.documents[id]; ok {
+					if !yield(id, doc) {
+						return
+					}
+				}
+			}
+		} else {
+			for id, doc := range idx.documents {
+				if !yield(id, doc) {
+					return
+				}
+			}
+		}
+	}
+
+	iterateDocs(func(docID string, doc *document) bool {
+		if e.matchesQuery(doc, query) {
+			hit := search.Hit{
+				ID:     docID,
+				Score:  e.calculateScore(doc, query),
+				Source: doc.data,
+			}
+			if query.Highlight {
+				hit.Highlights = e.generateHighlights(doc, query)
+			}
+			hits = append(hits, hit)
+		}
+		return true
+	})
+
+	return hits
+}
+
+func (e *Engine) paginateHits(hits []search.Hit, query search.Query) ([]search.Hit, float64) {
+	if len(hits) == 0 {
+		return []search.Hit{}, 0
+	}
+
+	maxScore := hits[0].Score
+
+	from := query.From
+	if from < 0 {
+		from = 0
+	}
+
+	if from >= len(hits) {
+		return []search.Hit{}, maxScore
+	}
+
+	hits = hits[from:]
+
+	size := query.Size
+	if size <= 0 {
+		size = 10
+	}
+	if size > len(hits) {
+		size = len(hits)
+	}
+
+	return hits[:size], maxScore
 }
 
 func (e *Engine) matchesQuery(doc *document, query search.Query) bool {
@@ -572,9 +577,9 @@ func (e *Engine) Bulk(ctx context.Context, indexName string, ops []search.BulkOp
 
 		switch op.Action {
 		case search.BulkActionIndex, search.BulkActionCreate:
-			err = e.indexLocked(indexName, op.ID, op.Document)
+			e.indexLocked(indexName, op.ID, op.Document)
 		case search.BulkActionUpdate:
-			err = e.indexLocked(indexName, op.ID, op.Document)
+			e.indexLocked(indexName, op.ID, op.Document)
 		case search.BulkActionDelete:
 			err = e.deleteLocked(indexName, op.ID)
 		}

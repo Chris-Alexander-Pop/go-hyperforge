@@ -112,7 +112,7 @@ func (a *Adapter) Find(ctx context.Context, collection string, query map[string]
 		return nil, errors.Internal("failed to scan dynamodb", err)
 	}
 
-	var docs []document.Document
+	docs := make([]document.Document, 0, len(output.Items))
 	for _, item := range output.Items {
 		var doc document.Document
 		if err := attributevalue.UnmarshalMap(item, &doc); err != nil {

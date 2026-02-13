@@ -47,7 +47,7 @@ func (c *Client) Chat(ctx context.Context, messages []llm.Message, opts ...llm.G
 	// The SDK manages history in StartChat if we use SendMessage, but we are stateless here mostly.
 	// So we need to reconstruct history.
 
-	var history []*genai.Content
+	history := make([]*genai.Content, 0, len(messages))
 	// Last message is the new prompt
 	if len(messages) == 0 {
 		return nil, pkgerrors.InvalidArgument("empty messages", nil)

@@ -49,7 +49,7 @@ func (m *Manager) GetRules(ctx context.Context) ([]waf.Rule, error) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 
-	var rules []waf.Rule
+	rules := make([]waf.Rule, 0, len(m.blockedIPs))
 	for _, rule := range m.blockedIPs {
 		rules = append(rules, rule)
 	}

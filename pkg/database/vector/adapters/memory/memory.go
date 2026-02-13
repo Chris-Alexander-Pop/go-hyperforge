@@ -44,7 +44,7 @@ func (s *Store) Search(ctx context.Context, queryVector []float32, limit int) ([
 		score float32
 	}
 
-	var results []scored
+	results := make([]scored, 0, len(s.entries))
 	for _, e := range s.entries {
 		score := cosineSimilarity(queryVector, e.vector)
 		results = append(results, scored{entry: e, score: score})

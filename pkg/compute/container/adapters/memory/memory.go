@@ -96,7 +96,7 @@ func (r *Runtime) List(ctx context.Context, opts container.ListOptions) ([]*cont
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
-	var result []*container.Container
+	result := make([]*container.Container, 0, len(r.containers))
 
 	for _, ctr := range r.containers {
 		// Filter out stopped if not All

@@ -96,7 +96,7 @@ func (a *Adapter) Update(ctx context.Context, collection string, filter map[stri
 		return errors.InvalidArgument("filter must contain 'id' for update", nil)
 	}
 
-	var updates []firestore.Update
+	updates := make([]firestore.Update, 0, len(update))
 	for k, v := range update {
 		// Split nested paths if dot notation is used
 		path := k

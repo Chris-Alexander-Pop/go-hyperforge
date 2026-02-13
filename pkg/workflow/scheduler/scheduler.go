@@ -113,10 +113,7 @@ func (s *Scheduler) Schedule(name, schedule string, handler JobFunc) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	nextRun, err := parseCron(schedule)
-	if err != nil {
-		return errors.InvalidArgument("invalid schedule: "+err.Error(), err)
-	}
+	nextRun := parseCron(schedule)
 
 	job := &Job{
 		ID:        uuid.NewString(),
@@ -157,25 +154,25 @@ func (s *Scheduler) ScheduleOnce(name string, runAt time.Time, handler JobFunc) 
 
 // parseCron parses a simple cron expression and returns next run time.
 // Supports: "* * * * *" (minute hour day month weekday) or "@hourly", "@daily".
-func parseCron(schedule string) (time.Time, error) {
+func parseCron(schedule string) time.Time {
 	now := time.Now()
 
 	switch schedule {
 	case "@hourly":
-		return now.Truncate(time.Hour).Add(time.Hour), nil
+		return now.Truncate(time.Hour).Add(time.Hour)
 	case "@daily":
-		return time.Date(now.Year(), now.Month(), now.Day()+1, 0, 0, 0, 0, now.Location()), nil
+		return time.Date(now.Year(), now.Month(), now.Day()+1, 0, 0, 0, 0, now.Location())
 	case "@weekly":
 		daysUntilSunday := (7 - int(now.Weekday())) % 7
 		if daysUntilSunday == 0 {
 			daysUntilSunday = 7
 		}
-		return time.Date(now.Year(), now.Month(), now.Day()+daysUntilSunday, 0, 0, 0, 0, now.Location()), nil
+		return time.Date(now.Year(), now.Month(), now.Day()+daysUntilSunday, 0, 0, 0, 0, now.Location())
 	case "once":
-		return time.Time{}, nil
+		return time.Time{}
 	default:
 		// Simple: just run every minute for demo purposes
-		return now.Truncate(time.Minute).Add(time.Minute), nil
+		return now.Truncate(time.Minute).Add(time.Minute)
 	}
 }
 
@@ -280,8 +277,7 @@ func (s *Scheduler) executeJob(ctx context.Context, job *Job) {
 
 	// Update next run
 	if job.Schedule != "once" {
-		nextRun, _ := parseCron(job.Schedule)
-		job.NextRun = nextRun
+		job.NextRun = parseCron(job.Schedule)
 	} else {
 		job.Enabled = false // Disable one-time jobs after execution
 	}

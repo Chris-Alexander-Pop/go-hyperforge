@@ -103,14 +103,13 @@ func (a *Adapter) Query(ctx context.Context, query string) ([]*timeseries.Point,
 
 	// Parsing Timestream results is complex due to dynamic schema.
 	// This is a simplified example returning generic points.
-	var results []*timeseries.Point
-
-	for _, row := range output.Rows {
+	results := make([]*timeseries.Point, len(output.Rows))
+	for i, row := range output.Rows {
 		p := &timeseries.Point{
 			Fields: make(map[string]interface{}),
 		}
-		for i, datum := range row.Data {
-			colInfo := output.ColumnInfo[i]
+		for j, datum := range row.Data {
+			colInfo := output.ColumnInfo[j]
 			name := aws.ToString(colInfo.Name)
 
 			if datum.ScalarValue != nil {
@@ -118,7 +117,7 @@ func (a *Adapter) Query(ctx context.Context, query string) ([]*timeseries.Point,
 			}
 			// Handling time column specifically requires known name or type check
 		}
-		results = append(results, p)
+		results[i] = p
 	}
 
 	return results, nil
@@ -131,7 +130,7 @@ func (a *Adapter) Close() error {
 
 // convertPoint converts a generic Point to a Timestream Record.
 func convertPoint(p *timeseries.Point) types.Record {
-	var dimensions []types.Dimension
+	dimensions := make([]types.Dimension, 0, len(p.Tags))
 	for k, v := range p.Tags {
 		dimensions = append(dimensions, types.Dimension{
 			Name:  aws.String(k),
@@ -141,7 +140,7 @@ func convertPoint(p *timeseries.Point) types.Record {
 
 	// Prepare measure value. Timestream supports Multi-measure records.
 	// For simplicity, we handle simple multi-measure records here using MeasureValues.
-	var measureValues []types.MeasureValue
+	measureValues := make([]types.MeasureValue, 0, len(p.Fields))
 	for k, v := range p.Fields {
 		valStr := fmt.Sprintf("%v", v)
 		valType := types.MeasureValueTypeVarchar // Default to string

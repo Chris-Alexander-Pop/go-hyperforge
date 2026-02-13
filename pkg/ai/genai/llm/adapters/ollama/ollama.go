@@ -36,7 +36,7 @@ func (c *Client) Chat(ctx context.Context, messages []llm.Message, opts ...llm.G
 	}
 
 	// Convert messages
-	var ollamaMsgs []map[string]string
+	ollamaMsgs := make([]map[string]string, 0, len(messages))
 	for _, m := range messages {
 		ollamaMsgs = append(ollamaMsgs, map[string]string{
 			"role":    string(m.Role),

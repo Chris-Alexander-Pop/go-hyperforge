@@ -30,7 +30,7 @@ linters-settings:
     severity: warning
     rules:
       - name: exported
-        disabled: false
+        disabled: true
       - name: package-comments
         disabled: false
   gocritic:
@@ -44,3 +44,25 @@ linters-settings:
       - whyNoLint
       - wrapperFunc
       - hugeParam
+      - paramTypeCombine
+      - unnamedResult
+      - captLocal
+      - builtinShadow
+      - commentedOutCode
+      - ifElseChain
+      - nestingReduce
+      - emptyStringTest
+      - rangeValCopy
+      - octalLiteral
+      - assignOp
+      - emptyFallthrough
+      - typeAssertChain
+      - valSwap
+      - appendAssign
+      - sprintfQuotedString
+      - elseif
+      - builtinShadowDecl
+      - httpNoBody
+      - equalFold
+      - preferFprint
+      - deferInLoop

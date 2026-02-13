@@ -103,16 +103,16 @@ func (r *Registry) Lookup(ctx context.Context, serviceName string, opts discover
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
-	return r.lookupLocked(ctx, serviceName, opts)
+	return r.lookupLocked(serviceName, opts), nil
 }
 
-func (r *Registry) lookupLocked(ctx context.Context, serviceName string, opts discovery.QueryOptions) ([]*discovery.Service, error) {
+func (r *Registry) lookupLocked(serviceName string, opts discovery.QueryOptions) []*discovery.Service {
 	ids, ok := r.byName[serviceName]
 	if !ok {
-		return []*discovery.Service{}, nil
+		return []*discovery.Service{}
 	}
 
-	var result []*discovery.Service
+	result := make([]*discovery.Service, 0, len(ids))
 	for _, id := range ids {
 		svc := r.services[id]
 		if svc == nil {
@@ -137,7 +137,7 @@ func (r *Registry) lookupLocked(ctx context.Context, serviceName string, opts di
 		result = result[:opts.Limit]
 	}
 
-	return result, nil
+	return result
 }
 
 func containsTag(tags []string, tag string) bool {
@@ -165,7 +165,7 @@ func (r *Registry) List(ctx context.Context, opts discovery.QueryOptions) ([]*di
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
-	var result []*discovery.Service
+	result := make([]*discovery.Service, 0, len(r.services))
 	for _, svc := range r.services {
 		if opts.HealthyOnly && svc.Health != discovery.HealthStatusPassing {
 			continue
@@ -197,7 +197,7 @@ func (r *Registry) Watch(ctx context.Context, serviceName string) (<-chan []*dis
 	ch := make(chan []*discovery.Service, 10)
 
 	// Send initial state synchronously
-	services, _ := r.lookupLocked(ctx, serviceName, discovery.QueryOptions{})
+	services := r.lookupLocked(serviceName, discovery.QueryOptions{})
 	ch <- services
 
 	r.watchers[serviceName] = append(r.watchers[serviceName], ch)

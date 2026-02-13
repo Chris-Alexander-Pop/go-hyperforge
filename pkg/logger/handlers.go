@@ -212,62 +212,78 @@ func (h *RedactHandler) Handle(ctx context.Context, r slog.Record) error {
 }
 
 func (h *RedactHandler) redactAttr(a slog.Attr, checkOnly bool) (slog.Attr, bool) {
-	// Recursive for groups
 	if a.Value.Kind() == slog.KindGroup {
-		groupAttrs := a.Value.Group()
+		return h.redactGroup(a, checkOnly)
+	}
+	return h.redactScalar(a, checkOnly)
+}
 
-		// If checking only, avoid allocating newGroup slice
-		if checkOnly {
-			for _, sub := range groupAttrs {
-				if _, changed := h.redactAttr(sub, true); changed {
-					return slog.Attr{}, true
-				}
-			}
-			return a, false
-		}
+func (h *RedactHandler) redactGroup(a slog.Attr, checkOnly bool) (slog.Attr, bool) {
+	groupAttrs := a.Value.Group()
 
-		newGroup := make([]slog.Attr, len(groupAttrs))
-		groupChanged := false
-		for i, sub := range groupAttrs {
-			var changed bool
-			newGroup[i], changed = h.redactAttr(sub, false)
-			if changed {
-				groupChanged = true
+	if checkOnly {
+		for _, sub := range groupAttrs {
+			if _, changed := h.redactAttr(sub, true); changed {
+				return slog.Attr{}, true
 			}
-		}
-		if groupChanged {
-			return slog.Attr{Key: a.Key, Value: slog.GroupValue(newGroup...)}, true
 		}
 		return a, false
 	}
 
-	if a.Value.Kind() == slog.KindString {
-		// Identify specific keys?
-		key := strings.ToLower(a.Key)
-		if strings.Contains(key, "token") || strings.Contains(key, "password") || strings.Contains(key, "secret") ||
-			strings.Contains(key, "api_key") || strings.Contains(key, "apikey") || strings.Contains(key, "access_key") ||
-			strings.Contains(key, "authorization") || strings.Contains(key, "cookie") || strings.Contains(key, "bearer") {
-			if checkOnly {
-				return slog.Attr{}, true
-			}
-			return slog.String(a.Key, "[REDACTED]"), true
-		}
-
-		// Regex scan value
-		val := a.Value.String()
-		if checkOnly {
-			if h.shouldRedactString(val) {
-				return slog.Attr{}, true
-			}
-			return a, false
-		}
-
-		newVal := h.redactString(val)
-		if newVal != val {
-			return slog.String(a.Key, newVal), true
+	newGroup := make([]slog.Attr, len(groupAttrs))
+	groupChanged := false
+	for i, sub := range groupAttrs {
+		var changed bool
+		newGroup[i], changed = h.redactAttr(sub, false)
+		if changed {
+			groupChanged = true
 		}
 	}
+	if groupChanged {
+		return slog.Attr{Key: a.Key, Value: slog.GroupValue(newGroup...)}, true
+	}
 	return a, false
+}
+
+func (h *RedactHandler) redactScalar(a slog.Attr, checkOnly bool) (slog.Attr, bool) {
+	if a.Value.Kind() != slog.KindString {
+		return a, false
+	}
+
+	key := strings.ToLower(a.Key)
+	if h.isSensitiveKey(key) {
+		if checkOnly {
+			return slog.Attr{}, true
+		}
+		return slog.String(a.Key, "[REDACTED]"), true
+	}
+
+	val := a.Value.String()
+	if checkOnly {
+		if h.shouldRedactString(val) {
+			return slog.Attr{}, true
+		}
+		return a, false
+	}
+
+	newVal := h.redactString(val)
+	if newVal != val {
+		return slog.String(a.Key, newVal), true
+	}
+	return a, false
+}
+
+func (h *RedactHandler) isSensitiveKey(key string) bool {
+	sensitiveKeys := []string{
+		"token", "password", "secret", "api_key", "apikey",
+		"access_key", "authorization", "cookie", "bearer",
+	}
+	for _, k := range sensitiveKeys {
+		if strings.Contains(key, k) {
+			return true
+		}
+	}
+	return false
 }
 
 func (h *RedactHandler) shouldRedactString(s string) bool {

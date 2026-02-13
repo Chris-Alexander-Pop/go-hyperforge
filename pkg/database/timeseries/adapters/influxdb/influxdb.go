@@ -57,7 +57,7 @@ func (a *Adapter) WriteBatch(ctx context.Context, points []*timeseries.Point) er
 		return nil
 	}
 
-	var influxPoints []*write.Point
+	influxPoints := make([]*write.Point, 0, len(points))
 	for _, p := range points {
 		influxPoints = append(influxPoints, convertPoint(p))
 	}
