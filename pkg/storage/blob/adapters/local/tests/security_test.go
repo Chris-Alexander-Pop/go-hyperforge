@@ -91,3 +91,28 @@ func TestRelativePathInitialization(t *testing.T) {
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "path traversal detected")
 }
+
+func TestURLPathTraversal(t *testing.T) {
+	storeDir := t.TempDir()
+	cfg := blob.Config{LocalDir: storeDir}
+	store, err := local.New(cfg)
+	require.NoError(t, err)
+
+	// Attempt traversal
+	maliciousKey := "../../../etc/passwd"
+	url := store.URL(maliciousKey)
+
+	// URL should be empty for invalid path
+	require.Equal(t, "", url, "URL should be empty for path traversal attempt")
+
+	// Valid case
+	validKey := "test.txt"
+	url = store.URL(validKey)
+	require.NotEmpty(t, url)
+	require.Contains(t, url, "file://")
+	require.Contains(t, url, "test.txt")
+
+	// Verify the valid URL points inside the store directory
+	absStoreDir, _ := filepath.Abs(storeDir)
+	require.Contains(t, url, absStoreDir)
+}
