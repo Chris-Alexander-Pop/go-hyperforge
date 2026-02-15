@@ -24,3 +24,8 @@
 **Vulnerability:** The `CreateRangePartition` function in `pkg/database/partitioning/ddl.go` constructed SQL queries using `fmt.Sprintf` with user-supplied strings inside single quotes (`'%s'`). This allowed attackers to escape the string literal via a single quote and inject arbitrary SQL.
 **Learning:** DDL statements (like `CREATE TABLE`) often don't support parameterized queries (prepared statements) for all values, leading developers to fallback to string formatting. This is a common trap.
 **Prevention:** When parameterized queries are not possible, ALWAYS use a dedicated escaping function (like `quoteLiteral`) that handles the specific escaping rules of the database dialect (e.g., doubling single quotes). Never trust string concatenation for SQL.
+
+## 2026-02-05 - Path Traversal Bypass via Multi-Layer Encoding
+**Vulnerability:** The `DetectPathTraversal` function failed to detect path traversal attempts when the input was encoded multiple times (e.g., triple encoded `../` as `%25252e%25252e%25252f`). The function only checked specific regex patterns for single and double encoded strings on the raw input.
+**Learning:** Security checks that rely on pattern matching against encoded inputs are brittle. Attackers can layer encodings to bypass static regex checks. Normalization (decoding) must occur *before* or *during* the check to reveal the true payload.
+**Prevention:** Implement iterative decoding (with a limit to prevent DoS) and check for malicious patterns at each step of the decoding process. This ensures that hidden payloads are detected regardless of the encoding depth.
