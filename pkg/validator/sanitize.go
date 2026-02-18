@@ -1,8 +1,11 @@
 package validator
 
 import (
+	"fmt"
 	"html"
 	"net/url"
+	"os"
+	"path/filepath"
 	"regexp"
 	"strings"
 )
@@ -191,6 +194,31 @@ func SanitizePath(input string) string {
 		}
 	}
 	return result
+}
+
+// ValidatePathInside checks if the target path is within the base directory.
+// It resolves paths to absolute paths and cleans them.
+// Returns the absolute clean path if valid, or an error.
+func ValidatePathInside(baseDir, targetPath string) (string, error) {
+	absBase, err := filepath.Abs(baseDir)
+	if err != nil {
+		return "", fmt.Errorf("failed to resolve base directory: %w", err)
+	}
+
+	// Clean the target path (relative to base)
+	fullPath := filepath.Join(absBase, targetPath)
+
+	// Ensure prefix matches
+	prefix := absBase
+	if !strings.HasSuffix(prefix, string(os.PathSeparator)) {
+		prefix += string(os.PathSeparator)
+	}
+
+	if !strings.HasPrefix(fullPath, prefix) {
+		return "", fmt.Errorf("path traversal attempt: path %s resolves to %s which is not within %s", targetPath, fullPath, baseDir)
+	}
+
+	return fullPath, nil
 }
 
 // =========================================================================

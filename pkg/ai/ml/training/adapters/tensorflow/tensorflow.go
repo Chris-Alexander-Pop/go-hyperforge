@@ -23,6 +23,7 @@ import (
 
 	"github.com/chris-alexander-pop/system-design-library/pkg/ai/ml/training"
 	pkgerrors "github.com/chris-alexander-pop/system-design-library/pkg/errors"
+	"github.com/chris-alexander-pop/system-design-library/pkg/validator"
 	"github.com/google/uuid"
 )
 
@@ -98,9 +99,16 @@ func (t *Trainer) StartJob(ctx context.Context, config training.JobConfig) (*tra
 	outputDir := config.OutputPath
 	if outputDir == "" {
 		outputDir = filepath.Join(jobDir, "output")
-		if err := os.MkdirAll(outputDir, 0o755); err != nil {
-			return nil, pkgerrors.Internal("failed to create output directory", err)
-		}
+	}
+
+	cleanOutputDir, err := validator.ValidatePathInside(jobDir, outputDir)
+	if err != nil {
+		return nil, pkgerrors.InvalidArgument("invalid output path", err)
+	}
+	outputDir = cleanOutputDir
+
+	if err := os.MkdirAll(outputDir, 0o755); err != nil {
+		return nil, pkgerrors.Internal("failed to create output directory", err)
 	}
 
 	job := &training.Job{
@@ -113,8 +121,14 @@ func (t *Trainer) StartJob(ctx context.Context, config training.JobConfig) (*tra
 		Metrics:    make(map[string]float64),
 	}
 
+	// Validate entry point
+	cleanEntryPoint, err := validator.ValidatePathInside(jobDir, config.EntryPoint)
+	if err != nil {
+		return nil, pkgerrors.InvalidArgument("invalid entry point", err)
+	}
+
 	// Build command
-	args := []string{config.EntryPoint}
+	args := []string{cleanEntryPoint}
 
 	// Add hyperparameters as CLI arguments
 	for key, value := range config.Hyperparameters {
