@@ -12,8 +12,8 @@ package bloomfilter
 
 import (
 	"hash"
-	"hash/fnv"
 	"math"
+	"math/bits"
 	"unsafe"
 
 	"github.com/chris-alexander-pop/system-design-library/pkg/concurrency"
@@ -155,17 +155,29 @@ func (bf *BloomFilter) Clear() {
 }
 
 // doubleHash computes two 64-bit hash values for double hashing.
+// It uses an inline implementation of FNV-1a 128-bit to avoid allocations.
 func doubleHash(data []byte) (uint64, uint64) {
-	h := fnv.New128a()
-	h.Write(data)
-	var buf [16]byte
-	sum := h.Sum(buf[:0])
+	// Initialize with offset basis for FNV-1a 128-bit
+	// Upper 64 bits: 0x6c62272e07bb0142
+	// Lower 64 bits: 0x62b821756295c58d
+	h1 := uint64(0x6c62272e07bb0142)
+	h2 := uint64(0x62b821756295c58d)
 
-	// Split 128-bit hash into two 64-bit hashes
-	h1 := uint64(sum[0])<<56 | uint64(sum[1])<<48 | uint64(sum[2])<<40 | uint64(sum[3])<<32 |
-		uint64(sum[4])<<24 | uint64(sum[5])<<16 | uint64(sum[6])<<8 | uint64(sum[7])
-	h2 := uint64(sum[8])<<56 | uint64(sum[9])<<48 | uint64(sum[10])<<40 | uint64(sum[11])<<32 |
-		uint64(sum[12])<<24 | uint64(sum[13])<<16 | uint64(sum[14])<<8 | uint64(sum[15])
+	for _, b := range data {
+		h2 ^= uint64(b)
+
+		// Multiply by FNV prime (2^88 + 315)
+		// p1 = 1<<24 (upper 64 bits of prime)
+		// p2 = 315 (lower 64 bits of prime)
+
+		// h2 * p2
+		hi, lo := bits.Mul64(h2, 315)
+
+		// h1 * p2 + h2 * p1 + carry
+		// h2 * p1 is h2 << 24
+		h1 = h1*315 + (h2 << 24) + hi
+		h2 = lo
+	}
 
 	return h1, h2
 }
