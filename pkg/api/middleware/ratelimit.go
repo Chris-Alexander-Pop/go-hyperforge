@@ -17,8 +17,8 @@ func RateLimitMiddleware(limiter ratelimit.Limiter, limit int64, period time.Dur
 			// Key strategy: IP Based for now
 			// In production, use "X-Forwarded-For" or User ID from context
 			key := r.RemoteAddr
-			if host, _, err := net.SplitHostPort(r.RemoteAddr); err == nil {
-				key = host
+			if ip, _, err := net.SplitHostPort(r.RemoteAddr); err == nil {
+				key = ip
 			}
 
 			res, err := limiter.Allow(r.Context(), key, limit, period)
@@ -33,7 +33,7 @@ func RateLimitMiddleware(limiter ratelimit.Limiter, limit int64, period time.Dur
 			// Add Headers
 			w.Header().Set("X-RateLimit-Limit", fmt.Sprintf("%d", limit))
 			w.Header().Set("X-RateLimit-Remaining", fmt.Sprintf("%d", res.Remaining))
-			w.Header().Set("X-RateLimit-Reset", fmt.Sprintf("%d", time.Now().Add(res.Reset).Unix()))
+			w.Header().Set("X-RateLimit-Reset", fmt.Sprintf("%d", int(res.Reset.Seconds())))
 
 			if !res.Allowed {
 				http.Error(w, "Too Many Requests", http.StatusTooManyRequests)
