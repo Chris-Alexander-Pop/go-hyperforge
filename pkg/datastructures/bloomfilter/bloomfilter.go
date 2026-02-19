@@ -155,32 +155,31 @@ func (bf *BloomFilter) Clear() {
 }
 
 // doubleHash computes two 64-bit hash values for double hashing.
-// This implementation inlines the FNV-1a 128-bit hash algorithm to avoid allocations.
+// It uses an inline implementation of FNV-1a 128-bit to avoid allocations.
 func doubleHash(data []byte) (uint64, uint64) {
-	const (
-		offset128Lower = 0x62b821756295c58d
-		offset128Higher = 0x6c62272e07bb0142
-		pLo = uint64(315)       // (1<<8) + 0x3b
-		pHi = uint64(1 << 24)   // (1<<88) >> 64
-	)
-
-	h0 := uint64(offset128Higher) // High part
-	h1 := uint64(offset128Lower)  // Low part
+	// Initialize with offset basis for FNV-1a 128-bit
+	// Upper 64 bits: 0x6c62272e07bb0142
+	// Lower 64 bits: 0x62b821756295c58d
+	h1 := uint64(0x6c62272e07bb0142)
+	h2 := uint64(0x62b821756295c58d)
 
 	for _, b := range data {
-		h1 ^= uint64(b)
+		h2 ^= uint64(b)
 
-		// Multiply by prime (h0, h1) * P
-		// (h0, h1) * (P_hi, P_lo)
-		// new_h0 = h0*P_lo + h1*P_hi + carry(h1*P_lo)
-		// new_h1 = lower 64 of h1*P_lo
+		// Multiply by FNV prime (2^88 + 315)
+		// p1 = 1<<24 (upper 64 bits of prime)
+		// p2 = 315 (lower 64 bits of prime)
 
-		hi, lo := bits.Mul64(h1, pLo)
-		h0 = h0*pLo + h1*pHi + hi
-		h1 = lo
+		// h2 * p2
+		hi, lo := bits.Mul64(h2, 315)
+
+		// h1 * p2 + h2 * p1 + carry
+		// h2 * p1 is h2 << 24
+		h1 = h1*315 + (h2 << 24) + hi
+		h2 = lo
 	}
 
-	return h0, h1
+	return h1, h2
 }
 
 // stringToBytes converts a string to a byte slice without allocation.
