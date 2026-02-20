@@ -80,3 +80,49 @@ func (s *SanitizeSuite) TestSanitizePath() {
 		})
 	}
 }
+
+func (s *SanitizeSuite) TestDetectPathTraversal() {
+	tests := []struct {
+		name     string
+		input    string
+		expected bool
+	}{
+		{
+			name:     "Standard traversal",
+			input:    "../../etc/passwd",
+			expected: true,
+		},
+		{
+			name:     "Safe path",
+			input:    "etc/passwd",
+			expected: false,
+		},
+		{
+			name:     "Encoded traversal",
+			input:    "%2e%2e%2fetc%2fpasswd",
+			expected: true,
+		},
+		{
+			name:     "Double encoded traversal",
+			input:    "%252e%252e%252fetc%252fpasswd",
+			expected: true,
+		},
+		{
+			name:     "Triple encoded traversal",
+			input:    "%25252e%25252e%25252f",
+			expected: true,
+		},
+		{
+			name:     "Mixed encoding",
+			input:    "%2e%2e%252f",
+			expected: true,
+		},
+	}
+
+	for _, tt := range tests {
+		s.Run(tt.name, func() {
+			got := validator.DetectPathTraversal(tt.input)
+			s.Equal(tt.expected, got, "Input: %s", tt.input)
+		})
+	}
+}
