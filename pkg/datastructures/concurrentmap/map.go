@@ -1,8 +1,6 @@
 package concurrentmap
 
 import (
-	"hash/fnv"
-
 	"github.com/chris-alexander-pop/system-design-library/pkg/concurrency"
 )
 
@@ -39,10 +37,22 @@ func New[K comparable, V any](shardCount int) *ShardedMap[K, V] {
 	return m
 }
 
+const (
+	offset32 = 2166136261
+	prime32  = 16777619
+)
+
+func hash(s string) uint32 {
+	h := uint32(offset32)
+	for i := 0; i < len(s); i++ {
+		h ^= uint32(s[i])
+		h *= prime32
+	}
+	return h
+}
+
 func (m *ShardedMap[K, V]) getShard(key string) *shard[K, V] {
-	h := fnv.New32a()
-	h.Write([]byte(key))
-	return m.shards[h.Sum32()%m.shardCount]
+	return m.shards[hash(key)%m.shardCount]
 }
 
 // Get retrieves a value.
