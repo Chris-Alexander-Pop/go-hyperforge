@@ -2,7 +2,6 @@ package tokenbucket
 
 import (
 	"context"
-	"fmt"
 	"sync"
 	"time"
 
@@ -30,12 +29,15 @@ func NewDist(store cache.Cache) *DistLimiter {
 }
 
 func (l *DistLimiter) Allow(ctx context.Context, key string, limit int64, period time.Duration) (*ratelimit.Result, error) {
-	stateKey := fmt.Sprintf("tb:%s", key)
-	val, _ := l.states.LoadOrStore(stateKey, &tokenBucketState{
-		tokens:     float64(limit),
-		lastRefill: time.Now(),
-		mu:         concurrency.NewSmartMutex(concurrency.MutexConfig{Name: "tokenbucket-state"}),
-	})
+	stateKey := "tb:" + key
+	val, ok := l.states.Load(stateKey)
+	if !ok {
+		val, _ = l.states.LoadOrStore(stateKey, &tokenBucketState{
+			tokens:     float64(limit),
+			lastRefill: time.Now(),
+			mu:         concurrency.NewSmartMutex(concurrency.MutexConfig{Name: "tokenbucket-state"}),
+		})
+	}
 	state := val.(*tokenBucketState)
 
 	state.mu.Lock()
