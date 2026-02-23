@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/chris-alexander-pop/system-design-library/pkg/validator"
+	"github.com/google/uuid"
 )
 
 // SanitizeMiddleware sanitizes request inputs to prevent XSS and injection attacks.
@@ -88,18 +89,7 @@ func RequestIDMiddleware() func(http.Handler) http.Handler {
 	}
 }
 
-// generateRequestID creates a unique request identifier.
+// generateRequestID creates a unique request identifier using UUID v4.
 func generateRequestID() string {
-	// Use a simple timestamp + random for now
-	// In production, use uuid.New().String()
-	return "req-" + randomHex(16)
-}
-
-func randomHex(n int) string {
-	const chars = "0123456789abcdef"
-	result := make([]byte, n)
-	for i := range result {
-		result[i] = chars[i%len(chars)]
-	}
-	return string(result)
+	return uuid.NewString()
 }
