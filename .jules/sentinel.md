@@ -24,3 +24,8 @@
 **Vulnerability:** The `CreateRangePartition` function in `pkg/database/partitioning/ddl.go` constructed SQL queries using `fmt.Sprintf` with user-supplied strings inside single quotes (`'%s'`). This allowed attackers to escape the string literal via a single quote and inject arbitrary SQL.
 **Learning:** DDL statements (like `CREATE TABLE`) often don't support parameterized queries (prepared statements) for all values, leading developers to fallback to string formatting. This is a common trap.
 **Prevention:** When parameterized queries are not possible, ALWAYS use a dedicated escaping function (like `quoteLiteral`) that handles the specific escaping rules of the database dialect (e.g., doubling single quotes). Never trust string concatenation for SQL.
+
+## 2026-05-18 - Rate Limit Bypass via Source Port
+**Vulnerability:** The `RateLimitMiddleware` used `r.RemoteAddr` (which contains `IP:Port`) as the rate limiting key. This allowed attackers to bypass rate limits by simply opening new connections (changing source ports).
+**Learning:** `r.RemoteAddr` in Go's `net/http` includes the port. Developers often mistake it for just the IP address. This pattern is common in "quick" implementations.
+**Prevention:** Always use `net.SplitHostPort` to extract the IP address from `r.RemoteAddr`. Be aware of IPv6 formatting (`[::1]:port`).
