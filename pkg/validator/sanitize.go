@@ -146,11 +146,25 @@ var PathTraversalPatterns = []*regexp.Regexp{
 
 // DetectPathTraversal checks if input contains path traversal patterns.
 func DetectPathTraversal(input string) bool {
-	lower := strings.ToLower(input)
-	for _, pattern := range PathTraversalPatterns {
-		if pattern.MatchString(lower) {
-			return true
+	current := input
+	// Check original string and up to 5 levels of decoding
+	for i := 0; i <= 5; i++ {
+		lower := strings.ToLower(current)
+		for _, pattern := range PathTraversalPatterns {
+			if pattern.MatchString(lower) {
+				return true
+			}
 		}
+
+		if i == 5 {
+			break
+		}
+
+		decoded, err := url.QueryUnescape(current)
+		if err != nil || decoded == current {
+			break
+		}
+		current = decoded
 	}
 	return false
 }
