@@ -1,8 +1,6 @@
 package concurrentmap
 
 import (
-	"hash/fnv"
-
 	"github.com/chris-alexander-pop/system-design-library/pkg/concurrency"
 )
 
@@ -11,6 +9,7 @@ import (
 type ShardedMap[K comparable, V any] struct {
 	shards     []*shard[K, V]
 	shardCount uint32
+	shardMask  uint32
 }
 
 type shard[K comparable, V any] struct {
@@ -19,14 +18,27 @@ type shard[K comparable, V any] struct {
 }
 
 // New creates a new ShardedMap.
-// shardCount should be a power of 2 for best performance (default 32).
+// shardCount is rounded up to the nearest power of 2 for bitwise masking.
 func New[K comparable, V any](shardCount int) *ShardedMap[K, V] {
 	if shardCount <= 0 {
 		shardCount = 32
 	}
+
+	// Ensure shardCount is a power of 2
+	n := uint32(shardCount)
+	// Round up to next power of 2 if not already
+	if n&(n-1) != 0 {
+		n = 1
+		for n < uint32(shardCount) {
+			n <<= 1
+		}
+	}
+	shardCount = int(n)
+
 	m := &ShardedMap[K, V]{
 		shards:     make([]*shard[K, V], shardCount),
 		shardCount: uint32(shardCount),
+		shardMask:  uint32(shardCount) - 1,
 	}
 
 	for i := 0; i < shardCount; i++ {
@@ -39,10 +51,20 @@ func New[K comparable, V any](shardCount int) *ShardedMap[K, V] {
 	return m
 }
 
+const (
+	offset32 = 2166136261
+	prime32  = 16777619
+)
+
 func (m *ShardedMap[K, V]) getShard(key string) *shard[K, V] {
-	h := fnv.New32a()
-	h.Write([]byte(key))
-	return m.shards[h.Sum32()%m.shardCount]
+	// Inline FNV-1a hash implementation
+	var hash uint32 = offset32
+	for i := 0; i < len(key); i++ {
+		hash ^= uint32(key[i])
+		hash *= prime32
+	}
+	// Use bitwise AND for modulo power of 2
+	return m.shards[hash&m.shardMask]
 }
 
 // Get retrieves a value.
