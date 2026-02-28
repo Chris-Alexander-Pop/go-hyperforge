@@ -1,3 +1,3 @@
-## 2024-05-23 - Regex Redaction Optimization
-**Learning:** `regexp.ReplaceAllString` executes expensive logic even if no replacement is needed. In high-throughput paths like logging middleware, unconditional execution of regex and unconditional slice allocation for "modified" records creates massive overhead (19 allocs/op -> 0 allocs/op).
-**Action:** Use fast-path heuristics (`strings.Contains`, length checks) to skip regex execution. Use a "check-only" pass to detect changes before allocating new structures to avoid allocation in the happy path (no redaction).
+## 2025-02-28 - [Load before LoadOrStore]
+**Learning:** Calling `sync.Map.LoadOrStore` unconditionally allocates heap objects for the value to store (even if the key exists). In performance-critical paths (like rate limiting `Allow` methods), this causes unnecessary allocations per request.
+**Action:** Use a "Load-before-LoadOrStore" pattern (`Load` first, and if not found, then `LoadOrStore`) to avoid allocations when the key already exists. Also, use string concatenation (`+`) instead of `fmt.Sprintf` for key generation to reduce allocations.
