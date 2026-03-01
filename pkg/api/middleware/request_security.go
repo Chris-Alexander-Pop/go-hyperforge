@@ -1,7 +1,11 @@
 package middleware
 
 import (
+	"crypto/rand"
+	"encoding/hex"
+	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/chris-alexander-pop/system-design-library/pkg/validator"
 )
@@ -96,10 +100,21 @@ func generateRequestID() string {
 }
 
 func randomHex(n int) string {
-	const chars = "0123456789abcdef"
-	result := make([]byte, n)
-	for i := range result {
-		result[i] = chars[i%len(chars)]
+	// Generate n/2 bytes since each byte will become 2 hex characters.
+	// We round up in case n is odd, then truncate the resulting string.
+	bytes := make([]byte, (n+1)/2)
+	if _, err := rand.Read(bytes); err != nil {
+		// Fallback in case crypto/rand fails
+		fallback := fmt.Sprintf("%x", time.Now().UnixNano())
+		// Pad with zeros if necessary
+		for len(fallback) < n {
+			fallback += "0"
+		}
+		return fallback[:n]
 	}
-	return string(result)
+	encoded := hex.EncodeToString(bytes)
+	if len(encoded) > n {
+		return encoded[:n]
+	}
+	return encoded
 }
