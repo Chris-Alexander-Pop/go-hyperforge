@@ -1,8 +1,11 @@
 package validator
 
 import (
+	"fmt"
 	"html"
 	"net/url"
+	"os"
+	"path/filepath"
 	"regexp"
 	"strings"
 )
@@ -146,21 +149,25 @@ var PathTraversalPatterns = []*regexp.Regexp{
 
 // DetectPathTraversal checks if input contains path traversal patterns.
 func DetectPathTraversal(input string) bool {
-	// Loop to handle multiple layers of encoding (e.g. %252e%252e%252f)
-	// Limit to 5 iterations to prevent potential DoS or infinite loops
-	for i := 0; i < 5; i++ {
-		lower := strings.ToLower(input)
+	current := input
+	// Check original string and up to 5 levels of decoding
+	for i := 0; i <= 5; i++ {
+		lower := strings.ToLower(current)
 		for _, pattern := range PathTraversalPatterns {
 			if pattern.MatchString(lower) {
 				return true
 			}
 		}
 
-		decoded, err := url.QueryUnescape(input)
-		if err != nil || decoded == input {
+		if i == 5 {
 			break
 		}
-		input = decoded
+
+		decoded, err := url.QueryUnescape(current)
+		if err != nil || decoded == current {
+			break
+		}
+		current = decoded
 	}
 	return false
 }
@@ -201,6 +208,31 @@ func SanitizePath(input string) string {
 		}
 	}
 	return result
+}
+
+// ValidatePathInside checks if the target path is within the base directory.
+// It resolves paths to absolute paths and cleans them.
+// Returns the absolute clean path if valid, or an error.
+func ValidatePathInside(baseDir, targetPath string) (string, error) {
+	absBase, err := filepath.Abs(baseDir)
+	if err != nil {
+		return "", fmt.Errorf("failed to resolve base directory: %w", err)
+	}
+
+	// Clean the target path (relative to base)
+	fullPath := filepath.Join(absBase, targetPath)
+
+	// Ensure prefix matches
+	prefix := absBase
+	if !strings.HasSuffix(prefix, string(os.PathSeparator)) {
+		prefix += string(os.PathSeparator)
+	}
+
+	if !strings.HasPrefix(fullPath, prefix) {
+		return "", fmt.Errorf("path traversal attempt: path %s resolves to %s which is not within %s", targetPath, fullPath, baseDir)
+	}
+
+	return fullPath, nil
 }
 
 // =========================================================================
