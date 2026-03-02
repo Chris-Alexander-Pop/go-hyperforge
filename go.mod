@@ -22,6 +22,7 @@ require (
 	github.com/AzureAD/microsoft-authentication-library-for-go v1.6.0
 	github.com/IBM/sarama v1.46.3
 	github.com/algolia/algoliasearch-client-go/v3 v3.32.1
+	github.com/alicebob/miniredis/v2 v2.36.1
 	github.com/aws/aws-sdk-go-v2 v1.41.1
 	github.com/aws/aws-sdk-go-v2/config v1.32.7
 	github.com/aws/aws-sdk-go-v2/credentials v1.19.7
@@ -138,7 +139,6 @@ require (
 	github.com/Microsoft/go-winio v0.6.2 // indirect
 	github.com/ProjectZKM/Ziren/crates/go-runtime/zkvm_runtime v0.0.0-20251001021608-1fe7b43fc4d6 // indirect
 	github.com/agnivade/levenshtein v1.2.1 // indirect
-	github.com/alicebob/miniredis/v2 v2.36.1 // indirect
 	github.com/andybalholm/brotli v1.1.1 // indirect
 	github.com/apache/arrow-go/v18 v18.1.0 // indirect
 	github.com/apache/arrow/go/v15 v15.0.2 // indirect
