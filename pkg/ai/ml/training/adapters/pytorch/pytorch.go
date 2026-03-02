@@ -21,6 +21,7 @@ import (
 
 	"github.com/chris-alexander-pop/system-design-library/pkg/ai/ml/training"
 	pkgerrors "github.com/chris-alexander-pop/system-design-library/pkg/errors"
+	"github.com/chris-alexander-pop/system-design-library/pkg/validator"
 	"github.com/google/uuid"
 )
 
@@ -105,9 +106,16 @@ func (t *Trainer) StartJob(ctx context.Context, config training.JobConfig) (*tra
 	outputDir := config.OutputPath
 	if outputDir == "" {
 		outputDir = filepath.Join(jobDir, "output")
-		if err := os.MkdirAll(outputDir, 0755); err != nil {
-			return nil, pkgerrors.Internal("failed to create output directory", err)
-		}
+	}
+
+	cleanOutputDir, err := validator.ValidatePathInside(jobDir, outputDir)
+	if err != nil {
+		return nil, pkgerrors.InvalidArgument("invalid output path", err)
+	}
+	outputDir = cleanOutputDir
+
+	if err := os.MkdirAll(outputDir, 0755); err != nil {
+		return nil, pkgerrors.Internal("failed to create output directory", err)
 	}
 
 	job := &training.Job{
@@ -120,6 +128,12 @@ func (t *Trainer) StartJob(ctx context.Context, config training.JobConfig) (*tra
 		Metrics:    make(map[string]float64),
 	}
 
+	// Validate entry point
+	cleanEntryPoint, err := validator.ValidatePathInside(jobDir, config.EntryPoint)
+	if err != nil {
+		return nil, pkgerrors.InvalidArgument("invalid entry point", err)
+	}
+
 	// Build command
 	var cmd *exec.Cmd
 	args := make([]string, 0)
@@ -128,10 +142,10 @@ func (t *Trainer) StartJob(ctx context.Context, config training.JobConfig) (*tra
 		// Use torchrun for distributed training
 		args = append(args, "-m", "torch.distributed.run",
 			fmt.Sprintf("--nproc_per_node=%d", t.config.NProc),
-			config.EntryPoint,
+			cleanEntryPoint,
 		)
 	} else {
-		args = append(args, config.EntryPoint)
+		args = append(args, cleanEntryPoint)
 	}
 
 	// Add hyperparameters
