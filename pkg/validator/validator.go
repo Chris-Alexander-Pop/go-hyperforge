@@ -2,6 +2,7 @@ package validator
 
 import (
 	"regexp"
+	"unicode"
 
 	"github.com/go-playground/validator/v10"
 )
@@ -51,9 +52,31 @@ func validatePhone(fl validator.FieldLevel) bool {
 
 func validatePasswordStrong(fl validator.FieldLevel) bool {
 	password := fl.Field().String()
+
 	// Length 8+
-	// Length 8+
-	// Needs Number, Special, Upper, etc. (Simplified for this example)
-	// Just generic complexity check is often better handled by zxcvbn, but for regex-ish:
-	return len(password) >= 8
+	if len(password) < 8 {
+		return false
+	}
+
+	var (
+		hasUpper   bool
+		hasLower   bool
+		hasNumber  bool
+		hasSpecial bool
+	)
+
+	for _, c := range password {
+		switch {
+		case unicode.IsUpper(c):
+			hasUpper = true
+		case unicode.IsLower(c):
+			hasLower = true
+		case unicode.IsNumber(c):
+			hasNumber = true
+		case unicode.IsPunct(c) || unicode.IsSymbol(c):
+			hasSpecial = true
+		}
+	}
+
+	return hasUpper && hasLower && hasNumber && hasSpecial
 }
