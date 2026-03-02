@@ -1,10 +1,13 @@
 package middleware
 
 import (
+	"crypto/rand"
+	"encoding/hex"
+	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/chris-alexander-pop/system-design-library/pkg/validator"
-	"github.com/google/uuid"
 )
 
 // SanitizeMiddleware sanitizes request inputs to prevent XSS and injection attacks.
@@ -89,7 +92,29 @@ func RequestIDMiddleware() func(http.Handler) http.Handler {
 	}
 }
 
-// generateRequestID creates a unique request identifier using UUID v4.
+// generateRequestID creates a unique request identifier.
 func generateRequestID() string {
-	return uuid.NewString()
+	// Use a simple timestamp + random for now
+	// In production, use uuid.New().String()
+	return "req-" + randomHex(16)
+}
+
+func randomHex(n int) string {
+	// Generate n/2 bytes since each byte will become 2 hex characters.
+	// We round up in case n is odd, then truncate the resulting string.
+	bytes := make([]byte, (n+1)/2)
+	if _, err := rand.Read(bytes); err != nil {
+		// Fallback in case crypto/rand fails
+		fallback := fmt.Sprintf("%x", time.Now().UnixNano())
+		// Pad with zeros if necessary
+		for len(fallback) < n {
+			fallback += "0"
+		}
+		return fallback[:n]
+	}
+	encoded := hex.EncodeToString(bytes)
+	if len(encoded) > n {
+		return encoded[:n]
+	}
+	return encoded
 }
