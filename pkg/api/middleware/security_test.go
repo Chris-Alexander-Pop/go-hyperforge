@@ -47,3 +47,25 @@ func TestCORS_MaxAge(t *testing.T) {
 	corsMaxAge := w.Header().Get("Access-Control-Max-Age")
 	assert.Equal(t, "86400", corsMaxAge)
 }
+
+func TestCORS_WildcardCredentials(t *testing.T) {
+	cfg := DefaultCORSConfig()
+	cfg.AllowedOrigins = []string{"*"}
+	cfg.AllowCredentials = true
+
+	handler := CORS(cfg)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	}))
+
+	req := httptest.NewRequest("GET", "/", nil)
+	req.Header.Set("Origin", "http://example.com")
+	w := httptest.NewRecorder()
+
+	handler.ServeHTTP(w, req)
+
+	origin := w.Header().Get("Access-Control-Allow-Origin")
+	assert.Equal(t, "*", origin)
+
+	credentials := w.Header().Get("Access-Control-Allow-Credentials")
+	assert.Equal(t, "", credentials, "Credentials should not be allowed with wildcard origin")
+}

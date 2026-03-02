@@ -314,7 +314,8 @@ func CORS(cfg CORSConfig) func(http.Handler) http.Handler {
 				}
 
 				// Credentials
-				if cfg.AllowCredentials {
+				// Do not allow credentials if origin is wildcard (*)
+				if cfg.AllowCredentials && w.Header().Get("Access-Control-Allow-Origin") != "*" {
 					w.Header().Set("Access-Control-Allow-Credentials", "true")
 				}
 
@@ -333,7 +334,8 @@ func CORS(cfg CORSConfig) func(http.Handler) http.Handler {
 			}
 
 			// Credentials for actual requests
-			if cfg.AllowCredentials {
+			// Do not allow credentials if origin is wildcard (*)
+			if cfg.AllowCredentials && w.Header().Get("Access-Control-Allow-Origin") != "*" {
 				w.Header().Set("Access-Control-Allow-Credentials", "true")
 			}
 
