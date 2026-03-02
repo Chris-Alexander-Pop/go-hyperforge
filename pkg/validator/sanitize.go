@@ -1,11 +1,8 @@
 package validator
 
 import (
-	"fmt"
 	"html"
 	"net/url"
-	"os"
-	"path/filepath"
 	"regexp"
 	"strings"
 )
@@ -147,8 +144,29 @@ var PathTraversalPatterns = []*regexp.Regexp{
 	regexp.MustCompile(`%252e%252e(%252f|%255c)`), // Double URL encoded
 }
 
-// recursiveDecode decodes URL-encoded strings recursively up to a limit.
-func recursiveDecode(input string) string {
+// DetectPathTraversal checks if input contains path traversal patterns.
+func DetectPathTraversal(input string) bool {
+	// Loop to handle multiple layers of encoding (e.g. %252e%252e%252f)
+	// Limit to 5 iterations to prevent potential DoS or infinite loops
+	for i := 0; i < 5; i++ {
+		lower := strings.ToLower(input)
+		for _, pattern := range PathTraversalPatterns {
+			if pattern.MatchString(lower) {
+				return true
+			}
+		}
+
+		decoded, err := url.QueryUnescape(input)
+		if err != nil || decoded == input {
+			break
+		}
+		input = decoded
+	}
+	return false
+}
+
+// SanitizePath removes path traversal attempts from a path string.
+func SanitizePath(input string) string {
 	// Decode URL encoding to handle encoded traversal patterns (e.g. %2e%2e%2f)
 	// We loop to handle multiple layers of encoding (e.g. %252e%252e%252f)
 	// Limit to 5 iterations to prevent potential DoS or infinite loops
@@ -159,27 +177,6 @@ func recursiveDecode(input string) string {
 		}
 		input = decoded
 	}
-	return input
-}
-
-// DetectPathTraversal checks if input contains path traversal patterns.
-func DetectPathTraversal(input string) bool {
-	// Decode first to catch encoded attacks
-	input = recursiveDecode(input)
-
-	lower := strings.ToLower(input)
-	for _, pattern := range PathTraversalPatterns {
-		if pattern.MatchString(lower) {
-			return true
-		}
-	}
-	return false
-}
-
-// SanitizePath removes path traversal attempts from a path string.
-func SanitizePath(input string) string {
-	// Decode URL encoding to handle encoded traversal patterns
-	input = recursiveDecode(input)
 
 	result := input
 	for {
@@ -204,31 +201,6 @@ func SanitizePath(input string) string {
 		}
 	}
 	return result
-}
-
-// ValidatePathInside checks if the target path is within the base directory.
-// It resolves paths to absolute paths and cleans them.
-// Returns the absolute clean path if valid, or an error.
-func ValidatePathInside(baseDir, targetPath string) (string, error) {
-	absBase, err := filepath.Abs(baseDir)
-	if err != nil {
-		return "", fmt.Errorf("failed to resolve base directory: %w", err)
-	}
-
-	// Clean the target path (relative to base)
-	fullPath := filepath.Join(absBase, targetPath)
-
-	// Ensure prefix matches
-	prefix := absBase
-	if !strings.HasSuffix(prefix, string(os.PathSeparator)) {
-		prefix += string(os.PathSeparator)
-	}
-
-	if !strings.HasPrefix(fullPath, prefix) {
-		return "", fmt.Errorf("path traversal attempt: path %s resolves to %s which is not within %s", targetPath, fullPath, baseDir)
-	}
-
-	return fullPath, nil
 }
 
 // =========================================================================
