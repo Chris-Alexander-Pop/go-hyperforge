@@ -116,7 +116,10 @@ func (s *Store) Delete(ctx context.Context, key string) error {
 
 func (s *Store) URL(key string) string {
 	// For local store, this might just be the file path or a mock URL
-	// Note: We don't strictly validate here as it's just generating a string,
-	// but usage of this URL should be careful.
-	return "file://" + filepath.Join(s.baseDir, key)
+	// Security: validate path to prevent traversal
+	fullPath, err := s.validatePath(key)
+	if err != nil {
+		return ""
+	}
+	return "file://" + fullPath
 }
