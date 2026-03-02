@@ -1,6 +1,8 @@
 package concurrentmap
 
 import (
+	"math/bits"
+
 	"github.com/chris-alexander-pop/system-design-library/pkg/concurrency"
 )
 
@@ -16,12 +18,26 @@ type shard[K comparable, V any] struct {
 	mu   *concurrency.SmartRWMutex
 }
 
+// FNV-1a constants
+const (
+	offset32 = 2166136261
+	prime32  = 16777619
+)
+
 // New creates a new ShardedMap.
-// shardCount should be a power of 2 for best performance (default 32).
+// shardCount is automatically adjusted to the next power of 2 for optimal performance (default 32).
 func New[K comparable, V any](shardCount int) *ShardedMap[K, V] {
 	if shardCount <= 0 {
 		shardCount = 32
 	}
+
+	// Ensure shardCount is a power of 2 for fast shard selection using bitwise AND
+	// Check if shardCount is already a power of 2
+	if shardCount&(shardCount-1) != 0 {
+		// Round up to next power of 2
+		shardCount = 1 << (32 - bits.LeadingZeros32(uint32(shardCount)))
+	}
+
 	m := &ShardedMap[K, V]{
 		shards:     make([]*shard[K, V], shardCount),
 		shardCount: uint32(shardCount),
@@ -37,22 +53,13 @@ func New[K comparable, V any](shardCount int) *ShardedMap[K, V] {
 	return m
 }
 
-const (
-	offset32 = 2166136261
-	prime32  = 16777619
-)
-
-func hash(s string) uint32 {
-	h := uint32(offset32)
-	for i := 0; i < len(s); i++ {
-		h ^= uint32(s[i])
+func (m *ShardedMap[K, V]) getShard(key string) *shard[K, V] {
+	var h uint32 = offset32
+	for i := 0; i < len(key); i++ {
+		h ^= uint32(key[i])
 		h *= prime32
 	}
-	return h
-}
-
-func (m *ShardedMap[K, V]) getShard(key string) *shard[K, V] {
-	return m.shards[hash(key)%m.shardCount]
+	return m.shards[h&(m.shardCount-1)]
 }
 
 // Get retrieves a value.
