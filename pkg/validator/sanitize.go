@@ -147,8 +147,33 @@ var PathTraversalPatterns = []*regexp.Regexp{
 	regexp.MustCompile(`%252e%252e(%252f|%255c)`), // Double URL encoded
 }
 
-// recursiveDecode decodes URL-encoded strings recursively up to a limit.
-func recursiveDecode(input string) string {
+// DetectPathTraversal checks if input contains path traversal patterns.
+func DetectPathTraversal(input string) bool {
+	current := input
+	// Check original string and up to 5 levels of decoding
+	for i := 0; i <= 5; i++ {
+		lower := strings.ToLower(current)
+		for _, pattern := range PathTraversalPatterns {
+			if pattern.MatchString(lower) {
+				return true
+			}
+		}
+
+		if i == 5 {
+			break
+		}
+
+		decoded, err := url.QueryUnescape(current)
+		if err != nil || decoded == current {
+			break
+		}
+		current = decoded
+	}
+	return false
+}
+
+// SanitizePath removes path traversal attempts from a path string.
+func SanitizePath(input string) string {
 	// Decode URL encoding to handle encoded traversal patterns (e.g. %2e%2e%2f)
 	// We loop to handle multiple layers of encoding (e.g. %252e%252e%252f)
 	// Limit to 5 iterations to prevent potential DoS or infinite loops
@@ -159,27 +184,6 @@ func recursiveDecode(input string) string {
 		}
 		input = decoded
 	}
-	return input
-}
-
-// DetectPathTraversal checks if input contains path traversal patterns.
-func DetectPathTraversal(input string) bool {
-	// Decode first to catch encoded attacks
-	input = recursiveDecode(input)
-
-	lower := strings.ToLower(input)
-	for _, pattern := range PathTraversalPatterns {
-		if pattern.MatchString(lower) {
-			return true
-		}
-	}
-	return false
-}
-
-// SanitizePath removes path traversal attempts from a path string.
-func SanitizePath(input string) string {
-	// Decode URL encoding to handle encoded traversal patterns
-	input = recursiveDecode(input)
 
 	result := input
 	for {
