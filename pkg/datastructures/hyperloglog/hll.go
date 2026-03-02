@@ -10,7 +10,6 @@
 package hyperloglog
 
 import (
-	"hash/fnv"
 	"math"
 
 	"github.com/chris-alexander-pop/system-design-library/pkg/concurrency"
@@ -61,7 +60,8 @@ func (hll *HyperLogLog) Add(data []byte) {
 
 // AddString adds a string to the estimator.
 func (hll *HyperLogLog) AddString(s string) {
-	hll.Add([]byte(s))
+	hash := hashString(s)
+	hll.addHash(hash)
 }
 
 func (hll *HyperLogLog) addHash(hash uint64) {
@@ -147,11 +147,28 @@ func (hll *HyperLogLog) Clear() {
 	}
 }
 
+const (
+	offset64 = 14695981039346656037
+	prime64  = 1099511628211
+)
+
 // hashBytes computes a 64-bit hash of the data.
 func hashBytes(data []byte) uint64 {
-	h := fnv.New64a()
-	h.Write(data)
-	return mix(h.Sum64())
+	var hash uint64 = offset64
+	for _, b := range data {
+		hash ^= uint64(b)
+		hash *= prime64
+	}
+	return mix(hash)
+}
+
+func hashString(s string) uint64 {
+	var hash uint64 = offset64
+	for i := 0; i < len(s); i++ {
+		hash ^= uint64(s[i])
+		hash *= prime64
+	}
+	return mix(hash)
 }
 
 func mix(h uint64) uint64 {
