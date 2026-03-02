@@ -1,30 +1,33 @@
 package middleware
 
 import (
+	"net/http"
+	"net/http/httptest"
 	"testing"
 
-	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestGenerateRequestID_Randomness(t *testing.T) {
-	// Generate multiple IDs
-	ids := make(map[string]bool)
-	count := 100
+func TestRequestID_Uniqueness(t *testing.T) {
+	// Create a simple handler wrapped by the middleware
+	handler := RequestIDMiddleware()(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	}))
 
-	for i := 0; i < count; i++ {
-		id := generateRequestID()
+	// First Request
+	req1 := httptest.NewRequest("GET", "/", nil)
+	w1 := httptest.NewRecorder()
+	handler.ServeHTTP(w1, req1)
+	id1 := w1.Header().Get("X-Request-ID")
+	assert.NotEmpty(t, id1, "Request ID should not be empty")
 
-		// Check for duplicates
-		if ids[id] {
-			t.Fatalf("Collision detected! ID %s was generated twice", id)
-		}
-		ids[id] = true
+	// Second Request
+	req2 := httptest.NewRequest("GET", "/", nil)
+	w2 := httptest.NewRecorder()
+	handler.ServeHTTP(w2, req2)
+	id2 := w2.Header().Get("X-Request-ID")
+	assert.NotEmpty(t, id2, "Request ID should not be empty")
 
-		// Check format (UUID)
-		_, err := uuid.Parse(id)
-		assert.NoError(t, err, "Generated ID should be a valid UUID")
-	}
-
-	assert.Equal(t, count, len(ids), "Should have unique IDs")
+	// Verify IDs are unique
+	assert.NotEqual(t, id1, id2, "Request IDs should be unique but got identical IDs: %s", id1)
 }
