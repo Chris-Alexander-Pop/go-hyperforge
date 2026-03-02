@@ -11,6 +11,7 @@ package hyperloglog
 
 import (
 	"math"
+	"math/bits"
 
 	"github.com/chris-alexander-pop/system-design-library/pkg/concurrency"
 )
@@ -147,14 +148,12 @@ func (hll *HyperLogLog) Clear() {
 	}
 }
 
-const (
-	offset64 = 14695981039346656037
-	prime64  = 1099511628211
-)
-
-// hashBytes computes a 64-bit hash of the data.
+// hashBytes computes a 64-bit hash of the data using inline FNV-1a.
 func hashBytes(data []byte) uint64 {
-	var hash uint64 = offset64
+	const offset64 = 14695981039346656037
+	const prime64 = 1099511628211
+
+	hash := uint64(offset64)
 	for _, b := range data {
 		hash ^= uint64(b)
 		hash *= prime64
@@ -162,8 +161,12 @@ func hashBytes(data []byte) uint64 {
 	return mix(hash)
 }
 
+// hashString computes a 64-bit hash of the string using inline FNV-1a.
 func hashString(s string) uint64 {
-	var hash uint64 = offset64
+	const offset64 = 14695981039346656037
+	const prime64 = 1099511628211
+
+	hash := uint64(offset64)
 	for i := 0; i < len(s); i++ {
 		hash ^= uint64(s[i])
 		hash *= prime64
@@ -182,16 +185,7 @@ func mix(h uint64) uint64 {
 
 // countLeadingZeros counts leading zeros in a 64-bit integer.
 func countLeadingZeros(x uint64) uint8 {
-	if x == 0 {
-		return 64
-	}
-
-	var count uint8
-	for x&(1<<63) == 0 {
-		count++
-		x <<= 1
-	}
-	return count
+	return uint8(bits.LeadingZeros64(x))
 }
 
 // getAlpha returns the correction factor for the given Precision.
