@@ -89,7 +89,8 @@ func RequestIDMiddleware() func(http.Handler) http.Handler {
 	}
 }
 
-// generateRequestID creates a unique request identifier using UUID v4.
+// generateRequestID creates a unique request identifier.
 func generateRequestID() string {
-	return uuid.NewString()
+	// Use UUID v4 for unique request identifiers
+	return uuid.New().String()
 }
