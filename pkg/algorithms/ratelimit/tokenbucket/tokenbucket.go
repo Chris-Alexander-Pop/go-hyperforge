@@ -29,6 +29,9 @@ func NewDist(store cache.Cache) *DistLimiter {
 }
 
 func (l *DistLimiter) Allow(ctx context.Context, key string, limit int64, period time.Duration) (*ratelimit.Result, error) {
+	// Optimization: Reduce allocations on hot path.
+	// 1. Use string concatenation instead of fmt.Sprintf
+	// 2. Check Load before LoadOrStore to avoid allocating tokenBucketState struct and SmartMutex
 	stateKey := "tb:" + key
 	val, ok := l.states.Load(stateKey)
 	if !ok {
