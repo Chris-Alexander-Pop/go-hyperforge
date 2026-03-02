@@ -1,6 +1,9 @@
 package deque
 
-import "sync"
+import (
+	"math/bits"
+	"sync"
+)
 
 // Deque is a generic double-ended queue.
 // Implemented using a slice with head/tail tracking or just simple slice manip (less efficient).
@@ -22,6 +25,10 @@ type Deque[T any] struct {
 func New[T any](initialCap int) *Deque[T] {
 	if initialCap < 1 {
 		initialCap = 16
+	} else {
+		// Round up to the next power of 2 to ensure efficient bitwise AND operations
+		// for circular buffer indexing.
+		initialCap = 1 << bits.Len(uint(initialCap-1))
 	}
 	return &Deque[T]{
 		buf:    make([]T, initialCap),
@@ -59,6 +66,11 @@ func (d *Deque[T]) PopBack() (T, bool) {
 	}
 	d.tail = (d.tail - 1) & (len(d.buf) - 1)
 	val := d.buf[d.tail]
+
+	// Avoid memory leaks
+	var zero T
+	d.buf[d.tail] = zero
+
 	d.count--
 	return val, true
 }
@@ -72,6 +84,11 @@ func (d *Deque[T]) PopFront() (T, bool) {
 		return zero, false
 	}
 	val := d.buf[d.head]
+
+	// Avoid memory leaks
+	var zero T
+	d.buf[d.head] = zero
+
 	d.head = (d.head + 1) & (len(d.buf) - 1)
 	d.count--
 	return val, true
