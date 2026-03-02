@@ -1,8 +1,6 @@
 package concurrentmap
 
 import (
-	"math/bits"
-
 	"github.com/chris-alexander-pop/system-design-library/pkg/concurrency"
 )
 
@@ -11,6 +9,7 @@ import (
 type ShardedMap[K comparable, V any] struct {
 	shards     []*shard[K, V]
 	shardCount uint32
+	shardMask  uint32
 }
 
 type shard[K comparable, V any] struct {
@@ -18,29 +17,28 @@ type shard[K comparable, V any] struct {
 	mu   *concurrency.SmartRWMutex
 }
 
-// FNV-1a constants
-const (
-	offset32 = 2166136261
-	prime32  = 16777619
-)
-
 // New creates a new ShardedMap.
-// shardCount is automatically adjusted to the next power of 2 for optimal performance (default 32).
+// shardCount is rounded up to the nearest power of 2 for bitwise masking.
 func New[K comparable, V any](shardCount int) *ShardedMap[K, V] {
 	if shardCount <= 0 {
 		shardCount = 32
 	}
 
-	// Ensure shardCount is a power of 2 for fast shard selection using bitwise AND
-	// Check if shardCount is already a power of 2
-	if shardCount&(shardCount-1) != 0 {
-		// Round up to next power of 2
-		shardCount = 1 << (32 - bits.LeadingZeros32(uint32(shardCount)))
+	// Ensure shardCount is a power of 2
+	n := uint32(shardCount)
+	// Round up to next power of 2 if not already
+	if n&(n-1) != 0 {
+		n = 1
+		for n < uint32(shardCount) {
+			n <<= 1
+		}
 	}
+	shardCount = int(n)
 
 	m := &ShardedMap[K, V]{
 		shards:     make([]*shard[K, V], shardCount),
 		shardCount: uint32(shardCount),
+		shardMask:  uint32(shardCount) - 1,
 	}
 
 	for i := 0; i < shardCount; i++ {
@@ -53,13 +51,20 @@ func New[K comparable, V any](shardCount int) *ShardedMap[K, V] {
 	return m
 }
 
+const (
+	offset32 = 2166136261
+	prime32  = 16777619
+)
+
 func (m *ShardedMap[K, V]) getShard(key string) *shard[K, V] {
-	var h uint32 = offset32
+	// Inline FNV-1a hash implementation
+	var hash uint32 = offset32
 	for i := 0; i < len(key); i++ {
-		h ^= uint32(key[i])
-		h *= prime32
+		hash ^= uint32(key[i])
+		hash *= prime32
 	}
-	return m.shards[h&(m.shardCount-1)]
+	// Use bitwise AND for modulo power of 2
+	return m.shards[hash&m.shardMask]
 }
 
 // Get retrieves a value.
