@@ -1,53 +1,30 @@
 package middleware
 
 import (
-	"net/http"
-	"net/http/httptest"
 	"testing"
 
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestRequestIDMiddleware_Uniqueness(t *testing.T) {
-	// Setup the middleware
-	handler := RequestIDMiddleware()(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-	}))
-
+func TestGenerateRequestID_Randomness(t *testing.T) {
+	// Generate multiple IDs
 	ids := make(map[string]bool)
-	count := 10
+	count := 100
 
 	for i := 0; i < count; i++ {
-		req := httptest.NewRequest("GET", "/", nil)
-		w := httptest.NewRecorder()
+		id := generateRequestID()
 
-		handler.ServeHTTP(w, req)
-
-		requestID := w.Header().Get("X-Request-ID")
-		assert.NotEmpty(t, requestID, "Request ID should not be empty")
-
-		if ids[requestID] {
-			t.Errorf("Duplicate Request ID found: %s", requestID)
+		// Check for duplicates
+		if ids[id] {
+			t.Fatalf("Collision detected! ID %s was generated twice", id)
 		}
-		ids[requestID] = true
+		ids[id] = true
+
+		// Check format (UUID)
+		_, err := uuid.Parse(id)
+		assert.NoError(t, err, "Generated ID should be a valid UUID")
 	}
 
-	assert.Equal(t, count, len(ids), "All Request IDs should be unique")
-}
-
-func TestRequestIDMiddleware_Format(t *testing.T) {
-	handler := RequestIDMiddleware()(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-	}))
-
-	req := httptest.NewRequest("GET", "/", nil)
-	w := httptest.NewRecorder()
-
-	handler.ServeHTTP(w, req)
-
-	requestID := w.Header().Get("X-Request-ID")
-	// Old format was "req-" + hex
-	// New format will be UUID string (usually just hex-dashed)
-	// But let's just check length > 10 for now
-	assert.Greater(t, len(requestID), 10, "Request ID should be reasonably long")
+	assert.Equal(t, count, len(ids), "Should have unique IDs")
 }
