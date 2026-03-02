@@ -16,10 +16,9 @@ func RateLimitMiddleware(limiter ratelimit.Limiter, limit int64, period time.Dur
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			// Key strategy: IP Based for now
 			// In production, use "X-Forwarded-For" or User ID from context
-			key := r.RemoteAddr
-			host, _, err := net.SplitHostPort(r.RemoteAddr)
-			if err == nil {
-				key = host
+			key, _, err := net.SplitHostPort(r.RemoteAddr)
+			if err != nil {
+				key = r.RemoteAddr
 			}
 
 			res, err := limiter.Allow(r.Context(), key, limit, period)
