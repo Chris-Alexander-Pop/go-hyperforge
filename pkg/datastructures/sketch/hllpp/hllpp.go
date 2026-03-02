@@ -3,6 +3,7 @@ package hllpp
 import (
 	"math"
 	"math/bits"
+	"unsafe"
 )
 
 // HLLPP is a simplified HyperLogLog++ implementation.
@@ -54,6 +55,13 @@ func (h *HLLPP) Add(data []byte) {
 	if rank > h.registers[idx] {
 		h.registers[idx] = rank
 	}
+}
+
+// AddString adds a string item to the sketch.
+// It uses unsafe to cast the string to []byte without allocation.
+// This is safe because Add only reads the data and does not modify it.
+func (h *HLLPP) AddString(s string) {
+	h.Add(unsafe.Slice(unsafe.StringData(s), len(s)))
 }
 
 func (h *HLLPP) mergeSparse() {
