@@ -23,15 +23,13 @@ func New(store cache.Cache) *Limiter {
 func (l *Limiter) Allow(ctx context.Context, key string, limit int64, period time.Duration) (*ratelimit.Result, error) {
 	// Simple Fixed Window approximation for v1, as per original code
 	now := time.Now()
-	// Optimization: Use Unix timestamp instead of RFC3339 formatting to avoid allocation overhead
-	// and heavy parsing. Use pre-allocated buffer for key construction.
-	timestamp := now.Truncate(period).Unix()
 
-	// key + ":" + int64 (max 20 chars)
-	buf := make([]byte, 0, len(key)+21)
+	// Optimized key generation: Avoid time.Format and repeated string concatenation
+	// Allocates a single buffer and converts to string, avoiding intermediate allocations from Format
+	buf := make([]byte, 0, len(key)+21) // 21 for separator + max int64 digits
 	buf = append(buf, key...)
 	buf = append(buf, ':')
-	buf = strconv.AppendInt(buf, timestamp, 10)
+	buf = strconv.AppendInt(buf, now.Truncate(period).Unix(), 10)
 	windowKey := string(buf)
 
 	count, err := l.store.Incr(ctx, windowKey, 1)
