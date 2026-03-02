@@ -2,7 +2,6 @@ package leakybucket
 
 import (
 	"context"
-	"fmt"
 	"sync"
 	"time"
 
@@ -28,11 +27,14 @@ func New(store cache.Cache) *Limiter {
 }
 
 func (l *Limiter) Allow(ctx context.Context, key string, limit int64, period time.Duration) (*ratelimit.Result, error) {
-	stateKey := fmt.Sprintf("lb:%s", key)
-	val, _ := l.buckets.LoadOrStore(stateKey, &state{
-		queue:    0,
-		lastLeak: time.Now(),
-	})
+	stateKey := "lb:" + key
+	val, ok := l.buckets.Load(stateKey)
+	if !ok {
+		val, _ = l.buckets.LoadOrStore(stateKey, &state{
+			queue:    0,
+			lastLeak: time.Now(),
+		})
+	}
 	s := val.(*state)
 
 	s.mu.Lock()
