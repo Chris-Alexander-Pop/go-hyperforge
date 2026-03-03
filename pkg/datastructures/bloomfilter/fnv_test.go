@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-func TestDoubleHashCorrectness(t *testing.T) {
+func TestFNVDoubleHashCorrectness(t *testing.T) {
 	tests := []string{
 		"",
 		"a",
