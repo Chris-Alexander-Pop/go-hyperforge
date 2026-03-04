@@ -29,3 +29,8 @@
 **Vulnerability:** The `URL` method in the local blob storage adapter constructed URLs by blindly concatenating the base directory with the user-provided key using `filepath.Join`. This allowed attackers to generate valid `file://` URLs pointing to arbitrary files on the system (e.g., `file:///etc/passwd`) by using path traversal sequences like `../`.
 **Learning:** Security validation must be applied consistently across ALL methods that handle user input, not just data access methods like `Upload` or `Download`. Auxiliary methods that generate references (URLs, paths) are equally critical if their output is trusted by consumers.
 **Prevention:** Ensure that URL generation logic reuses the same path validation and sanitization routines as the core storage operations. Treat the generation of a file path reference as a security-sensitive operation.
+
+## 2026-03-04 - Insecure CSRF Token Fallback
+**Vulnerability:** The `generateCSRFToken` function in `pkg/api/middleware/security.go` fell back to generating a highly predictable token based on `time.Now().String()` if `crypto/rand.Read` failed. This violates the rule to "Fail securely - errors should not expose sensitive data". If an attacker could trigger an entropy pool exhaustion or similar failure, they could guess the generated token and bypass CSRF protections.
+**Learning:** Security mechanisms MUST fail securely. It is better to panic or return a 500 Internal Server Error and deny service than to silently proceed with compromised security guarantees.
+**Prevention:** Never use predictable sources (like time, PID, or insecure random number generators like `math/rand`) as fallbacks for cryptographic operations. If `crypto/rand` fails, the application should panic or immediately return an error.

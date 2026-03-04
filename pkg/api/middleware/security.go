@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
-	"time"
 )
 
 // =========================================================================
@@ -111,8 +110,8 @@ func ensureCSRFToken(w http.ResponseWriter, r *http.Request, cfg CSRFConfig) {
 func generateCSRFToken() string {
 	b := make([]byte, 32)
 	if _, err := rand.Read(b); err != nil {
-		// This should never happen in practice, but if it does, return a fallback
-		return base64.URLEncoding.EncodeToString([]byte(time.Now().String()))
+		// Fail securely if crypto/rand fails
+		panic("crypto/rand failed to generate CSRF token: " + err.Error())
 	}
 	return base64.URLEncoding.EncodeToString(b)
 }
