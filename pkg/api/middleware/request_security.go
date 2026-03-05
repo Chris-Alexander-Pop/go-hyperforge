@@ -49,7 +49,8 @@ func SecureJSONMiddleware() func(http.Handler) http.Handler {
 }
 
 // RequireHTTPS redirects HTTP requests to HTTPS.
-func RequireHTTPS() func(http.Handler) http.Handler {
+// allowedHosts is an optional list of allowed hosts to prevent Host header injection attacks.
+func RequireHTTPS(allowedHosts ...string) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			// Check X-Forwarded-Proto for reverse proxy setups
@@ -63,8 +64,36 @@ func RequireHTTPS() func(http.Handler) http.Handler {
 			}
 
 			if proto != "https" {
+				host := r.Host
+				if len(allowedHosts) > 0 {
+					valid := false
+					for _, h := range allowedHosts {
+						if host == h {
+							valid = true
+							break
+						}
+					}
+					if !valid {
+						http.Error(w, "Invalid Host header", http.StatusBadRequest)
+						return
+					}
+				} else {
+					// Fallback to strict validation if no hosts are configured:
+					// Reject anything containing characters indicating path traversal,
+					// or non-alphanumeric (except standard port/domain separators).
+					// This prevents Open Redirect via Host header spoofing if not configured.
+					for _, ch := range host {
+						if (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || (ch >= '0' && ch <= '9') ||
+							ch == '.' || ch == '-' || ch == ':' {
+							continue
+						}
+						http.Error(w, "Invalid Host header", http.StatusBadRequest)
+						return
+					}
+				}
+
 				// Redirect to HTTPS
-				https := "https://" + r.Host + r.RequestURI
+				https := "https://" + host + r.RequestURI
 				http.Redirect(w, r, https, http.StatusMovedPermanently)
 				return
 			}
