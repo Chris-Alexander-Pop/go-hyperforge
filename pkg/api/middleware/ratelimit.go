@@ -1,9 +1,9 @@
 package middleware
 
 import (
-	"fmt"
 	"net"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/chris-alexander-pop/system-design-library/pkg/api/ratelimit"
@@ -31,9 +31,11 @@ func RateLimitMiddleware(limiter ratelimit.Limiter, limit int64, period time.Dur
 			}
 
 			// Add Headers
-			w.Header().Set("X-RateLimit-Limit", fmt.Sprintf("%d", limit))
-			w.Header().Set("X-RateLimit-Remaining", fmt.Sprintf("%d", res.Remaining))
-			w.Header().Set("X-RateLimit-Reset", fmt.Sprintf("%d", int(res.Reset.Seconds())))
+			// Using strconv.FormatInt instead of fmt.Sprintf for performance
+			// See: pkg/api/middleware/benchmark_test.go BenchmarkRateLimitMiddleware
+			w.Header().Set("X-RateLimit-Limit", strconv.FormatInt(limit, 10))
+			w.Header().Set("X-RateLimit-Remaining", strconv.FormatInt(res.Remaining, 10))
+			w.Header().Set("X-RateLimit-Reset", strconv.FormatInt(int64(res.Reset.Seconds()), 10))
 
 			if !res.Allowed {
 				http.Error(w, "Too Many Requests", http.StatusTooManyRequests)
