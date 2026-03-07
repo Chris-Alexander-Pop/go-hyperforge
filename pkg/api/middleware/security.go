@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"crypto/rand"
+	"crypto/subtle"
 	"encoding/base64"
 	"net/http"
 	"strconv"
@@ -83,7 +84,7 @@ func CSRFProtection(cfg CSRFConfig) func(http.Handler) http.Handler {
 				headerToken = r.FormValue(cfg.CookieName)
 			}
 
-			if headerToken == "" || headerToken != cookie.Value {
+			if headerToken == "" || subtle.ConstantTimeCompare([]byte(headerToken), []byte(cookie.Value)) != 1 {
 				http.Error(w, "CSRF token mismatch", http.StatusForbidden)
 				return
 			}
