@@ -2,11 +2,11 @@ package middleware
 
 import (
 	"crypto/rand"
+	"crypto/subtle"
 	"encoding/base64"
 	"net/http"
 	"strconv"
 	"strings"
-	"time"
 )
 
 // =========================================================================
@@ -83,7 +83,13 @@ func CSRFProtection(cfg CSRFConfig) func(http.Handler) http.Handler {
 				headerToken = r.FormValue(cfg.CookieName)
 			}
 
-			if headerToken == "" || headerToken != cookie.Value {
+			if headerToken == "" {
+				http.Error(w, "CSRF token missing", http.StatusForbidden)
+				return
+			}
+
+			// 🛡️ Sentinel: Mitigate timing attacks by using constant-time comparison for CSRF tokens.
+			if subtle.ConstantTimeCompare([]byte(headerToken), []byte(cookie.Value)) != 1 {
 				http.Error(w, "CSRF token mismatch", http.StatusForbidden)
 				return
 			}
@@ -111,8 +117,9 @@ func ensureCSRFToken(w http.ResponseWriter, r *http.Request, cfg CSRFConfig) {
 func generateCSRFToken() string {
 	b := make([]byte, 32)
 	if _, err := rand.Read(b); err != nil {
-		// This should never happen in practice, but if it does, return a fallback
-		return base64.URLEncoding.EncodeToString([]byte(time.Now().String()))
+		// 🛡️ Sentinel: Fail securely if secure random number generation fails.
+		// Falling back to a predictable timestamp allows attackers to guess CSRF tokens.
+		panic("crypto/rand failed to generate secure random numbers for CSRF token")
 	}
 	return base64.URLEncoding.EncodeToString(b)
 }
