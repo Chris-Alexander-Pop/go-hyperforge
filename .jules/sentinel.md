@@ -29,3 +29,8 @@
 **Vulnerability:** The `URL` method in the local blob storage adapter constructed URLs by blindly concatenating the base directory with the user-provided key using `filepath.Join`. This allowed attackers to generate valid `file://` URLs pointing to arbitrary files on the system (e.g., `file:///etc/passwd`) by using path traversal sequences like `../`.
 **Learning:** Security validation must be applied consistently across ALL methods that handle user input, not just data access methods like `Upload` or `Download`. Auxiliary methods that generate references (URLs, paths) are equally critical if their output is trusted by consumers.
 **Prevention:** Ensure that URL generation logic reuses the same path validation and sanitization routines as the core storage operations. Treat the generation of a file path reference as a security-sensitive operation.
+
+## 2026-02-05 - Predictable Fallback in CSRF Token Generation
+**Vulnerability:** The `generateCSRFToken` function fell back to using `time.Now().String()` if `crypto/rand` failed to generate secure random bytes. This predictable timestamp allowed attackers to easily guess CSRF tokens and bypass CSRF protections.
+**Learning:** Fallbacks for secure random number generators (RNG) should never compromise the security of the tokens they generate. A system should fail securely (e.g., panic or return an error) rather than silently degrade to an insecure state.
+**Prevention:** Always handle RNG failures by aborting the operation (e.g., panicking or returning an error) to ensure the system remains secure under failure conditions. Do not implement predictable or insecure fallbacks for cryptographic operations.
