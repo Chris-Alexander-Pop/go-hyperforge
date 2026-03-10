@@ -3,7 +3,6 @@ package middleware
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"net/http"
 	"time"
 
@@ -36,7 +35,7 @@ func CacheMiddleware(c cache.Cache, ttl time.Duration) func(http.Handler) http.H
 				return
 			}
 
-			key := fmt.Sprintf("resp:%s", r.RequestURI)
+			key := "resp:" + r.RequestURI
 
 			// Try Get
 			var cachedBody []byte
