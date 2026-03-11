@@ -5,3 +5,7 @@
 ## 2025-05-24 - Circular Buffer Implementation Flaw
 **Learning:** Implementing circular buffers with bitwise AND masking (`index & (capacity - 1)`) instead of modulo requires strictly enforcing power-of-2 capacity. The existing implementation failed to enforce this precondition, leading to silent data corruption for arbitrary capacities. Additionally, slice-based queues must explicitly zero out popped elements to prevent memory leaks in Go's GC.
 **Action:** Always validate preconditions for low-level bitwise optimizations. When reviewing custom data structures, verify both the algorithm's correctness constraints (e.g., power-of-2) and language-specific memory management details (e.g., pointer clearing).
+
+## 2025-05-25 - HTTP Header Generation Performance
+**Learning:** `fmt.Sprintf` incurs unnecessary allocation and performance overhead when formatting integers for HTTP headers. `strconv.FormatInt` and `strconv.Itoa` are significantly faster (~3x faster) and allocate less. Additionally, pre-calculating constant header strings during middleware initialization eliminates per-request calculation overhead entirely.
+**Action:** Always prefer `strconv` functions over `fmt.Sprintf` for integer-to-string conversion in high-throughput paths like HTTP middleware. Pre-calculate constant values outside of request handler closures.
