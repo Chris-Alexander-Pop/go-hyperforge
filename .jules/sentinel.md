@@ -29,3 +29,7 @@
 **Vulnerability:** The `URL` method in the local blob storage adapter constructed URLs by blindly concatenating the base directory with the user-provided key using `filepath.Join`. This allowed attackers to generate valid `file://` URLs pointing to arbitrary files on the system (e.g., `file:///etc/passwd`) by using path traversal sequences like `../`.
 **Learning:** Security validation must be applied consistently across ALL methods that handle user input, not just data access methods like `Upload` or `Download`. Auxiliary methods that generate references (URLs, paths) are equally critical if their output is trusted by consumers.
 **Prevention:** Ensure that URL generation logic reuses the same path validation and sanitization routines as the core storage operations. Treat the generation of a file path reference as a security-sensitive operation.
+## 2026-03-13 - [Fix CSRF token validation timing attack]
+**Vulnerability:** The CSRF token validation logic used a naive string comparison (`headerToken != cookie.Value`), potentially allowing an attacker to deduce a valid token by measuring the response time (timing attack).
+**Learning:** Security tokens and passwords should always be compared in constant time. Go's standard `==` and `!=` operators short-circuit and are variable-time, making them insecure for this purpose.
+**Prevention:** Use `crypto/subtle.ConstantTimeCompare` when comparing security-sensitive strings or byte slices to ensure the comparison time is independent of the content.
