@@ -309,11 +309,17 @@ func (h *RedactHandler) redactString(s string) string {
 
 	hasAt := strings.Contains(s, "@")
 	if hasAt {
-		s = emailRegex.ReplaceAllString(s, "[EMAIL]")
+		// ⚡ Bolt: Use MatchString guard to avoid ReplaceAllString allocation overhead on non-matches
+		if emailRegex.MatchString(s) {
+			s = emailRegex.ReplaceAllString(s, "[EMAIL]")
+		}
 	}
 
 	if len(s) >= 13 && strings.ContainsAny(s, "0123456789") {
-		s = creditCardRegex.ReplaceAllString(s, "[CC]")
+		// ⚡ Bolt: Use MatchString guard to avoid ReplaceAllString allocation overhead on non-matches
+		if creditCardRegex.MatchString(s) {
+			s = creditCardRegex.ReplaceAllString(s, "[CC]")
+		}
 	}
 	return s
 }

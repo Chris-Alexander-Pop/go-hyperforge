@@ -49,3 +49,20 @@ func BenchmarkRedactHandler_Clean(b *testing.B) {
 		)
 	}
 }
+
+func BenchmarkRedactHandler_CleanWithDigits(b *testing.B) {
+	// Discard output
+	h := slog.NewJSONHandler(io.Discard, nil)
+	r := logger.NewRedactHandler(h)
+	l := slog.New(r)
+	ctx := context.Background()
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		// Log clean data but containing digits (triggers regex in redactString)
+		l.InfoContext(ctx, "Data with numbers",
+			"count", "12345678901234", // Long enough to trigger length check, but no CC match
+			"id", "item-1234567890123",
+		)
+	}
+}
