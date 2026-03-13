@@ -5,3 +5,7 @@
 ## 2025-05-24 - Circular Buffer Implementation Flaw
 **Learning:** Implementing circular buffers with bitwise AND masking (`index & (capacity - 1)`) instead of modulo requires strictly enforcing power-of-2 capacity. The existing implementation failed to enforce this precondition, leading to silent data corruption for arbitrary capacities. Additionally, slice-based queues must explicitly zero out popped elements to prevent memory leaks in Go's GC.
 **Action:** Always validate preconditions for low-level bitwise optimizations. When reviewing custom data structures, verify both the algorithm's correctness constraints (e.g., power-of-2) and language-specific memory management details (e.g., pointer clearing).
+
+## 2025-02-17 - Optimize log redaction allocations with MatchString guard
+**Learning:** In Go, `regexp.ReplaceAllString` incurs allocation overhead even when there's no match (due to internal setup). When a heuristic guard (e.g., checking for `@` or 13 digits) passes but the actual regex match fails, `ReplaceAllString` will still perform unnecessary allocations. Using `regexp.MatchString` as an additional guard condition before calling `ReplaceAllString` drops these allocations to 0 for non-matching strings, which is critical in hot paths like log handlers (`pkg/logger/handlers.go`).
+**Action:** Always consider wrapping `ReplaceAllString` with a `MatchString` guard in performance-critical paths, especially when the heuristic preceding the regex is broad and may produce frequent false positives that fail the regex anyway.
