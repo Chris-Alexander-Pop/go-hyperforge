@@ -9,6 +9,7 @@
 ## 2025-05-25 - HTML Tag Stripping Regex Optimization
 **Learning:** `regexp.ReplaceAllString` is an expensive operation that allocates memory and executes the regex engine even if the input string does not contain a single match. Since `htmlTagRegex` explicitly looks for `<` and `>`, using a fast-path heuristic like `strings.Contains(input, "<")` allows the function to skip regex evaluation entirely for plain text, reducing execution time from ~214ns to ~10ns for safe strings.
 **Action:** Always wrap `regexp.ReplaceAllString` with a cheap heuristic check (like `strings.Contains`) if the vast majority of inputs are expected to be clean and unmodified, especially in hot paths like validation and sanitization.
+
 ## 2025-05-26 - Redis Key Generation Optimization
 **Learning:** In Go, replacing `fmt.Sprintf` with direct string concatenation and `strconv` for hot paths like database or cache key generation significantly reduces CPU overhead and eliminates reflection-based memory allocations.
 **Action:** Use string concatenation (`+`) and `strconv` instead of `fmt.Sprintf` for constructing dynamic keys in cache and database adapters (MFA, session, cache). When benchmarking private package methods, use an `export_test.go` file (e.g., `func (p *Provider) TestKey()`) to safely expose them for tests without modifying the production API visibility.
@@ -24,3 +25,7 @@
 ## 2025-05-26 - String Concatenation Optimization
 **Learning:** In Go, manual character-by-character string concatenation with `+=` in a loop should be replaced with `strings.Split` for fixed delimiters to significantly reduce memory allocations and improve performance, as seen in the ~25x speedup for `splitArgon2Hash` (107 allocs/op -> 1 alloc/op).
 **Action:** Always prefer built-in functions like `strings.Split` over custom loops with string concatenation for splitting strings.
+
+## 2025-02-17 - Optimize log redaction allocations with MatchString guard
+**Learning:** In Go, `regexp.ReplaceAllString` incurs allocation overhead even when there's no match (due to internal setup). When a heuristic guard (e.g., checking for `@` or 13 digits) passes but the actual regex match fails, `ReplaceAllString` will still perform unnecessary allocations. Using `regexp.MatchString` as an additional guard condition before calling `ReplaceAllString` drops these allocations to 0 for non-matching strings, which is critical in hot paths like log handlers (`pkg/logger/handlers.go`).
+**Action:** Always consider wrapping `ReplaceAllString` with a `MatchString` guard in performance-critical paths, especially when the heuristic preceding the regex is broad and may produce frequent false positives that fail the regex anyway.
