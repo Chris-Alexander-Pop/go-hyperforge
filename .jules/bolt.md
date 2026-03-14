@@ -5,3 +5,7 @@
 ## 2025-05-24 - Circular Buffer Implementation Flaw
 **Learning:** Implementing circular buffers with bitwise AND masking (`index & (capacity - 1)`) instead of modulo requires strictly enforcing power-of-2 capacity. The existing implementation failed to enforce this precondition, leading to silent data corruption for arbitrary capacities. Additionally, slice-based queues must explicitly zero out popped elements to prevent memory leaks in Go's GC.
 **Action:** Always validate preconditions for low-level bitwise optimizations. When reviewing custom data structures, verify both the algorithm's correctness constraints (e.g., power-of-2) and language-specific memory management details (e.g., pointer clearing).
+
+## 2025-02-13 - [Pre-calculate invariant header value to avoid per-request format string allocation]
+**Learning:** In Go HTTP middlewares, invariant values (like configuration limits) should be pre-formatted or pre-calculated outside the request handler closure to avoid repeated allocation and formatting work per request. In performance-critical paths (like HTTP middlewares), `strconv` functions (e.g., `strconv.FormatInt`, `strconv.Itoa`) are preferred over `fmt.Sprintf` for integer-to-string conversion to reduce memory allocations and improve execution speed.
+**Action:** When writing or reviewing Go HTTP middlewares, look for opportunities to hoist format strings or use `strconv` instead of `fmt.Sprintf` for integer-to-string conversion.
