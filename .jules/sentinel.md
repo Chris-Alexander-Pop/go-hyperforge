@@ -29,3 +29,8 @@
 **Vulnerability:** The `URL` method in the local blob storage adapter constructed URLs by blindly concatenating the base directory with the user-provided key using `filepath.Join`. This allowed attackers to generate valid `file://` URLs pointing to arbitrary files on the system (e.g., `file:///etc/passwd`) by using path traversal sequences like `../`.
 **Learning:** Security validation must be applied consistently across ALL methods that handle user input, not just data access methods like `Upload` or `Download`. Auxiliary methods that generate references (URLs, paths) are equally critical if their output is trusted by consumers.
 **Prevention:** Ensure that URL generation logic reuses the same path validation and sanitization routines as the core storage operations. Treat the generation of a file path reference as a security-sensitive operation.
+
+## 2024-05-27 - Fail Securely on RNG Failure
+**Vulnerability:** Predictable CSRF token fallback on `crypto/rand` failure.
+**Learning:** Returning a predictable timestamp-based token when a secure random number generator fails completely compromises the protection mechanism and creates a false sense of security.
+**Prevention:** Always "fail securely". If a critical security component like `crypto/rand` fails, the application should panic or return a hard error (500), rather than gracefully degrading to an insecure state.
