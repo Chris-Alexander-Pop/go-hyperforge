@@ -288,6 +288,11 @@ func CORS(cfg CORSConfig) func(http.Handler) http.Handler {
 		allowedOriginsSet[origin] = true
 	}
 
+	// Pre-calculate strings to avoid per-request allocations
+	allowedMethodsStr := strings.Join(cfg.AllowedMethods, ", ")
+	allowedHeadersStr := strings.Join(cfg.AllowedHeaders, ", ")
+	exposedHeadersStr := strings.Join(cfg.ExposedHeaders, ", ")
+
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			origin := r.Header.Get("Origin")
@@ -317,13 +322,13 @@ func CORS(cfg CORSConfig) func(http.Handler) http.Handler {
 			// Handle preflight
 			if r.Method == http.MethodOptions && allowed {
 				// Methods
-				if len(cfg.AllowedMethods) > 0 {
-					w.Header().Set("Access-Control-Allow-Methods", strings.Join(cfg.AllowedMethods, ", "))
+				if allowedMethodsStr != "" {
+					w.Header().Set("Access-Control-Allow-Methods", allowedMethodsStr)
 				}
 
 				// Headers
-				if len(cfg.AllowedHeaders) > 0 {
-					w.Header().Set("Access-Control-Allow-Headers", strings.Join(cfg.AllowedHeaders, ", "))
+				if allowedHeadersStr != "" {
+					w.Header().Set("Access-Control-Allow-Headers", allowedHeadersStr)
 				}
 
 				// Credentials
@@ -342,8 +347,8 @@ func CORS(cfg CORSConfig) func(http.Handler) http.Handler {
 			}
 
 			// Exposed headers for actual requests
-			if len(cfg.ExposedHeaders) > 0 {
-				w.Header().Set("Access-Control-Expose-Headers", strings.Join(cfg.ExposedHeaders, ", "))
+			if exposedHeadersStr != "" {
+				w.Header().Set("Access-Control-Expose-Headers", exposedHeadersStr)
 			}
 
 			// Credentials for actual requests

@@ -29,3 +29,7 @@
 ## 2025-02-17 - Optimize log redaction allocations with MatchString guard
 **Learning:** In Go, `regexp.ReplaceAllString` incurs allocation overhead even when there's no match (due to internal setup). When a heuristic guard (e.g., checking for `@` or 13 digits) passes but the actual regex match fails, `ReplaceAllString` will still perform unnecessary allocations. Using `regexp.MatchString` as an additional guard condition before calling `ReplaceAllString` drops these allocations to 0 for non-matching strings, which is critical in hot paths like log handlers (`pkg/logger/handlers.go`).
 **Action:** Always consider wrapping `ReplaceAllString` with a `MatchString` guard in performance-critical paths, especially when the heuristic preceding the regex is broad and may produce frequent false positives that fail the regex anyway.
+
+## 2025-03-17 - Pre-calculate static headers in HTTP Middleware
+**Learning:** Calling `strings.Join` inside a frequently executed path (like an HTTP middleware handler) on data that doesn't change (like configuration parameters) causes unnecessary per-request memory allocation and CPU overhead.
+**Action:** When writing or modifying HTTP middleware (especially those in hot paths like CORS or Rate Limiting), always inspect the handler closure for operations on static configuration data and hoist them (pre-calculate) to the middleware initialization phase outside the returned handler function.
