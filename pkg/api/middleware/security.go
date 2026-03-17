@@ -169,32 +169,45 @@ func DefaultSecurityHeadersConfig() SecurityHeadersConfig {
 
 // SecurityHeaders adds security headers to responses.
 func SecurityHeaders(cfg SecurityHeadersConfig) func(http.Handler) http.Handler {
+	// Pre-calculate HSTS
+	var hsts string
+	if cfg.HSTSEnabled {
+		hsts = "max-age=" + strconv.Itoa(cfg.HSTSMaxAge)
+		if cfg.HSTSIncludeSubdomains {
+			hsts += "; includeSubDomains"
+		}
+		if cfg.HSTSPreload {
+			hsts += "; preload"
+		}
+	}
+
+	// Pre-calculate CSP
+	// Note: Iterating a map is non-deterministic, but since these are pre-calculated once
+	// at configuration time, it only happens once and is stable for the lifetime of the handler.
+	var csp string
+	if cfg.CSPEnabled && len(cfg.CSPDirectives) > 0 {
+		var b strings.Builder
+		for directive, value := range cfg.CSPDirectives {
+			if b.Len() > 0 {
+				b.WriteString("; ")
+			}
+			b.WriteString(directive)
+			b.WriteString(" ")
+			b.WriteString(value)
+		}
+		csp = b.String()
+	}
+
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			// HSTS
-			if cfg.HSTSEnabled {
-				hsts := "max-age=" + strconv.Itoa(cfg.HSTSMaxAge)
-				if cfg.HSTSIncludeSubdomains {
-					hsts += "; includeSubDomains"
-				}
-				if cfg.HSTSPreload {
-					hsts += "; preload"
-				}
+			if hsts != "" {
 				w.Header().Set("Strict-Transport-Security", hsts)
 			}
 
 			// CSP
-			if cfg.CSPEnabled && len(cfg.CSPDirectives) > 0 {
-				var csp strings.Builder
-				for directive, value := range cfg.CSPDirectives {
-					if csp.Len() > 0 {
-						csp.WriteString("; ")
-					}
-					csp.WriteString(directive)
-					csp.WriteString(" ")
-					csp.WriteString(value)
-				}
-				w.Header().Set("Content-Security-Policy", csp.String())
+			if csp != "" {
+				w.Header().Set("Content-Security-Policy", csp)
 			}
 
 			// X-Frame-Options
