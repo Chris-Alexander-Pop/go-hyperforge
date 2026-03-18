@@ -9,3 +9,7 @@
 ## 2025-05-25 - HTML Tag Stripping Regex Optimization
 **Learning:** `regexp.ReplaceAllString` is an expensive operation that allocates memory and executes the regex engine even if the input string does not contain a single match. Since `htmlTagRegex` explicitly looks for `<` and `>`, using a fast-path heuristic like `strings.Contains(input, "<")` allows the function to skip regex evaluation entirely for plain text, reducing execution time from ~214ns to ~10ns for safe strings.
 **Action:** Always wrap `regexp.ReplaceAllString` with a cheap heuristic check (like `strings.Contains`) if the vast majority of inputs are expected to be clean and unmodified, especially in hot paths like validation and sanitization.
+
+## 2025-05-26 - String Concatenation over fmt.Sprintf in Rate Limiters
+**Learning:** `fmt.Sprintf` is flexible but invokes reflection and format parsing overhead. In highly trafficked paths like rate limiter key generation (`rl:fixed:key:window`), manually concatenating strings with `strconv.FormatInt` reduces memory allocations and is significantly faster (~180ns to ~94ns, with a 50% drop in bytes allocated).
+**Action:** Always prefer string concatenation combined with `strconv` package functions over `fmt.Sprintf` for constructing simple keys in hot paths.
