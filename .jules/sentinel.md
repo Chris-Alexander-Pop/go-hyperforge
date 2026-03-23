@@ -33,3 +33,8 @@
 **Vulnerability:** The CSRF token generation in `pkg/api/middleware/security.go` fell back to a highly predictable timestamp string (`time.Now().String()`) if the system's cryptographically secure pseudo-random number generator (`crypto/rand`) failed. Furthermore, token validation used standard string inequality (`!=`), making it vulnerable to timing attacks.
 **Learning:** In cryptographic or security contexts, if a dependency like a random number generator fails, the application must "fail securely" (e.g., panic or return an error that halts the operation), rather than silently falling back to insecure, predictable defaults. Additionally, sensitive token comparisons must use constant-time operations like `crypto/subtle.ConstantTimeCompare` to prevent information leakage.
 **Prevention:** Audit all uses of `crypto/rand` to ensure errors are not masked by predictable fallbacks. Enforce the use of `crypto/subtle.ConstantTimeCompare` for all sensitive token or hash comparisons across the codebase.
+
+## 2026-03-23 - Missing Command Injection Validation in Middleware
+**Vulnerability:** The global API middleware `SanitizeMiddleware` validated inputs for SQL Injection and Path Traversal but failed to check for Command Injection.
+**Learning:** Given the system architecture relies on ML training and Big Data clients that execute processes via `exec.CommandContext`, global input validation must explicitly reject command injection payloads to protect underlying shell executions.
+**Prevention:** Ensure `validator.DetectCommandInjection` is integrated into all centralized input sanitization and validation middleware.
