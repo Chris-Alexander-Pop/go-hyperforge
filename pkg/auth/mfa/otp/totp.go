@@ -14,9 +14,13 @@ import (
 	"encoding/base32"
 	"encoding/binary"
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 )
+
+// zeros is a pre-allocated string of zeros for fast padding.
+const zeros = "00000000000000000000"
 
 // TOTPConfig configures TOTP generation.
 type TOTPConfig struct {
@@ -120,8 +124,15 @@ func (t *TOTP) generateCodeForCounter(secret string, counter uint64) (string, er
 	code = code % mod
 
 	// Pad with zeros
-	format := fmt.Sprintf("%%0%dd", t.config.Digits)
-	return fmt.Sprintf(format, code), nil
+	str := strconv.FormatInt(code, 10)
+	padLen := t.config.Digits - len(str)
+	if padLen > 0 {
+		if padLen <= len(zeros) {
+			return zeros[:padLen] + str, nil
+		}
+		return strings.Repeat("0", padLen) + str, nil
+	}
+	return str, nil
 }
 
 // Validate checks if a code is valid for the given secret.
