@@ -1,9 +1,9 @@
 package middleware
 
 import (
-	"fmt"
 	"net"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/chris-alexander-pop/system-design-library/pkg/api/ratelimit"
@@ -12,6 +12,9 @@ import (
 
 // RateLimitMiddleware creates an HTTP handler that enforces rate limits
 func RateLimitMiddleware(limiter ratelimit.Limiter, limit int64, period time.Duration) func(http.Handler) http.Handler {
+	// Pre-calculate invariant string values to avoid per-request allocations
+	limitStr := strconv.FormatInt(limit, 10)
+
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			// Key strategy: IP Based for now
@@ -31,9 +34,9 @@ func RateLimitMiddleware(limiter ratelimit.Limiter, limit int64, period time.Dur
 			}
 
 			// Add Headers
-			w.Header().Set("X-RateLimit-Limit", fmt.Sprintf("%d", limit))
-			w.Header().Set("X-RateLimit-Remaining", fmt.Sprintf("%d", res.Remaining))
-			w.Header().Set("X-RateLimit-Reset", fmt.Sprintf("%d", int(res.Reset.Seconds())))
+			w.Header().Set("X-RateLimit-Limit", limitStr)
+			w.Header().Set("X-RateLimit-Remaining", strconv.FormatInt(res.Remaining, 10))
+			w.Header().Set("X-RateLimit-Reset", strconv.FormatInt(int64(res.Reset.Seconds()), 10))
 
 			if !res.Allowed {
 				http.Error(w, "Too Many Requests", http.StatusTooManyRequests)
