@@ -16,7 +16,7 @@ func SanitizeMiddleware(sanitizer *validator.Sanitizer) func(http.Handler) http.
 			for key, values := range query {
 				for i, v := range values {
 					// Check for injection attempts
-					if validator.DetectSQLInjection(v) || validator.DetectPathTraversal(v) {
+					if validator.DetectSQLInjection(v) || validator.DetectPathTraversal(v) || validator.DetectCommandInjection(v) {
 						http.Error(w, "Invalid input detected", http.StatusBadRequest)
 						return
 					}
