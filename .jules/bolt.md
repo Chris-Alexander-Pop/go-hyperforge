@@ -9,3 +9,7 @@
 ## 2025-05-25 - HTML Tag Stripping Regex Optimization
 **Learning:** `regexp.ReplaceAllString` is an expensive operation that allocates memory and executes the regex engine even if the input string does not contain a single match. Since `htmlTagRegex` explicitly looks for `<` and `>`, using a fast-path heuristic like `strings.Contains(input, "<")` allows the function to skip regex evaluation entirely for plain text, reducing execution time from ~214ns to ~10ns for safe strings.
 **Action:** Always wrap `regexp.ReplaceAllString` with a cheap heuristic check (like `strings.Contains`) if the vast majority of inputs are expected to be clean and unmodified, especially in hot paths like validation and sanitization.
+
+## 2025-05-26 - Pre-calculate Invariants and Avoid fmt.Sprintf in Middleware
+**Learning:** In Go HTTP middlewares, using `fmt.Sprintf` for formatting numeric headers (like rate limits) inside the request handler closure causes unnecessary per-request memory allocations and execution overhead.
+**Action:** Pre-format invariant values (like the configuration limit) outside the request handler closure during initialization. For dynamic values, use `strconv.FormatInt` instead of `fmt.Sprintf` to reduce execution speed and avoid allocations.
