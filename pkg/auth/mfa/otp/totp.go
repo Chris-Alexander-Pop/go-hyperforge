@@ -14,6 +14,7 @@ import (
 	"encoding/base32"
 	"encoding/binary"
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -120,8 +121,18 @@ func (t *TOTP) generateCodeForCounter(secret string, counter uint64) (string, er
 	code = code % mod
 
 	// Pad with zeros
-	format := fmt.Sprintf("%%0%dd", t.config.Digits)
-	return fmt.Sprintf(format, code), nil
+	str := strconv.FormatInt(code, 10)
+	if len(str) < t.config.Digits {
+		diff := t.config.Digits - len(str)
+		if diff <= 20 {
+			// Pre-allocated string for fast zero padding
+			zeros := "00000000000000000000"
+			str = zeros[:diff] + str
+		} else {
+			str = strings.Repeat("0", diff) + str
+		}
+	}
+	return str, nil
 }
 
 // Validate checks if a code is valid for the given secret.
