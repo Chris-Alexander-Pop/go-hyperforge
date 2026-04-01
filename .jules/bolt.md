@@ -9,3 +9,7 @@
 ## 2025-05-25 - HTML Tag Stripping Regex Optimization
 **Learning:** `regexp.ReplaceAllString` is an expensive operation that allocates memory and executes the regex engine even if the input string does not contain a single match. Since `htmlTagRegex` explicitly looks for `<` and `>`, using a fast-path heuristic like `strings.Contains(input, "<")` allows the function to skip regex evaluation entirely for plain text, reducing execution time from ~214ns to ~10ns for safe strings.
 **Action:** Always wrap `regexp.ReplaceAllString` with a cheap heuristic check (like `strings.Contains`) if the vast majority of inputs are expected to be clean and unmodified, especially in hot paths like validation and sanitization.
+
+## 2025-02-28 - Avoid Sprintf for High-Frequency Headers
+**Learning:** `fmt.Sprintf` incurs reflection overhead and memory allocations per call, which becomes a bottleneck in high-throughput paths like API rate limit middleware. `strconv.FormatInt` provides allocation-free (or minimal allocation) string conversions. Additionally, invariant values like standard `limit` thresholds can be formatted once during closure setup instead of evaluating per-request.
+**Action:** Replace `fmt.Sprintf` with `strconv` for integers in middleware paths, and hoist invariant string parsing/formatting out of the returned handler func.
