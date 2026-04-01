@@ -2,6 +2,7 @@ package memory
 
 import (
 	"context"
+	"crypto/subtle"
 	"time"
 
 	"github.com/chris-alexander-pop/system-design-library/pkg/auth/mfa"
@@ -133,7 +134,7 @@ func (p *MFAProvider) Recover(ctx context.Context, userID, code string) (bool, e
 		// For simplicity in this memory adapter:
 		hashedCode := otp.HashRecoveryCode(code)
 		for i, hash := range enrollment.Recovery {
-			if hash == hashedCode {
+			if subtle.ConstantTimeCompare([]byte(hash), []byte(hashedCode)) == 1 {
 				// Remove it or mark it
 				enrollment.Recovery = append(enrollment.Recovery[:i], enrollment.Recovery[i+1:]...)
 				return true, nil

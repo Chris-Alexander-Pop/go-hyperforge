@@ -33,3 +33,8 @@
 **Vulnerability:** The CSRF token generation in `pkg/api/middleware/security.go` fell back to a highly predictable timestamp string (`time.Now().String()`) if the system's cryptographically secure pseudo-random number generator (`crypto/rand`) failed. Furthermore, token validation used standard string inequality (`!=`), making it vulnerable to timing attacks.
 **Learning:** In cryptographic or security contexts, if a dependency like a random number generator fails, the application must "fail securely" (e.g., panic or return an error that halts the operation), rather than silently falling back to insecure, predictable defaults. Additionally, sensitive token comparisons must use constant-time operations like `crypto/subtle.ConstantTimeCompare` to prevent information leakage.
 **Prevention:** Audit all uses of `crypto/rand` to ensure errors are not masked by predictable fallbacks. Enforce the use of `crypto/subtle.ConstantTimeCompare` for all sensitive token or hash comparisons across the codebase.
+
+## 2025-02-18 - Timing Attack in MFA Recovery Code Comparison
+**Vulnerability:** MFA recovery code hashes were being compared using standard string equality (`hash == hashedCode`) in the memory and redis adapters, exposing the system to timing attacks.
+**Learning:** Even hashed values must be compared securely in constant time when verifying authentication factors to prevent leaking information about the valid hash structure.
+**Prevention:** Always use `crypto/subtle.ConstantTimeCompare` when comparing sensitive tokens, secrets, or hashes, rather than relying on standard string equality (`==` or `!=`).
