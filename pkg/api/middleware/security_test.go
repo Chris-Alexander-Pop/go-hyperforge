@@ -5,6 +5,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/chris-alexander-pop/system-design-library/pkg/validator"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -68,4 +69,23 @@ func TestCORS_WildcardCredentials(t *testing.T) {
 
 	credentials := w.Header().Get("Access-Control-Allow-Credentials")
 	assert.Equal(t, "", credentials, "Credentials should not be allowed with wildcard origin")
+}
+
+func TestSanitizeMiddleware_CommandInjection(t *testing.T) {
+	sanitizer := validator.NewSanitizer(validator.DefaultSanitizerConfig())
+	handler := SanitizeMiddleware(sanitizer)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	}))
+
+	// Test case: valid input
+	req := httptest.NewRequest("GET", "/?q=valid", nil)
+	w := httptest.NewRecorder()
+	handler.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusOK, w.Code)
+
+	// Test case: command injection with URL encoded semicolon
+	req = httptest.NewRequest("GET", "/?q=valid%3B+rm+-rf+%2F", nil)
+	w = httptest.NewRecorder()
+	handler.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusBadRequest, w.Code)
 }
