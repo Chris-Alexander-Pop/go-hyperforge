@@ -4,6 +4,7 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"fmt"
+	"strings"
 
 	"github.com/chris-alexander-pop/system-design-library/pkg/errors"
 	"golang.org/x/crypto/argon2"
@@ -138,20 +139,13 @@ func splitArgon2Hash(hash string) []string {
 	if len(hash) > 0 && hash[0] == '$' {
 		hash = hash[1:]
 	}
-	parts := make([]string, 0, 5)
-	current := ""
-	for _, c := range hash {
-		if c == '$' {
-			parts = append(parts, current)
-			current = ""
-		} else {
-			current += string(c)
-		}
+
+	// Handle trailing $ if present to match previous loop logic where trailing empty string is ignored
+	if len(hash) > 0 && hash[len(hash)-1] == '$' {
+		hash = hash[:len(hash)-1]
 	}
-	if current != "" {
-		parts = append(parts, current)
-	}
-	return parts
+
+	return strings.Split(hash, "$")
 }
 
 // Bcrypt implementation
