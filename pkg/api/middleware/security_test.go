@@ -5,6 +5,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/chris-alexander-pop/system-design-library/pkg/validator"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -68,4 +69,19 @@ func TestCORS_WildcardCredentials(t *testing.T) {
 
 	credentials := w.Header().Get("Access-Control-Allow-Credentials")
 	assert.Equal(t, "", credentials, "Credentials should not be allowed with wildcard origin")
+}
+
+func TestSanitizeMiddleware_CommandInjection(t *testing.T) {
+	sanitizer := validator.NewSanitizer(validator.SanitizerConfig{})
+	handler := SanitizeMiddleware(sanitizer)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	}))
+
+	// Semicolons must be URL encoded (%3B) in go 1.17+
+	req := httptest.NewRequest("GET", "/?query=test%3Bls", nil)
+	w := httptest.NewRecorder()
+	handler.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+	assert.Contains(t, w.Body.String(), "Invalid input detected")
 }
