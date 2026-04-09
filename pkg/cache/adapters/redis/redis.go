@@ -3,7 +3,6 @@ package redis
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"time"
 
 	"github.com/chris-alexander-pop/system-design-library/pkg/cache"
@@ -17,7 +16,7 @@ type RedisCache struct {
 
 func New(cfg cache.Config) (cache.Cache, error) {
 	client := redis.NewClient(&redis.Options{
-		Addr:     fmt.Sprintf("%s:%s", cfg.Host, cfg.Port),
+		Addr:     cfg.Host + ":" + cfg.Port,
 		Password: cfg.Password,
 		DB:       cfg.DB,
 	})
