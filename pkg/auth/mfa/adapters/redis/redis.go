@@ -3,7 +3,7 @@ package redis
 import (
 	"context"
 	"encoding/json"
-	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/chris-alexander-pop/system-design-library/pkg/auth/mfa"
@@ -31,11 +31,11 @@ func New(client *redis.Client, cfg mfa.Config) *MFAProvider {
 }
 
 func (p *MFAProvider) key(userID string) string {
-	return fmt.Sprintf("auth:mfa:%s", userID)
+	return "auth:mfa:" + userID
 }
 
 func (p *MFAProvider) usedKey(userID string, counter uint64) string {
-	return fmt.Sprintf("auth:mfa:used:%s:%d", userID, counter)
+	return "auth:mfa:used:" + userID + ":" + strconv.FormatUint(counter, 10)
 }
 
 // redisEnrollment is a local struct to handle JSON serialization for Redis,

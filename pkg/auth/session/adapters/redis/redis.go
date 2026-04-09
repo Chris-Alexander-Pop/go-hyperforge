@@ -3,7 +3,6 @@ package redis
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"time"
 
 	"github.com/chris-alexander-pop/system-design-library/pkg/auth/session"
@@ -27,7 +26,7 @@ func New(client *redis.Client, cfg session.Config) *SessionManager {
 }
 
 func (m *SessionManager) key(sessionID string) string {
-	return fmt.Sprintf("auth:session:%s", sessionID)
+	return "auth:session:" + sessionID
 }
 
 func (m *SessionManager) Create(ctx context.Context, userID string, metadata map[string]interface{}) (*session.Session, error) {
