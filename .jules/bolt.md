@@ -16,3 +16,7 @@
 ## 2024-04-16 - Optimize TOTP Padding
 **Learning:** Formatting strings using `fmt.Sprintf` is surprisingly slow in high-throughput hot paths like OTP generation. The `fmt.Sprintf` implementation uses reflection and heap allocation to construct output formats at runtime.
 **Action:** Replace `fmt.Sprintf` integer zero-padding with a combination of `strconv.FormatInt`, string slice bounds indexing on a pre-allocated zeros string slice, and a `strings.Repeat` fallback. This significantly improves speed and drops allocations.
+
+## 2024-05-26 - Pre-formatting invariant values in HTTP middleware closures
+**Learning:** In Go HTTP middlewares, `fmt.Sprintf` introduces unnecessary allocation and CPU overhead. Invariant values (like configuration limits) should be pre-formatted outside the request handler closure to avoid per-request allocations. Dynamic values should use `strconv` functions like `strconv.FormatInt` and `strconv.Itoa`.
+**Action:** Always inspect middleware for values that can be pre-calculated or pre-formatted outside of the returned `http.HandlerFunc`. Use `strconv` over `fmt.Sprintf` for high-throughput string manipulation.
