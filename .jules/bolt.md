@@ -9,3 +9,7 @@
 ## 2025-05-25 - HTML Tag Stripping Regex Optimization
 **Learning:** `regexp.ReplaceAllString` is an expensive operation that allocates memory and executes the regex engine even if the input string does not contain a single match. Since `htmlTagRegex` explicitly looks for `<` and `>`, using a fast-path heuristic like `strings.Contains(input, "<")` allows the function to skip regex evaluation entirely for plain text, reducing execution time from ~214ns to ~10ns for safe strings.
 **Action:** Always wrap `regexp.ReplaceAllString` with a cheap heuristic check (like `strings.Contains`) if the vast majority of inputs are expected to be clean and unmodified, especially in hot paths like validation and sanitization.
+
+## 2024-05-26 - Redis Cache Key Generation Optimization
+**Learning:** Using `fmt.Sprintf` for constructing cache keys in high-throughput paths introduces unnecessary reflection and allocation overhead. In Redis adapters, string concatenation combined with `strconv` is significantly faster.
+**Action:** Replace `fmt.Sprintf` with string concatenation (`"prefix:" + id`) and use `strconv` (e.g., `strconv.FormatUint`) for dynamic numbers to minimize allocations and improve performance in cache key generation.
