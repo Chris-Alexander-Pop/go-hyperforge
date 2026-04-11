@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/chris-alexander-pop/system-design-library/pkg/validator"
 )
 
 func TestSecurityHeaders_HSTS(t *testing.T) {
@@ -68,4 +69,34 @@ func TestCORS_WildcardCredentials(t *testing.T) {
 
 	credentials := w.Header().Get("Access-Control-Allow-Credentials")
 	assert.Equal(t, "", credentials, "Credentials should not be allowed with wildcard origin")
+}
+
+func TestSanitizeMiddleware_Injection(t *testing.T) {
+	sanitizer := validator.NewSanitizer(validator.SanitizerConfig{
+		StripHTML:  true,
+		EscapeHTML: true,
+	})
+	handler := SanitizeMiddleware(sanitizer)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	}))
+
+	tests := []struct {
+		name     string
+		query    string
+		wantCode int
+	}{
+		{"Valid Input", "?name=jules", http.StatusOK},
+		{"SQL Injection", "?query=SELECT%20*%20FROM%20users", http.StatusBadRequest},
+		{"Path Traversal", "?file=../../../etc/passwd", http.StatusBadRequest},
+		{"Command Injection", "?cmd=ls%20-la%20%3B", http.StatusBadRequest},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			req := httptest.NewRequest("GET", "/"+tt.query, nil)
+			w := httptest.NewRecorder()
+			handler.ServeHTTP(w, req)
+			assert.Equal(t, tt.wantCode, w.Code)
+		})
+	}
 }
