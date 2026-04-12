@@ -14,9 +14,12 @@ import (
 	"encoding/base32"
 	"encoding/binary"
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 )
+
+var totpZeros = "00000000000000000000"
 
 // TOTPConfig configures TOTP generation.
 type TOTPConfig struct {
@@ -119,9 +122,17 @@ func (t *TOTP) generateCodeForCounter(secret string, counter uint64) (string, er
 	}
 	code = code % mod
 
-	// Pad with zeros
-	format := fmt.Sprintf("%%0%dd", t.config.Digits)
-	return fmt.Sprintf(format, code), nil
+	// Pad with zeros using strconv for better performance
+	strCode := strconv.FormatInt(code, 10)
+	diff := t.config.Digits - len(strCode)
+	if diff > 0 {
+		if diff <= len(totpZeros) {
+			strCode = totpZeros[:diff] + strCode
+		} else {
+			strCode = strings.Repeat("0", diff) + strCode
+		}
+	}
+	return strCode, nil
 }
 
 // Validate checks if a code is valid for the given secret.
