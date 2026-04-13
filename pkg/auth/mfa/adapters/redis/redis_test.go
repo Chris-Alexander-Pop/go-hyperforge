@@ -186,3 +186,26 @@ func TestRecoveryCodes(t *testing.T) {
 	require.NoError(t, err)
 	assert.False(t, success, "Recovery with invalid code should fail")
 }
+
+func BenchmarkKeyGeneration(b *testing.B) {
+	config := mfa.Config{
+		TOTPIssuer: "TestApp",
+		TOTPDigits: 6,
+		TOTPPeriod: 30,
+	}
+	provider := redisAdapter.New(nil, config)
+	userID := "user-1234567890"
+
+	b.Run("Key", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			_ = provider.TestKey(userID)
+		}
+	})
+
+	b.Run("UsedKey", func(b *testing.B) {
+		counter := uint64(123456)
+		for i := 0; i < b.N; i++ {
+			_ = provider.TestUsedKey(userID, counter)
+		}
+	})
+}
