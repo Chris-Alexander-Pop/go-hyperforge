@@ -37,3 +37,9 @@
 **Vulnerability:** The `SanitizeMiddleware` checked for SQL injection and Path Traversal but completely omitted checking for Command Injection, leaving a massive gap considering parts of the codebase execute underlying processes via `exec.CommandContext`.
 **Learning:** Security validations must be comprehensive, especially global middlewares, and missing checks can lead to critical vulnerabilities being propagated throughout the entire application.
 **Prevention:** Regularly audit the capabilities of the validation and sanitization packages against the usage patterns in global middlewares.
+
+## 2024-05-24 - Timing Attack in MFA Recovery Code Comparison
+**Vulnerability:** The MFA recovery code validation in `pkg/auth/mfa/adapters/memory/memory.go` and `pkg/auth/mfa/adapters/redis/redis.go` used standard string inequality (`hash == hashedCode`), making it vulnerable to timing attacks.
+**Learning:** In cryptographic or security contexts, sensitive token comparisons must use constant-time operations like `crypto/subtle.ConstantTimeCompare` to prevent information leakage.
+**Prevention:** Enforce the use of `crypto/subtle.ConstantTimeCompare` for all sensitive token or hash comparisons across the codebase.
+
