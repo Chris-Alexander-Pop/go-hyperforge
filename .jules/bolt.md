@@ -20,3 +20,7 @@
 ## 2024-05-26 - Pre-formatting invariant values in HTTP middleware closures
 **Learning:** In Go HTTP middlewares, `fmt.Sprintf` introduces unnecessary allocation and CPU overhead. Invariant values (like configuration limits) should be pre-formatted outside the request handler closure to avoid per-request allocations. Dynamic values should use `strconv` functions like `strconv.FormatInt` and `strconv.Itoa`.
 **Action:** Always inspect middleware for values that can be pre-calculated or pre-formatted outside of the returned `http.HandlerFunc`. Use `strconv` over `fmt.Sprintf` for high-throughput string manipulation.
+
+## 2025-05-26 - String Concatenation Optimization
+**Learning:** In Go, manual character-by-character string concatenation with `+=` in a loop should be replaced with `strings.Split` for fixed delimiters to significantly reduce memory allocations and improve performance, as seen in the ~25x speedup for `splitArgon2Hash` (107 allocs/op -> 1 alloc/op).
+**Action:** Always prefer built-in functions like `strings.Split` over custom loops with string concatenation for splitting strings.
