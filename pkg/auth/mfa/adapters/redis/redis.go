@@ -2,6 +2,7 @@ package redis
 
 import (
 	"context"
+	"crypto/subtle"
 	"encoding/json"
 	"fmt"
 	"time"
@@ -268,7 +269,7 @@ func (p *MFAProvider) Recover(ctx context.Context, userID, code string) (bool, e
 		foundIndex := -1
 		hashedCode := otp.HashRecoveryCode(code)
 		for i, hash := range enrollment.Recovery {
-			if hash == hashedCode {
+			if subtle.ConstantTimeCompare([]byte(hash), []byte(hashedCode)) == 1 {
 				foundIndex = i
 				break
 			}
