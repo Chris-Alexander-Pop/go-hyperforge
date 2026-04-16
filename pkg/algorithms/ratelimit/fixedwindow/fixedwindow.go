@@ -2,7 +2,7 @@ package fixedwindow
 
 import (
 	"context"
-	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/chris-alexander-pop/system-design-library/pkg/algorithms/ratelimit"
@@ -22,7 +22,10 @@ func New(store cache.Cache) *Limiter {
 
 func (l *Limiter) Allow(ctx context.Context, key string, limit int64, period time.Duration) (*ratelimit.Result, error) {
 	window := time.Now().Truncate(period).Unix()
-	cacheKey := fmt.Sprintf("rl:fixed:%s:%d", key, window)
+
+	// Optimization: Reduce allocations on hot path.
+	// Use string concatenation and strconv instead of fmt.Sprintf
+	cacheKey := "rl:fixed:" + key + ":" + strconv.FormatInt(window, 10)
 
 	curr, err := l.store.Incr(ctx, cacheKey, 1)
 	if err != nil {
