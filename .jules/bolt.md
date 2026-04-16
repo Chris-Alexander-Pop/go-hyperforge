@@ -12,3 +12,7 @@
 ## 2025-05-26 - Redis Key Generation Optimization
 **Learning:** In Go, replacing `fmt.Sprintf` with direct string concatenation and `strconv` for hot paths like database or cache key generation significantly reduces CPU overhead and eliminates reflection-based memory allocations.
 **Action:** Use string concatenation (`+`) and `strconv` instead of `fmt.Sprintf` for constructing dynamic keys in cache and database adapters (MFA, session, cache). When benchmarking private package methods, use an `export_test.go` file (e.g., `func (p *Provider) TestKey()`) to safely expose them for tests without modifying the production API visibility.
+
+## 2024-04-16 - Optimize TOTP Padding
+**Learning:** Formatting strings using `fmt.Sprintf` is surprisingly slow in high-throughput hot paths like OTP generation. The `fmt.Sprintf` implementation uses reflection and heap allocation to construct output formats at runtime.
+**Action:** Replace `fmt.Sprintf` integer zero-padding with a combination of `strconv.FormatInt`, string slice bounds indexing on a pre-allocated zeros string slice, and a `strings.Repeat` fallback. This significantly improves speed and drops allocations.
