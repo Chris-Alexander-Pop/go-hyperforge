@@ -1,0 +1,10 @@
+--- pkg/database/document/adapters/cosmosdb/benchmark_test.go
++++ pkg/database/document/adapters/cosmosdb/benchmark_test.go
+@@ -37,7 +37,7 @@
+	}
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+-		buildQuery(query)
++		buildQuery(query) // Ignoring error in bench
+	}
+ }
