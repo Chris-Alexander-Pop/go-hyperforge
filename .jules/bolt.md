@@ -33,3 +33,6 @@
 ## 2025-03-17 - Pre-calculate static headers in HTTP Middleware
 **Learning:** Calling `strings.Join` inside a frequently executed path (like an HTTP middleware handler) on data that doesn't change (like configuration parameters) causes unnecessary per-request memory allocation and CPU overhead.
 **Action:** When writing or modifying HTTP middleware (especially those in hot paths like CORS or Rate Limiting), always inspect the handler closure for operations on static configuration data and hoist them (pre-calculate) to the middleware initialization phase outside the returned handler function.
+## 2025-02-23 - Avoid fmt.Sprintf for Hot Path String Construction
+**Learning:** In Go, string concatenation and `strconv.FormatInt` are significantly faster than `fmt.Sprintf` for constructing cache keys and unique IDs in hot paths (like rate limiting adapters), because they minimize reflection and allocation overhead.
+**Action:** Always prefer string concatenation (`+`) or `strconv` formatting over `fmt.Sprintf` when generating dynamic cache keys or IDs in performance-critical code paths.
