@@ -3,6 +3,7 @@ package algolia
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/algolia/algoliasearch-client-go/v3/algolia/opt"
@@ -263,7 +264,7 @@ func (e *Engine) buildFilters(filters []search.Filter) string {
 				for _, v := range arr {
 					vals = append(vals, fmt.Sprintf("%s:%v", f.Field, v))
 				}
-				filterStr = fmt.Sprintf("(%s)", join(vals, " OR "))
+				filterStr = fmt.Sprintf("(%s)", strings.Join(vals, " OR "))
 			}
 		default:
 			filterStr = fmt.Sprintf("%s:%v", f.Field, f.Value)
@@ -272,18 +273,7 @@ func (e *Engine) buildFilters(filters []search.Filter) string {
 		parts = append(parts, filterStr)
 	}
 
-	return join(parts, " AND ")
-}
-
-func join(parts []string, sep string) string {
-	if len(parts) == 0 {
-		return ""
-	}
-	result := parts[0]
-	for i := 1; i < len(parts); i++ {
-		result += sep + parts[i]
-	}
-	return result
+	return strings.Join(parts, " AND ")
 }
 
 func (e *Engine) Bulk(ctx context.Context, indexName string, ops []search.BulkOperation) (*search.BulkResult, error) {
