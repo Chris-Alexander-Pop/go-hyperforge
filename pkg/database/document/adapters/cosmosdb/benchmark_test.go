@@ -49,6 +49,6 @@ func BenchmarkBuildQueryParameterized(b *testing.B) {
 	}
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		buildQuery(query)
+		_, _, _ = buildQuery(query)
 	}
 }
