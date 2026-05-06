@@ -33,3 +33,6 @@
 ## 2025-03-17 - Pre-calculate static headers in HTTP Middleware
 **Learning:** Calling `strings.Join` inside a frequently executed path (like an HTTP middleware handler) on data that doesn't change (like configuration parameters) causes unnecessary per-request memory allocation and CPU overhead.
 **Action:** When writing or modifying HTTP middleware (especially those in hot paths like CORS or Rate Limiting), always inspect the handler closure for operations on static configuration data and hoist them (pre-calculate) to the middleware initialization phase outside the returned handler function.
+## 2025-05-27 - Redis Key Generation Allocation Optimization
+**Learning:** In Go, replacing `fmt.Sprintf` with direct string concatenation and `strconv` for hot paths like database or cache key generation significantly reduces CPU overhead and eliminates reflection-based memory allocations. Rate limiting middleware runs on every request, so string allocations here cascade into significant garbage collection pressure at scale.
+**Action:** Use string concatenation (`+`) and `strconv` instead of `fmt.Sprintf` for constructing dynamic keys in cache and database adapters. When applying this optimization across a file, ensure it is applied consistently to all methods (e.g., all rate limit strategies) to maximize the benefit.
