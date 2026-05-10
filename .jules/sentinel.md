@@ -48,3 +48,7 @@
 **Vulnerability:** The `RequireHTTPS` middleware constructed absolute redirect URLs blindly trusting the `r.Host` value. This allowed an attacker to supply an arbitrary `Host` header (e.g. `evil.com`), tricking the server into issuing a 301 redirect to an attacker-controlled site, potentially leading to phishing or token leakage.
 **Learning:** `r.Host` is user-supplied data and must never be trusted implicitly when constructing absolute URLs, especially in security boundaries like HTTP-to-HTTPS redirects.
 **Prevention:** Introduce validation for the `Host` header against an explicit whitelist of allowed hosts. For backward compatibility where a whitelist isn't provided, enforce strict character validation (e.g., alphanumeric, dots, dashes) to prevent structural attacks like path traversal or query string injection via the Host header.
+## 2025-02-18 - [NoSQL Injection in CosmosDB Adapter]
+**Vulnerability:** The CosmosDB adapter dynamically concatenated user-provided query and update map keys into query strings and patch operations without validation. This allowed NoSQL injection by bypassing expected field boundaries.
+**Learning:** In document databases, query structures are often built dynamically from user-provided maps. Always validate the keys of these maps, even if values are parameterized, to prevent injection through the structure of the query itself.
+**Prevention:** Use a strict allowlist regex (e.g., `^[a-zA-Z0-9_.]+$`) for all map keys that are incorporated into database queries or update paths.
