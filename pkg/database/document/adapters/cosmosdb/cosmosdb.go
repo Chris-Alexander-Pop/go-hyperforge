@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -15,6 +16,8 @@ import (
 
 // NOTE: This implementation assumes the Azure SDK for Go is available.
 // If not, please run: go get github.com/Azure/azure-sdk-for-go/sdk/data/azcosmos
+
+var keyRegex = regexp.MustCompile(`^[a-zA-Z0-9_.]+$`)
 
 // Adapter implements the document.Interface for Azure CosmosDB.
 type Adapter struct {
@@ -83,7 +86,10 @@ func (a *Adapter) Find(ctx context.Context, collection string, query map[string]
 		return nil, errors.Internal("failed to get container client", err)
 	}
 
-	queryText, queryParams := buildQuery(query)
+	queryText, queryParams, err := buildQuery(query)
+	if err != nil {
+		return nil, errors.InvalidArgument("invalid query", err)
+	}
 
 	// Detect partition key from query
 	pk := azcosmos.NewPartitionKey() // Default to empty partition key (cross-partition query)
@@ -132,6 +138,9 @@ func (a *Adapter) Update(ctx context.Context, collection string, filter map[stri
 
 	var operations azcosmos.PatchOperations
 	for k, v := range update {
+		if !keyRegex.MatchString(k) {
+			return errors.InvalidArgument(fmt.Sprintf("invalid characters in update key: %s", k), nil)
+		}
 		operations.AppendSet(fmt.Sprintf("/%s", k), v)
 	}
 
@@ -171,7 +180,7 @@ func (a *Adapter) Close() error {
 	return nil
 }
 
-func buildQuery(query map[string]interface{}) (string, []azcosmos.QueryParameter) {
+func buildQuery(query map[string]interface{}) (string, []azcosmos.QueryParameter, error) {
 	// Pre-calculate estimated size to reduce re-allocations
 	// Base: "SELECT * FROM c" (15)
 	// Per param: " WHERE " (7) or " AND " (5) + "c." (2) + key (~10) + " = " (3) + "@p" (2) + digits (1-3)
@@ -187,13 +196,17 @@ func buildQuery(query map[string]interface{}) (string, []azcosmos.QueryParameter
 	sb.WriteString("SELECT * FROM c")
 
 	if len(query) == 0 {
-		return sb.String(), nil
+		return sb.String(), nil, nil
 	}
 
 	sb.WriteString(" WHERE ")
 	params := make([]azcosmos.QueryParameter, 0, len(query))
 	i := 0
 	for k, v := range query {
+		if !keyRegex.MatchString(k) {
+			return "", nil, fmt.Errorf("invalid characters in query key: %s", k)
+		}
+
 		if i > 0 {
 			sb.WriteString(" AND ")
 		}
@@ -213,5 +226,5 @@ func buildQuery(query map[string]interface{}) (string, []azcosmos.QueryParameter
 		i++
 	}
 
-	return sb.String(), params
+	return sb.String(), params, nil
 }
