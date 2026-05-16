@@ -33,7 +33,20 @@ func DefaultRedactorConfig() RedactorConfig {
 	}
 }
 
+var defaultCompiledPatterns = map[string]*regexp.Regexp{
+	"credit_card":  regexp.MustCompile(`\b(?:\d{4}[-\s]?){3}\d{4}\b`),
+	"ssn":          regexp.MustCompile(`\b\d{3}-\d{2}-\d{4}\b`),
+	"email":        regexp.MustCompile(`\b[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}\b`),
+	"phone":        regexp.MustCompile(`\b(?:\+?1[-.\s]?)?\(?[0-9]{3}\)?[-.\s]?[0-9]{3}[-.\s]?[0-9]{4}\b`),
+	"api_key":      regexp.MustCompile(`\b(?:sk|pk|api|key|token|secret)[_-]?[a-zA-Z0-9]{20,}\b`),
+	"aws_key":      regexp.MustCompile(`\bAKIA[0-9A-Z]{16}\b`),
+	"jwt":          regexp.MustCompile(`\beyJ[a-zA-Z0-9_-]*\.eyJ[a-zA-Z0-9_-]*\.[a-zA-Z0-9_-]*\b`),
+	"ipv4":         regexp.MustCompile(`\b(?:\d{1,3}\.){3}\d{1,3}\b`),
+	"password_url": regexp.MustCompile(`(?i)(?:password|passwd|pwd|secret|token)=([^&\s]+)`),
+}
+
 // NewRedactor creates a new PII redactor.
+// ⚡ Bolt: Pre-compile default regex patterns to avoid compilation overhead on instantiation
 func NewRedactor(cfg RedactorConfig) *Redactor {
 	if cfg.Replacement == "" {
 		cfg.Replacement = "[REDACTED]"
@@ -41,44 +54,16 @@ func NewRedactor(cfg RedactorConfig) *Redactor {
 
 	r := &Redactor{
 		replacement: cfg.Replacement,
-		patterns:    make([]*redactionPattern, 0),
+		patterns:    make([]*redactionPattern, 0, len(defaultCompiledPatterns)+len(cfg.CustomPatterns)),
 	}
 
-	// Add default patterns
-	defaultPatterns := map[string]string{
-		// Credit Card Numbers
-		"credit_card": `\b(?:\d{4}[-\s]?){3}\d{4}\b`,
-
-		// Social Security Numbers (US)
-		"ssn": `\b\d{3}-\d{2}-\d{4}\b`,
-
-		// Email addresses
-		"email": `\b[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}\b`,
-
-		// Phone numbers (various formats)
-		"phone": `\b(?:\+?1[-.\s]?)?\(?[0-9]{3}\)?[-.\s]?[0-9]{3}[-.\s]?[0-9]{4}\b`,
-
-		// API Keys / Tokens (common patterns)
-		"api_key": `\b(?:sk|pk|api|key|token|secret)[_-]?[a-zA-Z0-9]{20,}\b`,
-
-		// AWS Keys
-		"aws_key": `\bAKIA[0-9A-Z]{16}\b`,
-
-		// JWT Tokens
-		"jwt": `\beyJ[a-zA-Z0-9_-]*\.eyJ[a-zA-Z0-9_-]*\.[a-zA-Z0-9_-]*\b`,
-
-		// IP Addresses
-		"ipv4": `\b(?:\d{1,3}\.){3}\d{1,3}\b`,
-
-		// Passwords in URLs
-		"password_url": `(?i)(?:password|passwd|pwd|secret|token)=([^&\s]+)`,
-	}
-
-	for name, pattern := range defaultPatterns {
-		if err := r.AddPattern(name, pattern, ""); err != nil {
-			// Skip patterns that fail to compile
-			continue
-		}
+	// Add pre-compiled default patterns
+	for name, compiled := range defaultCompiledPatterns {
+		r.patterns = append(r.patterns, &redactionPattern{
+			name:    name,
+			pattern: compiled,
+			mask:    r.replacement,
+		})
 	}
 
 	// Add custom patterns
