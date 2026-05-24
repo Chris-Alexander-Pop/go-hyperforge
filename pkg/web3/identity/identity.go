@@ -14,8 +14,8 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/hex"
-	"fmt"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
@@ -45,32 +45,42 @@ type SIWEMessage struct {
 func (m *SIWEMessage) String() string {
 	var sb strings.Builder
 
-	sb.WriteString(fmt.Sprintf("%s wants you to sign in with your Ethereum account:\n", m.Domain))
+	sb.WriteString(m.Domain)
+	sb.WriteString(" wants you to sign in with your Ethereum account:\n")
 	sb.WriteString(m.Address + "\n\n")
 
 	if m.Statement != "" {
 		sb.WriteString(m.Statement + "\n\n")
 	}
 
-	sb.WriteString(fmt.Sprintf("URI: %s\n", m.URI))
-	sb.WriteString(fmt.Sprintf("Version: %s\n", m.Version))
-	sb.WriteString(fmt.Sprintf("Chain ID: %d\n", m.ChainID))
-	sb.WriteString(fmt.Sprintf("Nonce: %s\n", m.Nonce))
-	sb.WriteString(fmt.Sprintf("Issued At: %s", m.IssuedAt.UTC().Format(time.RFC3339)))
+	sb.WriteString("URI: ")
+	sb.WriteString(m.URI)
+	sb.WriteString("\nVersion: ")
+	sb.WriteString(m.Version)
+	sb.WriteString("\nChain ID: ")
+	sb.WriteString(strconv.Itoa(m.ChainID))
+	sb.WriteString("\nNonce: ")
+	sb.WriteString(m.Nonce)
+	sb.WriteString("\nIssued At: ")
+	sb.WriteString(m.IssuedAt.UTC().Format(time.RFC3339))
 
 	if m.ExpirationTime != nil {
-		sb.WriteString(fmt.Sprintf("\nExpiration Time: %s", m.ExpirationTime.UTC().Format(time.RFC3339)))
+		sb.WriteString("\nExpiration Time: ")
+		sb.WriteString(m.ExpirationTime.UTC().Format(time.RFC3339))
 	}
 	if m.NotBefore != nil {
-		sb.WriteString(fmt.Sprintf("\nNot Before: %s", m.NotBefore.UTC().Format(time.RFC3339)))
+		sb.WriteString("\nNot Before: ")
+		sb.WriteString(m.NotBefore.UTC().Format(time.RFC3339))
 	}
 	if m.RequestID != "" {
-		sb.WriteString(fmt.Sprintf("\nRequest ID: %s", m.RequestID))
+		sb.WriteString("\nRequest ID: ")
+		sb.WriteString(m.RequestID)
 	}
 	if len(m.Resources) > 0 {
 		sb.WriteString("\nResources:")
 		for _, r := range m.Resources {
-			sb.WriteString(fmt.Sprintf("\n- %s", r))
+			sb.WriteString("\n- ")
+			sb.WriteString(r)
 		}
 	}
 
@@ -136,7 +146,11 @@ func (v *SIWEVerifier) Verify(ctx context.Context, message *SIWEMessage, signatu
 
 	// Verify signature
 	msgStr := message.String()
-	prefixedMsg := fmt.Sprintf("\x19Ethereum Signed Message:\n%d%s", len(msgStr), msgStr)
+	var sb strings.Builder
+	sb.WriteString("\x19Ethereum Signed Message:\n")
+	sb.WriteString(strconv.Itoa(len(msgStr)))
+	sb.WriteString(msgStr)
+	prefixedMsg := sb.String()
 	msgHash := crypto.Keccak256Hash([]byte(prefixedMsg))
 
 	sigBytes, err := hexutil.Decode(signature)
@@ -171,7 +185,11 @@ func (v *SIWEVerifier) Verify(ctx context.Context, message *SIWEMessage, signatu
 
 // VerifySignature verifies a simple Ethereum signature.
 func VerifySignature(message, signature, address string) (bool, error) {
-	prefixedMsg := fmt.Sprintf("\x19Ethereum Signed Message:\n%d%s", len(message), message)
+	var sb strings.Builder
+	sb.WriteString("\x19Ethereum Signed Message:\n")
+	sb.WriteString(strconv.Itoa(len(message)))
+	sb.WriteString(message)
+	prefixedMsg := sb.String()
 	msgHash := crypto.Keccak256Hash([]byte(prefixedMsg))
 
 	sigBytes, err := hexutil.Decode(signature)
@@ -231,17 +249,24 @@ func ParseDID(did string) (*DID, error) {
 
 // String returns the DID as a string.
 func (d *DID) String() string {
-	result := fmt.Sprintf("did:%s:%s", d.Method, d.Identifier)
+	var sb strings.Builder
+	sb.WriteString("did:")
+	sb.WriteString(d.Method)
+	sb.WriteByte(':')
+	sb.WriteString(d.Identifier)
 	if d.Path != "" {
-		result += "/" + d.Path
+		sb.WriteByte('/')
+		sb.WriteString(d.Path)
 	}
 	if d.Query != "" {
-		result += "?" + d.Query
+		sb.WriteByte('?')
+		sb.WriteString(d.Query)
 	}
 	if d.Fragment != "" {
-		result += "#" + d.Fragment
+		sb.WriteByte('#')
+		sb.WriteString(d.Fragment)
 	}
-	return result
+	return sb.String()
 }
 
 // EthereumDID creates a DID from an Ethereum address.
