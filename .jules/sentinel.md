@@ -48,3 +48,7 @@
 **Vulnerability:** The `RequireHTTPS` middleware constructed absolute redirect URLs blindly trusting the `r.Host` value. This allowed an attacker to supply an arbitrary `Host` header (e.g. `evil.com`), tricking the server into issuing a 301 redirect to an attacker-controlled site, potentially leading to phishing or token leakage.
 **Learning:** `r.Host` is user-supplied data and must never be trusted implicitly when constructing absolute URLs, especially in security boundaries like HTTP-to-HTTPS redirects.
 **Prevention:** Introduce validation for the `Host` header against an explicit whitelist of allowed hosts. For backward compatibility where a whitelist isn't provided, enforce strict character validation (e.g., alphanumeric, dots, dashes) to prevent structural attacks like path traversal or query string injection via the Host header.
+## 2025-02-25 - Prevent NoSQL Injection in Map Key Concatenation
+**Vulnerability:** Dynamic keys from maps were directly concatenated into database queries and patch paths.
+**Learning:** Keys extracted from unstructured inputs (like JSON or generic maps) are user-controlled data and can contain injection payloads; they must be validated just like values.
+**Prevention:** Strictly validate map keys against an allowlist regex (e.g., ^[a-zA-Z0-9_.]+$) before incorporating them into dynamic query strings or database operations.
