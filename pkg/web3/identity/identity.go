@@ -25,6 +25,8 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 )
 
+var didRe = regexp.MustCompile(`^did:([a-z0-9]+):([a-zA-Z0-9._-]+)(?:/([^?#]*))?(?:\?([^#]*))?(?:#(.*))?$`)
+
 // SIWEMessage represents a Sign-In with Ethereum message.
 type SIWEMessage struct {
 	Domain         string
@@ -206,8 +208,7 @@ type DID struct {
 // Parse parses a DID string.
 func ParseDID(did string) (*DID, error) {
 	// Basic DID regex: did:method:identifier
-	re := regexp.MustCompile(`^did:([a-z0-9]+):([a-zA-Z0-9._-]+)(?:/([^?#]*))?(?:\?([^#]*))?(?:#(.*))?$`)
-	matches := re.FindStringSubmatch(did)
+	matches := didRe.FindStringSubmatch(did)
 	if matches == nil {
 		return nil, pkgerrors.InvalidArgument("invalid DID format", nil)
 	}
