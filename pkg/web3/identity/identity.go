@@ -203,11 +203,12 @@ type DID struct {
 	Fragment   string
 }
 
+var didRegex = regexp.MustCompile(`^did:([a-z0-9]+):([a-zA-Z0-9._-]+)(?:/([^?#]*))?(?:\?([^#]*))?(?:#(.*))?$`)
+
 // Parse parses a DID string.
 func ParseDID(did string) (*DID, error) {
 	// Basic DID regex: did:method:identifier
-	re := regexp.MustCompile(`^did:([a-z0-9]+):([a-zA-Z0-9._-]+)(?:/([^?#]*))?(?:\?([^#]*))?(?:#(.*))?$`)
-	matches := re.FindStringSubmatch(did)
+	matches := didRegex.FindStringSubmatch(did)
 	if matches == nil {
 		return nil, pkgerrors.InvalidArgument("invalid DID format", nil)
 	}
