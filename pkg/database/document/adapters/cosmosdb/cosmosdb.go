@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -15,6 +16,8 @@ import (
 
 // NOTE: This implementation assumes the Azure SDK for Go is available.
 // If not, please run: go get github.com/Azure/azure-sdk-for-go/sdk/data/azcosmos
+
+var keyAllowlist = regexp.MustCompile(`^[a-zA-Z0-9_.]+$`)
 
 // Adapter implements the document.Interface for Azure CosmosDB.
 type Adapter struct {
@@ -83,7 +86,10 @@ func (a *Adapter) Find(ctx context.Context, collection string, query map[string]
 		return nil, errors.Internal("failed to get container client", err)
 	}
 
-	queryText, queryParams := buildQuery(query)
+	queryText, queryParams, err := buildQuery(query)
+	if err != nil {
+		return nil, err
+	}
 
 	// Detect partition key from query
 	pk := azcosmos.NewPartitionKey() // Default to empty partition key (cross-partition query)
@@ -132,6 +138,9 @@ func (a *Adapter) Update(ctx context.Context, collection string, filter map[stri
 
 	var operations azcosmos.PatchOperations
 	for k, v := range update {
+		if !keyAllowlist.MatchString(k) {
+			return errors.InvalidArgument("invalid update key format", nil)
+		}
 		operations.AppendSet(fmt.Sprintf("/%s", k), v)
 	}
 
@@ -171,7 +180,7 @@ func (a *Adapter) Close() error {
 	return nil
 }
 
-func buildQuery(query map[string]interface{}) (string, []azcosmos.QueryParameter) {
+func buildQuery(query map[string]interface{}) (string, []azcosmos.QueryParameter, error) {
 	// Pre-calculate estimated size to reduce re-allocations
 	// Base: "SELECT * FROM c" (15)
 	// Per param: " WHERE " (7) or " AND " (5) + "c." (2) + key (~10) + " = " (3) + "@p" (2) + digits (1-3)
@@ -187,7 +196,7 @@ func buildQuery(query map[string]interface{}) (string, []azcosmos.QueryParameter
 	sb.WriteString("SELECT * FROM c")
 
 	if len(query) == 0 {
-		return sb.String(), nil
+		return sb.String(), nil, nil
 	}
 
 	sb.WriteString(" WHERE ")
@@ -201,6 +210,10 @@ func buildQuery(query map[string]interface{}) (string, []azcosmos.QueryParameter
 		// Optimization: Avoid fmt.Sprintf parsing overhead for simple param names
 		paramName := "@p" + strconv.Itoa(i)
 
+		if !keyAllowlist.MatchString(k) {
+			return "", nil, errors.InvalidArgument("invalid query key format", nil)
+		}
+
 		sb.WriteString("c.")
 		sb.WriteString(k)
 		sb.WriteString(" = ")
@@ -213,5 +226,5 @@ func buildQuery(query map[string]interface{}) (string, []azcosmos.QueryParameter
 		i++
 	}
 
-	return sb.String(), params
+	return sb.String(), params, nil
 }

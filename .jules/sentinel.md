@@ -48,3 +48,8 @@
 **Vulnerability:** The `RequireHTTPS` middleware constructed absolute redirect URLs blindly trusting the `r.Host` value. This allowed an attacker to supply an arbitrary `Host` header (e.g. `evil.com`), tricking the server into issuing a 301 redirect to an attacker-controlled site, potentially leading to phishing or token leakage.
 **Learning:** `r.Host` is user-supplied data and must never be trusted implicitly when constructing absolute URLs, especially in security boundaries like HTTP-to-HTTPS redirects.
 **Prevention:** Introduce validation for the `Host` header against an explicit whitelist of allowed hosts. For backward compatibility where a whitelist isn't provided, enforce strict character validation (e.g., alphanumeric, dots, dashes) to prevent structural attacks like path traversal or query string injection via the Host header.
+
+## 2024-05-24 - NoSQL Injection via Unsanitized Map Keys in Document Adapters
+**Vulnerability:** Document database adapters (e.g., CosmosDB) concatenate map keys directly into queries or patch operations without sanitization, leading to NoSQL injection vulnerabilities.
+**Learning:** In Go, string concatenation with `fmt.Sprintf` is fast but unsafe for building queries if input format is not strictly validated, as dynamic queries can execute arbitrary operations.
+**Prevention:** Always strictly validate document keys against a regex allowlist (e.g., `^[a-zA-Z0-9_.]+$`) before dynamically concatenating them into query strings or update paths.
