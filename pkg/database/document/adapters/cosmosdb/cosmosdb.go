@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -15,6 +16,8 @@ import (
 
 // NOTE: This implementation assumes the Azure SDK for Go is available.
 // If not, please run: go get github.com/Azure/azure-sdk-for-go/sdk/data/azcosmos
+
+var validKeyRegex = regexp.MustCompile(`^[a-zA-Z0-9_.]+$`)
 
 // Adapter implements the document.Interface for Azure CosmosDB.
 type Adapter struct {
@@ -78,6 +81,12 @@ func (a *Adapter) Insert(ctx context.Context, collection string, doc document.Do
 
 // Find retrieves documents.
 func (a *Adapter) Find(ctx context.Context, collection string, query map[string]interface{}) ([]document.Document, error) {
+	for k := range query {
+		if !validKeyRegex.MatchString(k) {
+			return nil, errors.InvalidArgument("invalid query key", nil)
+		}
+	}
+
 	container, err := a.database.NewContainer(collection)
 	if err != nil {
 		return nil, errors.Internal("failed to get container client", err)
@@ -132,6 +141,9 @@ func (a *Adapter) Update(ctx context.Context, collection string, filter map[stri
 
 	var operations azcosmos.PatchOperations
 	for k, v := range update {
+		if !validKeyRegex.MatchString(k) {
+			return errors.InvalidArgument("invalid update key", nil)
+		}
 		operations.AppendSet(fmt.Sprintf("/%s", k), v)
 	}
 
