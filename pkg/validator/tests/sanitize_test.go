@@ -126,3 +126,52 @@ func (s *SanitizeSuite) TestDetectPathTraversal() {
 		})
 	}
 }
+
+func (s *SanitizeSuite) TestStripHTMLTags() {
+	tests := []struct {
+		name     string
+		input    string
+		expected string
+	}{
+		{
+			name:     "No tags",
+			input:    "just text",
+			expected: "just text",
+		},
+		{
+			name:     "Simple tag",
+			input:    "some <b>bold</b> text",
+			expected: "some bold text",
+		},
+		{
+			name:     "Multiple tags",
+			input:    "<b>bold</b> and <i>italic</i>",
+			expected: "bold and italic",
+		},
+		{
+			name:     "Nested tags",
+			input:    "a <b <c> d",
+			expected: "a  d",
+		},
+		{
+			name:     "Unclosed tag",
+			input:    "a <b",
+			expected: "a &lt;b",
+		},
+		{
+			name:     "Empty tag",
+			input:    "<><>",
+			expected: "",
+		},
+	}
+
+	cfg := validator.DefaultSanitizerConfig()
+	sanitizer := validator.NewSanitizer(cfg)
+
+	for _, tt := range tests {
+		s.Run(tt.name, func() {
+			got := sanitizer.Sanitize(tt.input)
+			s.Equal(tt.expected, got, "Input: %s", tt.input)
+		})
+	}
+}

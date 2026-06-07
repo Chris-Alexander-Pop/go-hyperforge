@@ -98,16 +98,33 @@ func (s *Sanitizer) sanitizeValue(v interface{}) interface{} {
 	}
 }
 
-// HTML tag stripping regex
-var htmlTagRegex = regexp.MustCompile(`<[^>]*>`)
-
 func stripHTMLTags(input string) string {
 	// Fast path: if the input doesn't contain a '<', it can't contain an HTML tag.
 	// This avoids allocating memory and executing regex in the common non-matching case.
 	if !strings.Contains(input, "<") {
 		return input
 	}
-	return htmlTagRegex.ReplaceAllString(input, "")
+
+	var sb strings.Builder
+	sb.Grow(len(input))
+
+	for len(input) > 0 {
+		i := strings.IndexByte(input, '<')
+		if i == -1 {
+			sb.WriteString(input)
+			break
+		}
+
+		j := strings.IndexByte(input[i+1:], '>')
+		if j == -1 {
+			sb.WriteString(input)
+			break
+		}
+
+		sb.WriteString(input[:i])
+		input = input[i+1+j+1:]
+	}
+	return sb.String()
 }
 
 // =========================================================================
