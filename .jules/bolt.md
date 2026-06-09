@@ -33,3 +33,6 @@
 ## 2025-03-17 - Pre-calculate static headers in HTTP Middleware
 **Learning:** Calling `strings.Join` inside a frequently executed path (like an HTTP middleware handler) on data that doesn't change (like configuration parameters) causes unnecessary per-request memory allocation and CPU overhead.
 **Action:** When writing or modifying HTTP middleware (especially those in hot paths like CORS or Rate Limiting), always inspect the handler closure for operations on static configuration data and hoist them (pre-calculate) to the middleware initialization phase outside the returned handler function.
+## 2026-06-09 - CosmosDB Patch String Concatenation Optimization
+**Learning:** Using `fmt.Sprintf` for simple string building in hot paths (like map iteration in patch operations) incurs reflection and allocation overhead.
+**Action:** Replace `fmt.Sprintf("/%s", k)` with simple concatenation `"/" + k` to avoid allocations and improve performance in adapter update loops.
