@@ -33,3 +33,7 @@
 ## 2025-03-17 - Pre-calculate static headers in HTTP Middleware
 **Learning:** Calling `strings.Join` inside a frequently executed path (like an HTTP middleware handler) on data that doesn't change (like configuration parameters) causes unnecessary per-request memory allocation and CPU overhead.
 **Action:** When writing or modifying HTTP middleware (especially those in hot paths like CORS or Rate Limiting), always inspect the handler closure for operations on static configuration data and hoist them (pre-calculate) to the middleware initialization phase outside the returned handler function.
+
+## 2025-06-12 - DynamoDB Query Construction Optimization
+**Learning:** In Go, using `fmt.Sprintf` within loops to construct query and update expressions (like placeholder generation) in hot paths such as the DynamoDB adapter adds unnecessary reflection and allocation overhead.
+**Action:** Replace `fmt.Sprintf` with `strconv.Itoa` and direct string concatenation when generating dynamic expression names and values in database adapters.
