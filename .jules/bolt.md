@@ -33,3 +33,7 @@
 ## 2025-03-17 - Pre-calculate static headers in HTTP Middleware
 **Learning:** Calling `strings.Join` inside a frequently executed path (like an HTTP middleware handler) on data that doesn't change (like configuration parameters) causes unnecessary per-request memory allocation and CPU overhead.
 **Action:** When writing or modifying HTTP middleware (especially those in hot paths like CORS or Rate Limiting), always inspect the handler closure for operations on static configuration data and hoist them (pre-calculate) to the middleware initialization phase outside the returned handler function.
+
+## 2025-05-26 - Rate Limiter Redis Key Optimization
+**Learning:** Using `fmt.Sprintf` for constructing cache keys and request IDs in the `pkg/api/ratelimit/adapters/redis` package introduces reflection and memory allocation overhead. A more optimal approach using string concatenation and `strconv.AppendInt` yields faster results and drops memory allocation overhead entirely.
+**Action:** Replace `fmt.Sprintf` with string concatenation (`+`) for keys and `strconv.AppendInt` for constructing request IDs in rate limit adapters.
