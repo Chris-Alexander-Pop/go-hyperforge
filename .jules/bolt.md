@@ -33,3 +33,7 @@
 ## 2025-03-17 - Pre-calculate static headers in HTTP Middleware
 **Learning:** Calling `strings.Join` inside a frequently executed path (like an HTTP middleware handler) on data that doesn't change (like configuration parameters) causes unnecessary per-request memory allocation and CPU overhead.
 **Action:** When writing or modifying HTTP middleware (especially those in hot paths like CORS or Rate Limiting), always inspect the handler closure for operations on static configuration data and hoist them (pre-calculate) to the middleware initialization phase outside the returned handler function.
+
+## 2024-05-24 - Optimize repetitive string formatting and allocations in DynamoDB adapter
+**Learning:** Using `fmt.Sprintf` inside loops for simple variable string generations (like placeholder names) introduces reflection overhead that can be bypassed using `strconv.Itoa` and simple string concatenation. Additionally, when the length of the result collections is known in advance, pre-allocating slices and maps significantly reduces runtime overhead and prevents unnecessary memory allocations.
+**Action:** Prioritize `strconv` and string concatenation over `fmt.Sprintf` in hot paths when constructing strings, and explicitly pre-allocate collections with known capacities.
