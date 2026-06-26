@@ -57,7 +57,10 @@ func CSRFProtection(cfg CSRFConfig) func(http.Handler) http.Handler {
 			// Skip safe methods
 			if r.Method == http.MethodGet || r.Method == http.MethodHead || r.Method == http.MethodOptions {
 				// Set/refresh token for safe methods
-				ensureCSRFToken(w, r, cfg)
+				if err := ensureCSRFToken(w, r, cfg); err != nil {
+					http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+					return
+				}
 				next.ServeHTTP(w, r)
 				return
 			}
@@ -93,9 +96,12 @@ func CSRFProtection(cfg CSRFConfig) func(http.Handler) http.Handler {
 	}
 }
 
-func ensureCSRFToken(w http.ResponseWriter, r *http.Request, cfg CSRFConfig) {
+func ensureCSRFToken(w http.ResponseWriter, r *http.Request, cfg CSRFConfig) error {
 	if _, err := r.Cookie(cfg.CookieName); err != nil {
-		token := generateCSRFToken()
+		token, err := generateCSRFToken()
+		if err != nil {
+			return err
+		}
 		http.SetCookie(w, &http.Cookie{
 			Name:     cfg.CookieName,
 			Value:    token,
@@ -106,15 +112,17 @@ func ensureCSRFToken(w http.ResponseWriter, r *http.Request, cfg CSRFConfig) {
 			SameSite: cfg.SameSite,
 		})
 	}
+	return nil
 }
 
-func generateCSRFToken() string {
+func generateCSRFToken() (string, error) {
 	b := make([]byte, 32)
 	if _, err := rand.Read(b); err != nil {
 		// Fail securely: do not use a predictable fallback if RNG fails
-		panic("crypto/rand failed to generate random bytes for CSRF token")
+		// Return an error instead of panicking to prevent DoS
+		return "", err
 	}
-	return base64.URLEncoding.EncodeToString(b)
+	return base64.URLEncoding.EncodeToString(b), nil
 }
 
 // =========================================================================

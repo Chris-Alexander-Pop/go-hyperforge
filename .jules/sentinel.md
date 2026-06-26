@@ -48,3 +48,7 @@
 **Vulnerability:** The `RequireHTTPS` middleware constructed absolute redirect URLs blindly trusting the `r.Host` value. This allowed an attacker to supply an arbitrary `Host` header (e.g. `evil.com`), tricking the server into issuing a 301 redirect to an attacker-controlled site, potentially leading to phishing or token leakage.
 **Learning:** `r.Host` is user-supplied data and must never be trusted implicitly when constructing absolute URLs, especially in security boundaries like HTTP-to-HTTPS redirects.
 **Prevention:** Introduce validation for the `Host` header against an explicit whitelist of allowed hosts. For backward compatibility where a whitelist isn't provided, enforce strict character validation (e.g., alphanumeric, dots, dashes) to prevent structural attacks like path traversal or query string injection via the Host header.
+## 2024-05-24 - Fix DoS via Panic in Random Number Generation
+**Vulnerability:** A failure in random number generation triggered a panic in a middleware, causing the application to crash and resulting in a Denial of Service (DoS) vulnerability.
+**Learning:** Panicking on security-related component failures (like `rand.Read`) inside request processing pipelines causes a complete DoS for the server.
+**Prevention:** Always handle crypto failures gracefully by returning internal server errors to the client instead of triggering an application-wide panic.
