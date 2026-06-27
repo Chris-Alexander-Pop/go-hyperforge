@@ -215,6 +215,31 @@ func SanitizePath(input string) string {
 	return result
 }
 
+// evaluateSymlinks evaluates symlinks for paths that may partially exist.
+func evaluateSymlinks(p string) (string, error) {
+	var suffix []string
+	current := p
+	for {
+		resolved, err := filepath.EvalSymlinks(current)
+		if err == nil {
+			for i := len(suffix) - 1; i >= 0; i-- {
+				resolved = filepath.Join(resolved, suffix[i])
+			}
+			return resolved, nil
+		}
+		if !os.IsNotExist(err) {
+			return "", err
+		}
+		dir := filepath.Dir(current)
+		if dir == current {
+			break
+		}
+		suffix = append(suffix, filepath.Base(current))
+		current = dir
+	}
+	return filepath.Clean(p), nil
+}
+
 // ValidatePathInside checks if the target path is within the base directory.
 // It resolves paths to absolute paths and cleans them.
 // Returns the absolute clean path if valid, or an error.
@@ -224,20 +249,31 @@ func ValidatePathInside(baseDir, targetPath string) (string, error) {
 		return "", fmt.Errorf("failed to resolve base directory: %w", err)
 	}
 
+	resolvedBase, err := evaluateSymlinks(absBase)
+	if err != nil {
+		return "", fmt.Errorf("failed to evaluate base directory symlinks: %w", err)
+	}
+
 	// Clean the target path (relative to base)
-	fullPath := filepath.Join(absBase, targetPath)
+	fullPath := filepath.Join(resolvedBase, targetPath)
+
+	// Prevent symlink traversal by evaluating the target path symlinks
+	resolvedPath, err := evaluateSymlinks(fullPath)
+	if err != nil {
+		return "", fmt.Errorf("failed to evaluate path: %w", err)
+	}
 
 	// Ensure prefix matches
-	prefix := absBase
+	prefix := resolvedBase
 	if !strings.HasSuffix(prefix, string(os.PathSeparator)) {
 		prefix += string(os.PathSeparator)
 	}
 
-	if !strings.HasPrefix(fullPath, prefix) {
-		return "", fmt.Errorf("path traversal attempt: path %s resolves to %s which is not within %s", targetPath, fullPath, baseDir)
+	if !strings.HasPrefix(resolvedPath, prefix) && resolvedPath != resolvedBase {
+		return "", fmt.Errorf("path traversal attempt: path %s resolves to %s which is not within %s", targetPath, resolvedPath, baseDir)
 	}
 
-	return fullPath, nil
+	return resolvedPath, nil
 }
 
 // =========================================================================
