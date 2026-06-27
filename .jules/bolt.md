@@ -33,3 +33,7 @@
 ## 2025-03-17 - Pre-calculate static headers in HTTP Middleware
 **Learning:** Calling `strings.Join` inside a frequently executed path (like an HTTP middleware handler) on data that doesn't change (like configuration parameters) causes unnecessary per-request memory allocation and CPU overhead.
 **Action:** When writing or modifying HTTP middleware (especially those in hot paths like CORS or Rate Limiting), always inspect the handler closure for operations on static configuration data and hoist them (pre-calculate) to the middleware initialization phase outside the returned handler function.
+
+## 2024-06-27 - Replace Regex for HTML Tag Stripping with Manual Parsing
+**Learning:** In Go, replacing simple regex operations (like stripping HTML tags) with manual `strings.IndexByte` and a `strings.Builder` can lead to a 10x performance improvement by avoiding regexp engine overhead and unnecessary allocations.
+**Action:** Default to manual string building or byte scanning algorithms for simple, well-defined string modifications where performance matters.
