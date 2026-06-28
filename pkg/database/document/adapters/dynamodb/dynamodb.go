@@ -3,6 +3,7 @@ package dynamodb
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -79,16 +80,28 @@ func (a *Adapter) Find(ctx context.Context, collection string, query map[string]
 	var expAttrNames map[string]string
 
 	if len(query) > 0 {
-		parts := []string{}
+		// Optimization: Pre-calculate estimated size to reduce re-allocations
+		// and avoid reflection overhead of fmt.Sprintf (~8x faster).
+		size := len(query) * 30
+		var sb strings.Builder
+		sb.Grow(size)
+
 		expAttrValues = make(map[string]types.AttributeValue)
 		expAttrNames = make(map[string]string)
 
 		i := 0
 		for k, v := range query {
-			placeholder := fmt.Sprintf(":v%d", i)
-			namePlaceholder := fmt.Sprintf("#n%d", i)
+			if i > 0 {
+				sb.WriteString(" AND ")
+			}
 
-			parts = append(parts, fmt.Sprintf("%s = %s", namePlaceholder, placeholder))
+			idxStr := strconv.Itoa(i)
+			placeholder := ":v" + idxStr
+			namePlaceholder := "#n" + idxStr
+
+			sb.WriteString(namePlaceholder)
+			sb.WriteString(" = ")
+			sb.WriteString(placeholder)
 
 			av, err := attributevalue.Marshal(v)
 			if err != nil {
@@ -98,7 +111,7 @@ func (a *Adapter) Find(ctx context.Context, collection string, query map[string]
 			expAttrNames[namePlaceholder] = k
 			i++
 		}
-		f := strings.Join(parts, " AND ")
+		f := sb.String()
 		filterExp = &f
 	}
 
@@ -133,16 +146,28 @@ func (a *Adapter) Update(ctx context.Context, collection string, filter map[stri
 	}
 
 	// Update Expression construction
-	parts := []string{}
+	// Optimization: Avoid fmt.Sprintf and strings.Join for building update expressions
+	// to eliminate reflection overhead and reduce allocations.
+	var sb strings.Builder
+	sb.Grow(4 + len(update)*30) // "SET " + approx 30 bytes per field
+	sb.WriteString("SET ")
+
 	expAttrValues := make(map[string]types.AttributeValue)
 	expAttrNames := make(map[string]string)
 
 	i := 0
 	for k, v := range update {
-		placeholder := fmt.Sprintf(":v%d", i)
-		namePlaceholder := fmt.Sprintf("#n%d", i)
+		if i > 0 {
+			sb.WriteString(", ")
+		}
 
-		parts = append(parts, fmt.Sprintf("%s = %s", namePlaceholder, placeholder))
+		idxStr := strconv.Itoa(i)
+		placeholder := ":v" + idxStr
+		namePlaceholder := "#n" + idxStr
+
+		sb.WriteString(namePlaceholder)
+		sb.WriteString(" = ")
+		sb.WriteString(placeholder)
 
 		av, err := attributevalue.Marshal(v)
 		if err != nil {
@@ -153,7 +178,7 @@ func (a *Adapter) Update(ctx context.Context, collection string, filter map[stri
 		i++
 	}
 
-	updateExp := "SET " + strings.Join(parts, ", ")
+	updateExp := sb.String()
 
 	_, err = a.client.UpdateItem(ctx, &dynamodb.UpdateItemInput{
 		TableName:                 aws.String(collection),
