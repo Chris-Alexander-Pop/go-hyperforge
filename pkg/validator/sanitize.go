@@ -224,8 +224,42 @@ func ValidatePathInside(baseDir, targetPath string) (string, error) {
 		return "", fmt.Errorf("failed to resolve base directory: %w", err)
 	}
 
+	if evalBase, err := filepath.EvalSymlinks(absBase); err == nil {
+		absBase = evalBase
+	}
+
 	// Clean the target path (relative to base)
 	fullPath := filepath.Join(absBase, targetPath)
+
+	// Security Concern: filepath.EvalSymlinks fails if the target file does not exist yet.
+	// We iteratively walk up the directory tree using filepath.Dir to resolve symlinks
+	// for existing parent directories before applying boundary checks.
+	current := fullPath
+	var unexistingParts []string
+	for {
+		eval, err := filepath.EvalSymlinks(current)
+		if err == nil {
+			fullPath = eval
+			for i := len(unexistingParts) - 1; i >= 0; i-- {
+				fullPath = filepath.Join(fullPath, unexistingParts[i])
+			}
+			break
+		}
+		if !os.IsNotExist(err) {
+			return "", fmt.Errorf("failed to evaluate symlinks: %w", err)
+		}
+		parent := filepath.Dir(current)
+		if parent == current { // Root reached
+			for i := len(unexistingParts) - 1; i >= 0; i-- {
+				fullPath = filepath.Join(fullPath, unexistingParts[i])
+			}
+			break
+		}
+		unexistingParts = append(unexistingParts, filepath.Base(current))
+		current = parent
+	}
+
+	fullPath = filepath.Clean(fullPath)
 
 	// Ensure prefix matches
 	prefix := absBase

@@ -48,3 +48,8 @@
 **Vulnerability:** The `RequireHTTPS` middleware constructed absolute redirect URLs blindly trusting the `r.Host` value. This allowed an attacker to supply an arbitrary `Host` header (e.g. `evil.com`), tricking the server into issuing a 301 redirect to an attacker-controlled site, potentially leading to phishing or token leakage.
 **Learning:** `r.Host` is user-supplied data and must never be trusted implicitly when constructing absolute URLs, especially in security boundaries like HTTP-to-HTTPS redirects.
 **Prevention:** Introduce validation for the `Host` header against an explicit whitelist of allowed hosts. For backward compatibility where a whitelist isn't provided, enforce strict character validation (e.g., alphanumeric, dots, dashes) to prevent structural attacks like path traversal or query string injection via the Host header.
+
+## 2026-06-28 - Path Traversal via Symlinks to Non-Existent Files
+**Vulnerability:** The `ValidatePathInside` function did not evaluate symlinks for paths where the target file did not exist yet, allowing attackers to bypass path boundary checks by providing a path containing a symlink that resolves outside the base directory.
+**Learning:** `filepath.EvalSymlinks` fails if the final file doesn't exist. When validating paths for creation, it's necessary to resolve symlinks for all existing parent directories before checking the path bounds.
+**Prevention:** Iteratively walk up the directory tree using `filepath.Dir` to resolve symlinks for existing parent directories before checking if the resolved path starts with the base directory.
