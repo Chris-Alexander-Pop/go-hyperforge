@@ -224,17 +224,46 @@ func ValidatePathInside(baseDir, targetPath string) (string, error) {
 		return "", fmt.Errorf("failed to resolve base directory: %w", err)
 	}
 
+	// Security: Evaluate symlinks for the base directory to prevent symlink traversal
+	evalBase, err := filepath.EvalSymlinks(absBase)
+	if err != nil {
+		// If the base directory itself does not exist, we can fallback to absBase
+		if !os.IsNotExist(err) {
+			return "", fmt.Errorf("failed to evaluate base directory symlinks: %w", err)
+		}
+		evalBase = absBase
+	}
+
 	// Clean the target path (relative to base)
 	fullPath := filepath.Join(absBase, targetPath)
 
-	// Ensure prefix matches
-	prefix := absBase
+	// Security: Iteratively walk up the directory tree resolving symlinks to prevent path traversal for non-existent files
+	resolvedPath := fullPath
+	for current := fullPath; current != filepath.Dir(current); current = filepath.Dir(current) {
+		if _, err := os.Stat(current); err == nil {
+			eval, err := filepath.EvalSymlinks(current)
+			if err != nil {
+				return "", fmt.Errorf("failed to evaluate symlinks for %s: %w", current, err)
+			}
+			rel, err := filepath.Rel(current, fullPath)
+			if err != nil {
+				return "", fmt.Errorf("failed to calculate relative path: %w", err)
+			}
+			resolvedPath = filepath.Join(eval, rel)
+			break
+		} else if !os.IsNotExist(err) {
+			return "", fmt.Errorf("failed to stat %s: %w", current, err)
+		}
+	}
+
+	// Ensure prefix matches the evaluated base directory
+	prefix := evalBase
 	if !strings.HasSuffix(prefix, string(os.PathSeparator)) {
 		prefix += string(os.PathSeparator)
 	}
 
-	if !strings.HasPrefix(fullPath, prefix) {
-		return "", fmt.Errorf("path traversal attempt: path %s resolves to %s which is not within %s", targetPath, fullPath, baseDir)
+	if !strings.HasPrefix(resolvedPath, prefix) {
+		return "", fmt.Errorf("path traversal attempt: path %s resolves to %s which is not within %s", targetPath, resolvedPath, baseDir)
 	}
 
 	return fullPath, nil
