@@ -33,3 +33,6 @@
 ## 2025-03-17 - Pre-calculate static headers in HTTP Middleware
 **Learning:** Calling `strings.Join` inside a frequently executed path (like an HTTP middleware handler) on data that doesn't change (like configuration parameters) causes unnecessary per-request memory allocation and CPU overhead.
 **Action:** When writing or modifying HTTP middleware (especially those in hot paths like CORS or Rate Limiting), always inspect the handler closure for operations on static configuration data and hoist them (pre-calculate) to the middleware initialization phase outside the returned handler function.
+## 2025-02-28 - Replace HTML Sanitization Regex with Manual Parsing
+**Learning:** Using `regexp` for simple character-bounded replacements like stripping HTML tags (`<[^>]*>`) introduces significant overhead. A manual O(N) loop using `strings.Builder` and `strings.IndexByte` provides identical behavior (including handling unclosed tags correctly) but performs drastically better in hot paths.
+**Action:** For simple string substitution tasks, especially sanitization in hot paths, benchmark `strings.IndexByte` and manual string building against `regexp`. Manual algorithms often yield 5-10x improvements.
