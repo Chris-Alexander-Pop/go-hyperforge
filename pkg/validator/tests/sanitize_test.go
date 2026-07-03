@@ -126,3 +126,45 @@ func (s *SanitizeSuite) TestDetectPathTraversal() {
 		})
 	}
 }
+
+func (s *SanitizeSuite) TestSanitizeString() {
+	sanitizer := validator.NewSanitizer(validator.DefaultSanitizerConfig())
+	tests := []struct {
+		name     string
+		input    string
+		expected string
+	}{
+		{
+			name:     "No tags",
+			input:    "Hello world",
+			expected: "Hello world",
+		},
+		{
+			name:     "Simple tags",
+			input:    "<b>Hello</b> world",
+			expected: "Hello world",
+		},
+		{
+			name:     "Unclosed tag",
+			input:    "Hello <world",
+			expected: "Hello &lt;world",
+		},
+		{
+			name:     "Multiple tags",
+			input:    "Hello <b>world</b> <br/>",
+			expected: "Hello world ",
+		},
+		{
+			name:     "Nested tags",
+			input:    "<div><p>Test</p></div>",
+			expected: "Test",
+		},
+	}
+
+	for _, tt := range tests {
+		s.Run(tt.name, func() {
+			got := sanitizer.Sanitize(tt.input)
+			s.Equal(tt.expected, got, "Input: %s", tt.input)
+		})
+	}
+}
