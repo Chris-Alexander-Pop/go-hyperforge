@@ -224,8 +224,45 @@ func ValidatePathInside(baseDir, targetPath string) (string, error) {
 		return "", fmt.Errorf("failed to resolve base directory: %w", err)
 	}
 
+	// Resolve symlinks for base directory if it exists
+	if resolvedBase, err := filepath.EvalSymlinks(absBase); err == nil {
+		absBase = resolvedBase
+	}
+
 	// Clean the target path (relative to base)
 	fullPath := filepath.Join(absBase, targetPath)
+
+	// Securely resolve symlinks for fullPath
+	current := fullPath
+	var nonExistent []string
+	for {
+		_, err := os.Lstat(current)
+		if err == nil {
+			break
+		}
+		if !os.IsNotExist(err) {
+			return "", fmt.Errorf("error checking path: %w", err)
+		}
+		// Path doesn't exist, move up
+		dir := filepath.Dir(current)
+		if dir == current {
+			break
+		}
+		// prepend to nonExistent
+		nonExistent = append([]string{filepath.Base(current)}, nonExistent...)
+		current = dir
+	}
+
+	resolvedCurrent, err := filepath.EvalSymlinks(current)
+	if err != nil {
+		return "", fmt.Errorf("failed to eval symlinks (broken symlink detected): %w", err)
+	}
+	current = resolvedCurrent
+
+	resolvedPath := current
+	for _, part := range nonExistent {
+		resolvedPath = filepath.Join(resolvedPath, part)
+	}
 
 	// Ensure prefix matches
 	prefix := absBase
@@ -233,8 +270,8 @@ func ValidatePathInside(baseDir, targetPath string) (string, error) {
 		prefix += string(os.PathSeparator)
 	}
 
-	if !strings.HasPrefix(fullPath, prefix) {
-		return "", fmt.Errorf("path traversal attempt: path %s resolves to %s which is not within %s", targetPath, fullPath, baseDir)
+	if !strings.HasPrefix(resolvedPath, prefix) {
+		return "", fmt.Errorf("path traversal attempt: path %s resolves to %s which is not within %s", targetPath, resolvedPath, baseDir)
 	}
 
 	return fullPath, nil

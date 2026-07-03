@@ -48,3 +48,11 @@
 **Vulnerability:** The `RequireHTTPS` middleware constructed absolute redirect URLs blindly trusting the `r.Host` value. This allowed an attacker to supply an arbitrary `Host` header (e.g. `evil.com`), tricking the server into issuing a 301 redirect to an attacker-controlled site, potentially leading to phishing or token leakage.
 **Learning:** `r.Host` is user-supplied data and must never be trusted implicitly when constructing absolute URLs, especially in security boundaries like HTTP-to-HTTPS redirects.
 **Prevention:** Introduce validation for the `Host` header against an explicit whitelist of allowed hosts. For backward compatibility where a whitelist isn't provided, enforce strict character validation (e.g., alphanumeric, dots, dashes) to prevent structural attacks like path traversal or query string injection via the Host header.
+## 2024-07-03 - Symlink Bypass in Path Traversal Validation
+**Vulnerability:** The `ValidatePathInside` function checked path containment using string prefixes without resolving symbolic links in the user-provided target path.
+**Learning:** `filepath.EvalSymlinks` only works for existing paths. If validating a path for a file that doesn't exist yet, it's necessary to iteratively walk up the tree (`filepath.Dir`) to resolve existing parent directory symlinks before performing boundary checks.
+**Prevention:** Always iteratively resolve symlinks for the existing prefix of a path before relying on string matching (`strings.HasPrefix`) to prevent directory escapes via symlinks.
+## 2024-07-03 - Broken Symlink Bypass in Path Validation
+**Vulnerability:** When iteratively resolving symlinks for path validation, ignoring `os.ErrNotExist` from `filepath.EvalSymlinks` on an existing path component fails to resolve broken symlinks. This allows an attacker to bypass boundary checks by providing a broken symlink pointing to a malicious location outside the base directory.
+**Learning:** If an existing path component returns `os.ErrNotExist` when evaluating symlinks, it is a broken symlink. The validation logic must fail closed and reject the path instead of falling back to lexical evaluation.
+**Prevention:** Never ignore `os.ErrNotExist` from `filepath.EvalSymlinks` on a path component that has been verified to exist (e.g., via `os.Lstat`). Fail securely on broken symlinks during security boundary validation.
