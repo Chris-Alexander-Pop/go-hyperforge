@@ -216,16 +216,57 @@ func SanitizePath(input string) string {
 }
 
 // ValidatePathInside checks if the target path is within the base directory.
-// It resolves paths to absolute paths and cleans them.
+// It resolves paths to absolute paths, follows symlinks securely, and cleans them.
 // Returns the absolute clean path if valid, or an error.
 func ValidatePathInside(baseDir, targetPath string) (string, error) {
 	absBase, err := filepath.Abs(baseDir)
 	if err != nil {
 		return "", fmt.Errorf("failed to resolve base directory: %w", err)
 	}
+	// Evaluate symlinks in the base directory
+	resolvedBase, err := filepath.EvalSymlinks(absBase)
+	if err == nil {
+		absBase = resolvedBase
+	} else if !os.IsNotExist(err) {
+		return "", fmt.Errorf("failed to eval symlinks for base directory: %w", err)
+	}
 
 	// Clean the target path (relative to base)
 	fullPath := filepath.Join(absBase, targetPath)
+
+	current := fullPath
+	for {
+		resolved, err := filepath.EvalSymlinks(current)
+		if err == nil {
+			rel, err := filepath.Rel(current, fullPath)
+			if err != nil {
+				return "", fmt.Errorf("failed to compute relative path: %w", err)
+			}
+			if rel != "." {
+				fullPath = filepath.Join(resolved, rel)
+			} else {
+				fullPath = resolved
+			}
+			break
+		}
+		if !os.IsNotExist(err) {
+			return "", fmt.Errorf("failed to evaluate symlinks: %w", err)
+		}
+
+		// Check for broken symlink
+		_, lerr := os.Lstat(current)
+		if lerr == nil {
+			return "", fmt.Errorf("broken symlink detected at %s", current)
+		}
+
+		parent := filepath.Dir(current)
+		if parent == current {
+			break
+		}
+		current = parent
+	}
+
+	fullPath = filepath.Clean(fullPath)
 
 	// Ensure prefix matches
 	prefix := absBase
@@ -233,8 +274,9 @@ func ValidatePathInside(baseDir, targetPath string) (string, error) {
 		prefix += string(os.PathSeparator)
 	}
 
-	if !strings.HasPrefix(fullPath, prefix) {
-		return "", fmt.Errorf("path traversal attempt: path %s resolves to %s which is not within %s", targetPath, fullPath, baseDir)
+	// Security Check: Ensure resolved path is still within base directory
+	if !strings.HasPrefix(fullPath, prefix) && fullPath != absBase {
+		return "", fmt.Errorf("path traversal attempt: path %s resolves to %s which is not within %s", targetPath, fullPath, absBase)
 	}
 
 	return fullPath, nil
