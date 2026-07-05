@@ -224,17 +224,52 @@ func ValidatePathInside(baseDir, targetPath string) (string, error) {
 		return "", fmt.Errorf("failed to resolve base directory: %w", err)
 	}
 
-	// Clean the target path (relative to base)
-	fullPath := filepath.Join(absBase, targetPath)
+	// Security Concern: Evaluate symlinks in base directory to avoid bypass
+	evalBase, err := filepath.EvalSymlinks(absBase)
+	if err != nil {
+		return "", fmt.Errorf("failed to evaluate base directory symlinks: %w", err)
+	}
 
-	// Ensure prefix matches
-	prefix := absBase
+	fullPath := filepath.Join(evalBase, targetPath)
+
+	// Security Concern: Iteratively resolve target path symlinks and fail closed on broken symlinks to prevent path traversal bypass
+	current := fullPath
+	var unexistingParts []string
+	for {
+		_, err := os.Lstat(current)
+		if err == nil {
+			evalCurrent, err := filepath.EvalSymlinks(current)
+			if err != nil {
+				if os.IsNotExist(err) {
+					return "", fmt.Errorf("broken symlink detected")
+				}
+				return "", err
+			}
+
+			for i := len(unexistingParts) - 1; i >= 0; i-- {
+				evalCurrent = filepath.Join(evalCurrent, unexistingParts[i])
+			}
+			fullPath = evalCurrent
+			break
+		} else if os.IsNotExist(err) {
+			parent := filepath.Dir(current)
+			if parent == current || parent == "" {
+				break
+			}
+			unexistingParts = append(unexistingParts, filepath.Base(current))
+			current = parent
+		} else {
+			return "", err
+		}
+	}
+
+	prefix := evalBase
 	if !strings.HasSuffix(prefix, string(os.PathSeparator)) {
 		prefix += string(os.PathSeparator)
 	}
 
 	if !strings.HasPrefix(fullPath, prefix) {
-		return "", fmt.Errorf("path traversal attempt: path %s resolves to %s which is not within %s", targetPath, fullPath, baseDir)
+		return "", fmt.Errorf("path traversal attempt: path %s resolves to %s which is not within %s", targetPath, fullPath, evalBase)
 	}
 
 	return fullPath, nil
