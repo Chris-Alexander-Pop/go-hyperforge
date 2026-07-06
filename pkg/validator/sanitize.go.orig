@@ -243,13 +243,12 @@ func ValidatePathInside(baseDir, targetPath string) (string, error) {
 			resolvedPath = evalPath
 			break
 		}
-
-		if _, lstatErr := os.Lstat(current); lstatErr == nil {
-			return "", fmt.Errorf("broken symlink detected in path: %w", err)
-		} else if !os.IsNotExist(lstatErr) {
+		if !os.IsNotExist(err) {
+			if _, lstatErr := os.Lstat(current); lstatErr == nil {
+				return "", fmt.Errorf("broken symlink detected in path: %w", err)
+			}
 			return "", fmt.Errorf("failed to evaluate symlinks for path %s: %w", current, err)
 		}
-
 		parent := filepath.Dir(current)
 		if parent == current {
 			return "", fmt.Errorf("failed to evaluate symlinks, hit root: %w", err)

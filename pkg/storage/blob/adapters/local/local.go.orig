@@ -38,14 +38,8 @@ func New(cfg blob.Config) (blob.Store, error) {
 }
 
 func (s *Store) validatePath(key string) (string, error) {
-	evalBase, err := filepath.EvalSymlinks(s.baseDir)
-	if err != nil {
-		return "", errors.New(errors.CodeInvalidArgument, "invalid path: failed to evaluate base dir symlinks", err)
-	}
-	baseDirResolved := evalBase
-
 	// Join performs Clean implicitly
-	fullPath := filepath.Join(baseDirResolved, key)
+	fullPath := filepath.Join(s.baseDir, key)
 
 	current := fullPath
 	var resolvedPath string
@@ -57,9 +51,10 @@ func (s *Store) validatePath(key string) (string, error) {
 			resolvedPath = evalPath
 			break
 		}
-		if _, lstatErr := os.Lstat(current); lstatErr == nil {
-			return "", errors.New(errors.CodeInvalidArgument, "invalid path: broken symlink detected", nil)
-		} else if !os.IsNotExist(lstatErr) {
+		if !os.IsNotExist(err) {
+			if _, lstatErr := os.Lstat(current); lstatErr == nil {
+				return "", errors.New(errors.CodeInvalidArgument, "invalid path: broken symlink detected", nil)
+			}
 			return "", errors.New(errors.CodeInvalidArgument, "invalid path: failed to evaluate symlinks", err)
 		}
 		parent := filepath.Dir(current)
@@ -77,7 +72,7 @@ func (s *Store) validatePath(key string) (string, error) {
 	// Ensure the path is within the base directory
 	// We append a separator to ensure we don't match partial directory names
 	// e.g. /tmp/data vs /tmp/database
-	prefix := baseDirResolved
+	prefix := s.baseDir
 	if !strings.HasSuffix(prefix, string(os.PathSeparator)) {
 		prefix += string(os.PathSeparator)
 	}
