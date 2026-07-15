@@ -45,7 +45,9 @@ func (a *Adapter) Get(ctx context.Context) *gorm.DB {
 	return a.db.WithContext(ctx)
 }
 
-// GetShard returns an error as in-memory adapter does not support sharding.
+// GetShard returns an error: the memory adapter is single-instance and does not
+// route by key. Use sql.NewSharded with multiple backends and sharding.Strategy
+// for multi-shard setups.
 func (a *Adapter) GetShard(ctx context.Context, key string) (*gorm.DB, error) {
 	return nil, errors.NotFound(fmt.Sprintf("sharding not supported in memory adapter, key: %s", key), nil)
 }

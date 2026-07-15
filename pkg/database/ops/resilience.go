@@ -5,33 +5,39 @@ import (
 	"time"
 
 	"github.com/chris-alexander-pop/system-design-library/pkg/errors"
+	"github.com/chris-alexander-pop/system-design-library/pkg/resilience"
 )
 
 // WithRetry executes the operation with exponential backoff retries.
+// It delegates to pkg/resilience.Retry while preserving the historical
+// (ctx, attempts, backoff, op) signature.
+//
 // Useful for transient network errors or db connection glitches.
 func WithRetry(ctx context.Context, attempts int, backoff time.Duration, op func() error) error {
-	var err error
-	for i := 0; i < attempts; i++ {
-		if i > 0 {
-			select {
-			case <-ctx.Done():
-				return ctx.Err()
-			case <-time.After(backoff):
-				backoff *= 2 // Exponential backoff
-			}
-		}
+	if attempts <= 0 {
+		attempts = 1
+	}
+	if backoff <= 0 {
+		backoff = 100 * time.Millisecond
+	}
 
-		err = op()
-		if err == nil {
-			return nil
-		}
+	cfg := resilience.RetryConfig{
+		MaxAttempts:    attempts,
+		InitialBackoff: backoff,
+		MaxBackoff:     30 * time.Second,
+		Multiplier:     2.0,
+		Jitter:         0,
+		RetryIf:        func(err error) bool { return err != nil },
+	}
 
-		// If context is canceled, stop retrying
-		if ctx.Err() != nil {
-			return ctx.Err()
-		}
-		// In a real system, we would check if err is "Retryable" (e.g. 5xx, timeout, lock contention)
-		// For now, we assume simplistic retry for any error unless explicitly wrapped as Permanent.
+	err := resilience.Retry(ctx, cfg, func(ctx context.Context) error {
+		return op()
+	})
+	if err == nil {
+		return nil
+	}
+	if ctx.Err() != nil {
+		return ctx.Err()
 	}
 	return errors.Wrap(err, "max retries exceeded")
 }
