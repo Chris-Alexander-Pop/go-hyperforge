@@ -80,6 +80,7 @@ Landed foundation/reuse/domain hardening (scores above are the *pre-fix* snapsho
 - ✅ Deep wave: enterprise ProjectionRunner + checkpoint sql/postgres + EventedStore messaging outbox; servicemesh mTLS helpers; speech AWS/Google adapters; ml inference/feature instrumented+errors+memory
 - ✅ Remaining adapters: Cassandra KV (gocql + injectable SessionAPI); Milvus vector REST; AWS WAFv2 IPSet; GCP/Azure KMS Encrypt/Decrypt; PXE provisioning HTTP
 - ✅ Deep Hyperforge gaps: Typesense/OpenSearch real HTTP clients; web3 adapters/geth+kubo (ethereum/ipfs thin wrappers); greengrass `iot.Client` adapter + device/cert helpers; `config.Load` in search/web3/iot + templates/service/starter; prompt `{{#if}}`/`{{include:}}`; TODO overclaim demotions
+- ✅ Deep wave: sticky LB; Neptune Gremlin HTTP; GuardDuty scanner; AWS/GCP secret managers; postgres controlplane + metering; instrumented durable saga + scheduler (robfig cron already wired)
 
 ---
 
@@ -217,7 +218,7 @@ Landed foundation/reuse/domain hardening (scores above are the *pre-fix* snapsho
 - [x] 🔗 Replace `ops.WithRetry` with `pkg/resilience`
 - [x] ✅ Adapters: Neo4j HTTP graph (`graph/adapters/neo4j`); Weaviate vector (`vector/adapters/weaviate`)
 - [x] ✅ Cassandra KV (`kv/adapters/cassandra` gocql + injectable SessionAPI); Milvus vector REST (`vector/adapters/milvus`)
-- [ ] ❌ Adapters still open: Neptune graph
+- [x] ✅ Neptune Gremlin HTTP graph (`graph/adapters/neptune`) injectable Doer
 - [x] ✅ ClickHouse implements `sql.SQL`; vector `SearchWithOpts` metadata filter (memory/pinecone/weaviate/milvus)
 - [x] ✅ Hybrid search (`HybridSearch` keyword metadata + vector score)
 - [ ] ❌ Broader interface conformance tests across stores
@@ -258,7 +259,8 @@ Landed foundation/reuse/domain hardening (scores above are the *pre-fix* snapsho
 ### `pkg/metering` (~20 → improved)
 - [x] ✅ Tests; `InstrumentedRater`; memory + Prometheus exporter adapters
 - [x] 🔗 Wire to `pkg/events` (`EventedMeter`) + `pkg/commerce.Money` via `CalculateCostMoney`
-- [ ] ❌ Period aggregation / rate-card mutation APIs; postgres adapter still open
+- [x] ✅ Postgres Meter/Rater adapter (`adapters/postgres` via database/sql)
+- [ ] ❌ Period aggregation / rate-card mutation APIs still open
 
 ---
 
@@ -314,7 +316,9 @@ Landed foundation/reuse/domain hardening (scores above are the *pre-fix* snapsho
 - [x] ✅ Cloudflare WAF IP access rules (`waf/adapters/cloudflare`) + httptest tests
 - [x] ✅ AWS WAFv2 IPSet (`waf/adapters/aws`) + injectable API tests
 - [x] ✅ GCP KMS + Azure Key Vault (`crypto/kms/adapters/gcpkms`, `azurekms`) Encrypt/Decrypt injectable
-- [ ] ❌ Remaining: cloud secret managers, scanners, GuardDuty
+- [x] ✅ AWS Secrets Manager + GCP Secret Manager Get/Set (`secrets/adapters/awssecrets`, `gcpsecretmanager`)
+- [x] ✅ GuardDuty findings List/Get scanner (`scanning/adapters/guardduty`) injectable
+- [ ] ❌ Remaining: Azure Key Vault secrets; ClamAV scanner
 - [x] 🔄 PQC marked **experimental** (demo Kyber + X25519); CIRCL/liboqs not in go.mod; Dilithium/ML-DSA absent
 - [ ] 🔗 Broader hash/password reuse via crypto across auth (partial)
 
@@ -351,7 +355,7 @@ Landed foundation/reuse/domain hardening (scores above are the *pre-fix* snapsho
 - [x] ✅ Control-plane instance APIs (create/bind/unbind/list + capacity reservation)
 - [x] ✅ etcd HTTP controlplane adapter for host inventory persistence (`adapters/etcd`)
 - [x] ✅ PXE imaging HTTP orchestrator (`provisioning/adapters/pxe`) + httptest tests
-- [ ] ❌ postgres controlplane driver still open
+- [x] ✅ Postgres controlplane driver (`adapters/postgres` durable host/instance inventory via database/sql)
 - [x] ✅ Real scheduler strategies: binpack / spread / random (memory adapter)
 - [x] ✅ Shared vocabulary note vs `pkg/compute` in docs
 - [x] ✅ Tests for controlplane / provisioning / scheduler memory adapters + new adapters
@@ -388,8 +392,8 @@ Landed foundation/reuse/domain hardening (scores above are the *pre-fix* snapsho
 - [x] ✅ Memory engine Task/Wait state-machine execution + IdempotencyKey; timeout still honored on empty/legacy path
 - [x] 🔗 Scheduler + `pkg/concurrency/distlock`; saga + `pkg/events`/`messaging`
 - [x] ✅ Durable saga (`StateStore` memory + file/json; `DurableExecutor.Resume` / `ResumeAll`)
-- [ ] ❌ Real cron; cloud adapter completeness
-- [ ] ❌ Saga/scheduler instrumented + interfaces
+- [x] ✅ Real cron via robfig/cron (`scheduler/cron.go`); instrumented durable saga executor + instrumented scheduler
+- [ ] ❌ Cloud adapter completeness (Temporal/StepFunctions/LogicApps depth)
 
 ### `pkg/iot` (~28 → improved)
 - [x] ✅ Root Client/Updater interfaces + memory adapters + instrumented + tests
@@ -430,7 +434,7 @@ Landed foundation/reuse/domain hardening (scores above are the *pre-fix* snapsho
 - [x] ✅ Sliding window counter (weighted prev+curr windows); Local remains exact log
 - [x] 🔗 Dijkstra/A* reuse `pkg/datastructures/heap`; shared `algorithms/graph` types
 - [x] ✅ Maglev + P2C loadbalancing; health-aware balancer (`healthaware`)
-- [ ] ❌ Sticky LB still open
+- [x] ✅ Sticky session-affinity balancer (`loadbalancing/sticky`)
 - [ ] ❌ Finish Raft/Paxos/Chord/SWIM/Louvain beyond educational stubs
 
 ### `pkg/datastructures` (~58)

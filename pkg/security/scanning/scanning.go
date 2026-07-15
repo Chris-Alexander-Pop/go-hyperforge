@@ -7,7 +7,9 @@ import (
 
 // Config configures the Scanner.
 type Config struct {
-	// Provider specifies the scanning provider (memory, clamav, guardduty).
+	// Provider specifies the scanning provider.
+	// Implemented: "memory", "guardduty" (adapters/guardduty).
+	// Reserved: "clamav".
 	Provider string `env:"SECURITY_SCANNING_PROVIDER" env-default:"memory"`
 }
 

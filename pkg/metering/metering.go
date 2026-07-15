@@ -69,7 +69,7 @@ type RateCard struct {
 
 // Config holds configuration for the Metering service.
 type Config struct {
-	// Driver selects the metering backend: "memory", "prometheus".
+	// Driver selects the metering backend: "memory", "prometheus", "postgres".
 	Driver string `env:"METERING_DRIVER" env-default:"memory"`
 }
 
