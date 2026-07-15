@@ -2,8 +2,9 @@
 //
 // Supported backends:
 //   - Redis: Production-grade in-memory key-value store
-//   - Cassandra: Distributed NoSQL database
 //   - Memory: In-memory store for testing
+//
+// Planned: Cassandra (Driver reserved; no adapter yet).
 //
 // Usage:
 //

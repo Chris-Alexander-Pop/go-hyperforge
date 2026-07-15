@@ -12,6 +12,30 @@
 2. Important functions need thorough tests (aim for full coverage of public API paths, including failure modes and `-race` where concurrent).
 3. Docs must match reality — demote false ✅ in `pkg/TODO.md` when implementing or when documenting gaps here.
 
+### Still open (truly remaining)
+
+- Cross-cutting: adopt `pkg/errors` / `SmartMutex` / `resilience` / `validator` / `algorithms` / `events` everywhere; PACKAGE_STANDARDS skeletons & interface tests; demote false ✅ in `pkg/TODO.md`
+- `pkg/logger`: bootstrap examples in templates/services (Init/Shutdown already fixed)
+- `pkg/config`: broader in-repo `Load` adoption
+- `pkg/test`: drive Suite adoption across cache/messaging/events/…
+- `pkg/concurrency`: re-export `x/sync/semaphore` + `errgroup` (optional)
+- `pkg/database`: Cassandra KV, Neptune graph, Milvus vector; broader conformance
+- `pkg/storage`: block/archive/controller cloud adapters (file **local** shipped)
+- `pkg/data`: real Typesense/OpenSearch HTTP clients (memory stubs exist); Snowflake
+- `pkg/analytics`: exact counters / warehouse adapters
+- `pkg/metering`: period aggregation / rate-card mutation APIs; postgres adapter
+- `pkg/api`: Echo↔stdlib middleware bridge; WS rooms / upgrade auth; gRPC auth + stream error mapping
+- `pkg/security`: AWS WAF, GCP/Azure KMS, cloud secret managers, scanners, GuardDuty; real CIRCL/liboqs PQC (experimental stub remains)
+- `pkg/cloud`: PXE imaging + postgres controlplane driver
+- `pkg/servicemesh`: etcd/K8s discovery; mesh mTLS / retry docs
+- `pkg/enterprise`: projection runner; durable store; fuller standards layout polish
+- `pkg/workflow`: real cron; cloud adapter completeness; saga/scheduler instrumented
+- `pkg/iot`: device certs; Greengrass behind root Client
+- `pkg/web3`: fuller SDK isolation under adapters
+- `pkg/ai`: fuller prompt engine; speech cloud adapters; instrumented/errors for remaining ML depth
+- `pkg/algorithms`: Raft/Paxos/Chord/SWIM/Louvain beyond educational stubs; sticky LB
+- `pkg/datastructures`: drive reuse into algorithms/cache/workflow
+
 ### Progress since review (branch `branch/package-readiness-review-35ed`)
 
 Landed foundation/reuse/domain hardening (scores above are the *pre-fix* snapshot):
@@ -39,7 +63,6 @@ Landed foundation/reuse/domain hardening (scores above are the *pre-fix* snapsho
 - ✅ `ai` gateway + prompt: multi-provider `genai/gateway` fallback router; versioned `genai/prompt` template stub
 - ✅ `ai` multimodal + evals + RAG: `llm.ContentPart`/Parts; memory+OpenAI paths; `genai/evals` EvalRunner/golden/LLM-judge; RAG↔vector+rerank; Textract OCR adapter
 - ✅ `database` Neo4j HTTP graph + Weaviate vector adapters; `SearchWithOpts` metadata filter; ClickHouse implements `sql.SQL`
-- 🔄 Remaining large gaps still listed below (cloud IaaS adapters, security scanners/GuardDuty/GCP-Azure KMS, Cassandra KV, etc.)
 - ✅ `security`: Vault KV v2, AWS KMS Encrypt/Decrypt, Cloudflare WAF IP access rules
 - ✅ `audit`: SQL/Postgres durable store, messaging fanout, hash-chain, retention/GDPR
 - ✅ Module branding: `go.mod` + all imports → `github.com/chris-alexander-pop/go-hyperforge` (was `system-design-library`)
@@ -47,6 +70,13 @@ Landed foundation/reuse/domain hardening (scores above are the *pre-fix* snapsho
 - ✅ `iot`: CoAP stub protocol (`protocols/coap`) + `device/registry` interface/memory
 - ✅ `algorithms/loadbalancing`: Maglev + P2C
 - ✅ `workflow` memory engine: real Task/Wait state-machine execution + idempotency key
+- ✅ `workflow` durable saga: StateStore (memory + file/json) + Resume/ResumeAll after crash
+- ✅ `cloud/controlplane` etcd HTTP adapter for host inventory persistence
+- ✅ `database/vector` HybridSearch (keyword metadata + vector score)
+- ✅ `metering` Prometheus exporter adapter + CalculateCostMoney → commerce.Money
+- ✅ `iot` awsiot behind root Client adapter; blob-backed OTA via pkg/storage/blob
+- ✅ `algorithms/loadbalancing/healthaware` skips unhealthy nodes
+- ✅ Deep wave: `concurrency` singleflight + adaptive WorkerPool; `events` Outbox→messaging; `cache` Redis Cluster Config; search Typesense/OpenSearch memory stubs; `storage/file` local FS; `api/openapi` stub; errors ABORTED/FAILED_PRECONDITION + FromHTTP/FromGRPC
 
 ---
 
@@ -55,32 +85,32 @@ Landed foundation/reuse/domain hardening (scores above are the *pre-fix* snapsho
 | Package | Score | Notes |
 |---------|------:|-------|
 | messaging | 71→82 | Factory/options/ErrQueueFull/ResilientConsumer/tests landed |
-| database | 62→improved | Neo4j+Weaviate adapters; vector filters; ClickHouse sql.SQL; sharding/Cassandra still open |
+| database | 62→improved | Neo4j+Weaviate adapters; vector filters; ClickHouse sql.SQL; Cassandra still open |
 | auth | 57→improved | Session/MFA/JWT; OAuth2 AS; SMS/email MFA; Apple social; SAML skeleton |
-| cache | 60→improved | Exists/MGet/MSet/Expire/TTL; NewFromConfig; miniredis; prefix invalidate |
-| logger | 58 | Widely used; Init/Async/trace bugs |
-| errors | 58 | Foundation usable; codes/Is/Wrap incomplete |
+| cache | 60→improved | Exists/MGet/MSet/Expire/TTL; NewFromConfig; miniredis; Cluster Config |
+| logger | 58→improved | Init/Async/Shutdown/redact fixed |
+| errors | 58→improved | Codes/IsCode/Wrap/FromHTTP/FromGRPC |
 | datastructures | 58 | Broad catalog; many stubs / low reuse |
 | communication | 58 | Ready: root drivers/errors/resilience, html/text templates, adapter tests |
-| data | 62 | Search+Suggest; bigdata errors/instrumented; etl/processing planned |
+| data | 62 | Search+Suggest; Typesense/OpenSearch memory stubs; bigdata errors/instrumented |
 | compute | 52→78 | EC2/GCE/Docker + k8s Exec; Azure VM/Functions scaffolds |
-| concurrency | 58 | SmartMutex strong; distlock retry + honest Redis docs |
+| concurrency | 58→improved | singleflight + adaptive WorkerPool option |
 | network | 50* | LB/DNS/CDN/APIGW/IP instrumented; cloud adapters reserved |
-| api | 48 | Broad surface; GraphQL stub; standards weak |
+| api | 48→improved | OpenAPI helper stub; GraphQL; standards weak in places |
 | test | 45→improved | Suite self-tests/examples; containers Short-skip + Cleanup |
 | commerce | 42→78 | Money + payment depth; billing proration+dunning; TaxJar/Avalara; live FX |
-| events | 42 | Skeleton bus; unsafe async |
-| workflow | 38 | Scaffold; no events/messaging/distlock |
-| algorithms | 38 | Many educational stubs |
+| events | 42→improved | Config/errors/lifecycle + Outbox messaging bridge |
+| workflow | 38→improved | Task/Wait SM + distlock/events |
+| algorithms | 38→improved | Maglev/P2C; many educational stubs remain |
 | cloud | 38→72 | Libvirt/Firecracker/Redfish/IPMI + instance bind APIs |
 | telemetry | 36→improved | OTLP/noop/stdout traces+metrics MeterProvider |
 | ai | 36→improved | StreamChat/gateway/prompt; multimodal Parts; evals; RAG↔vector/rerank; Textract |
 | analytics | 32→improved | HLL + event Sink + windowed uniqueness |
-| validator | 32 | Thin; config bypasses it |
+| validator | 32→improved | Interface/errors/instrumented; config routes through it |
 | audit | 34→improved | SQL/Postgres + messaging fanout; hash-chain; GDPR/retention |
-| security | 30* → improved | Vault KV v2, AWS KMS, Cloudflare WAF; scanners still open |
-| servicemesh | 25* | Discovery OK; CB/RL reinvent resilience/algorithms |
-| storage | 45* | Blob Store parity + resilience landed; file/block/archive still memory-only |
+| security | 30* → improved | Vault KV v2, AWS KMS, Cloudflare WAF; scanners still open; PQC experimental |
+| servicemesh | 25*→improved | Discovery OK + Consul; CB/RL facades |
+| storage | 45*→improved | Blob Store parity; file local FS adapter |
 | resilience | 75→improved | Hedge/Fallback/ExecuteT + env Config; CB+retry+timeout+bulkhead |
 
 \*Approximate where review used checklist form without a single headline score.
@@ -92,7 +122,7 @@ Landed foundation/reuse/domain hardening (scores above are the *pre-fix* snapsho
 - [ ] 🔗 Use `pkg/errors` everywhere (no `fmt.Errorf` / stdlib `errors.New` for domain errors)
 - [ ] 🔗 Use `pkg/concurrency.SmartMutex` / `SmartRWMutex` instead of `sync.Mutex` / `RWMutex`
 - [ ] 🔗 Use `pkg/resilience` for all external I/O (CB + retry); delete reinvented wrappers
-- [ ] 🔗 Use `pkg/validator` for Config validation; fix `pkg/config` to call it
+- [x] 🔗 Use `pkg/validator` for Config validation; fix `pkg/config` to call it
 - [ ] 🔗 Use `pkg/algorithms/*` and `pkg/datastructures/*` instead of local copies (Dijkstra PQ, LB selection, etc.)
 - [ ] 🔗 Emit domain events via `pkg/events` where standards §9 apply
 - [ ] ❌ Package `errors.go` + `instrumented.go` + `adapters/memory/` where PACKAGE_STANDARDS require them
@@ -104,34 +134,34 @@ Landed foundation/reuse/domain hardening (scores above are the *pre-fix* snapsho
 
 ## 1. Core foundation
 
-### `pkg/errors` (~58)
-- [ ] ❌ Codes: `DEADLINE_EXCEEDED`, `UNAVAILABLE`, `RESOURCE_EXHAUSTED`, `CANCELED`, `ABORTED`, `FAILED_PRECONDITION`
-- [ ] ❌ `IsCode(err, code)` / `Code(err)` helpers
-- [ ] ❌ `Wrap` preserving `*AppError` (or `WrapCode`)
-- [ ] ❌ HTTP/gRPC mapping for custom/domain codes; reverse `FromHTTP` / `FromGRPC`
+### `pkg/errors` (~58 → improved)
+- [x] ✅ Codes: `DEADLINE_EXCEEDED`, `UNAVAILABLE`, `RESOURCE_EXHAUSTED`, `CANCELED`, `ABORTED`, `FAILED_PRECONDITION`
+- [x] ✅ `IsCode(err, code)` / `Code(err)` helpers
+- [x] ✅ `Wrap` preserving `*AppError` (or `WrapCode`)
+- [x] ✅ HTTP/gRPC mapping for custom/domain codes; reverse `FromHTTP` / `FromGRPC`
 - [x] 🔗 Wire `HTTPStatus`/`GRPCStatus` into `pkg/api/rest` and `pkg/api/grpc`
-- [ ] ❌ Full test matrix for all helpers + wrapped errors
+- [x] ✅ Full test matrix for helpers + wrapped errors (including FromHTTP/FromGRPC)
 
-### `pkg/logger` (~58)
-- [ ] ❌ Fix `Init` double-wrap of handler stack
-- [ ] ❌ Trace correlation with default `Async=true` (attrs before queue / copy span IDs)
-- [ ] ❌ `Shutdown(ctx)` flush for AsyncHandler
-- [ ] ❌ Redact `WithAttrs` / bound attrs
+### `pkg/logger` (~58 → improved)
+- [x] ✅ Fix `Init` double-wrap of handler stack
+- [x] ✅ Trace correlation with default `Async=true` (attrs before queue / copy span IDs)
+- [x] ✅ `Shutdown(ctx)` flush for AsyncHandler
+- [x] ✅ Redact `WithAttrs` / bound attrs
 - [ ] ❌ Bootstrap: apps must call `Init`; examples in templates/services
-- [ ] ❌ Tests for Init layering, Trace+Async, WithAttrs leak
+- [x] ✅ Tests for Init layering, Trace+Async, WithAttrs leak
 
-### `pkg/config` (~28)
-- [ ] 🔗 Route validation through `pkg/validator` (not raw playground)
-- [ ] ❌ Typed `AppError`s (`InvalidArgument` / `Internal`) instead of unstructured `Wrap`
-- [ ] ❌ `LoadFrom(path)` / options; multi-format; secrets integration
+### `pkg/config` (~28 → improved)
+- [x] 🔗 Route validation through `pkg/validator` (not raw playground)
+- [x] ✅ Typed `AppError`s (`InvalidArgument` / `Internal`) instead of unstructured `Wrap`
+- [x] ✅ `LoadFrom(path)` / options; multi-format; secrets integration
 - [ ] ❌ In-repo adoption (`config.Load` unused outside itself)
-- [ ] ❌ Failure-path tests
+- [x] ✅ Failure-path tests
 
-### `pkg/validator` (~32)
-- [ ] ❌ Interfaces + `errors.go` + `instrumented.go`
-- [ ] ❌ Map failures to `errors.InvalidArgument`
-- [ ] ❌ Context-first APIs; implement or remove dead `AllowedTags`
-- [ ] ❌ Tests for slug/phone/SQL/command/SanitizeMap
+### `pkg/validator` (~32 → improved)
+- [x] ✅ Interfaces + `errors.go` + `instrumented.go`
+- [x] ✅ Map failures to `errors.InvalidArgument`
+- [x] ✅ Context-first APIs; `AllowedTags` retained for sanitizer config
+- [x] ✅ Tests for slug/phone/SQL/command/SanitizeMap
 
 ### `pkg/telemetry` (~36 → improved)
 - [x] ✅ Adapter-isolated exporters; noop/stdout for tests (`Provider` + `adapters/noop`, `adapters/stdout`)
@@ -153,18 +183,18 @@ Landed foundation/reuse/domain hardening (scores above are the *pre-fix* snapsho
 - [x] ✅ Map circuit-open → UNAVAILABLE/503; bulkhead/half-open cap → RESOURCE_EXHAUSTED/429
 - [x] ✅ Tests for WithTimeout, ExponentialBackoff, RetryWithCircuitBreaker, Bulkhead, MaxRequests, Hedge, Fallback, ExecuteT
 
-### `pkg/concurrency` (~52)
+### `pkg/concurrency` (~52 → improved)
 - [ ] 🔗 Wrap/re-export `x/sync/semaphore` + `errgroup` instead of competing copies
 - [x] ✅ Distlock: `AcquireWithRetry` uses `LockConfig`; Redis adapter uses `pkg/errors`; docs honest (single-instance SET NX, not Redlock)
-- [ ] 🔗 Wire `algorithms/concurrency/adaptive` into pools
+- [x] 🔗 Wire `algorithms/concurrency/adaptive` into pools (`WithAdaptiveLimiter`)
 - [x] ✅ Tests for semaphore cancel paths + distlock retry/cancel (pool/pipeline/runner/redis lock still thin)
-- [ ] ❌ `singleflight`-style coalesce helper
+- [x] ✅ `singleflight`-style coalesce helper (`concurrency.Group`)
 
-### `pkg/events` (~42)
-- [ ] ❌ `Config`, `errors.go`, Unsubscribe, graceful Close
-- [ ] ❌ Bounded async via `pkg/concurrency.WorkerPool`; propagate ctx; surface handler errors
-- [ ] ❌ Outbox / messaging bridge helpers (standards §9.5)
-- [ ] ❌ Full fan-out / Close / race / instrumented tests
+### `pkg/events` (~42 → improved)
+- [x] ✅ `Config`, `errors.go`, Unsubscribe, graceful Close
+- [x] ✅ Bounded async via `pkg/concurrency.WorkerPool`; propagate ctx; surface handler errors
+- [x] ✅ Outbox / messaging bridge helpers (standards §9.5)
+- [x] ✅ Fan-out / Close / race / instrumented tests (outbox + memory bus)
 
 ---
 
@@ -175,31 +205,33 @@ Landed foundation/reuse/domain hardening (scores above are the *pre-fix* snapsho
 - [x] ✅ ResilientCache / Instrumented: do not treat NotFound as failure
 - [x] ✅ `errors.go`, `manager.go` (`NewFromConfig` + RegisterDriver), Config pool/TLS/timeouts
 - [x] ✅ Exists/MGet/MSet/Expire/GetTTL; `InvalidatePrefix`; Bloom Warm remains
-- [ ] ❌ Redis Cluster
+- [x] ✅ Redis Cluster (`Config.Cluster` / `Addrs` + `NewCluster`)
 - [x] ✅ Redis conformance tests (miniredis)
 
 ### `pkg/database` (~62 → improved)
-- [ ] ❌ Multi-shard manager wiring `pkg/algorithms/consistenthash` into `GetShard`
-- [ ] 🔗 Replace `ops.WithRetry` with `pkg/resilience`
+- [x] ✅ Multi-shard manager wiring `pkg/algorithms/consistenthash` into `GetShard` (`sql.NewSharded` + `sharding.ConsistentHash`)
+- [x] 🔗 Replace `ops.WithRetry` with `pkg/resilience`
 - [x] ✅ Adapters: Neo4j HTTP graph (`graph/adapters/neo4j`); Weaviate vector (`vector/adapters/weaviate`)
 - [ ] ❌ Adapters still open: Cassandra KV, Neptune graph, Milvus vector
 - [x] ✅ ClickHouse implements `sql.SQL`; vector `SearchWithOpts` metadata filter (memory/pinecone/weaviate)
-- [ ] ❌ Hybrid search; broader interface conformance tests across stores
+- [x] ✅ Hybrid search (`HybridSearch` keyword metadata + vector score)
+- [ ] ❌ Broader interface conformance tests across stores
 
-### `pkg/storage` (~45)
+### `pkg/storage` (~45 → improved)
 - [x] ✅ GCS/Azure implement `blob.Store`; map S3 miss → NotFound
 - [x] ✅ `blob/errors.go`; `pkg/resilience` on cloud I/O (`resilient.go`)
-- [x] ✅ Docs demoted: file/block/archive/controller memory-only (cloud adapters not claimed)
+- [x] ✅ Docs demoted: block/archive/controller memory-only (cloud adapters not claimed)
 - [x] ✅ `pkg/concurrency` in memory adapters; typed `pkg/events` payloads (`BlobEventPayload`)
 - [x] ✅ Root `storage.go`; archive doc clarified (cold storage ≠ tar/zip)
-- [ ] ❌ Production adapters for file/block/archive/controller (still future work)
+- [x] ✅ Local/NFS-shaped `file` adapter (`file/adapters/local` real FS)
+- [ ] ❌ Production adapters for block/archive/controller (still future work)
 
-### `pkg/data` (~56)
+### `pkg/data` (~56 → improved)
 - [x] ✅ Docs: top-level `etl` / `processing` marked planned-only (`data/doc.go`, `pkg/README`)
-- [x] ✅ Search `Suggest` autocomplete on interface + memory; Typesense/OpenSearch documented as planned
+- [x] ✅ Search `Suggest` autocomplete on interface + memory; Typesense/OpenSearch memory stubs
 - [x] ✅ Reuse `pkg/concurrency` (SmartRWMutex/SmartMutex) in search memory, mapreduce, DAG
 - [x] ✅ Bigdata `errors.go` + instrumented logging; Spark docs honest (local spark-submit, not Connect)
-- [ ] ❌ Typesense/OpenSearch/Snowflake adapters (still future work)
+- [ ] ❌ Real Typesense/OpenSearch HTTP clients; Snowflake adapters (still future work)
 
 ### `pkg/streaming` (~25 → improved)
 - [x] ✅ Remove Pub/Sub duplication with `pkg/messaging` (Kinesis/EventHubs + memory only)
@@ -214,10 +246,10 @@ Landed foundation/reuse/domain hardening (scores above are the *pre-fix* snapsho
 - [ ] ❌ Exact counters / warehouse adapters (still future work)
 - [x] ✅ Fix PACKAGE_STANDARDS §6.11 example (`memory.New` + Close/Merge)
 
-### `pkg/metering` (~20)
-- [ ] ❌ Tests; `InstrumentedRater`; postgres/prometheus adapters or honest Config
-- [ ] 🔗 Wire to `pkg/commerce/billing` + `pkg/events`
-- [ ] ❌ Period aggregation / rate-card mutation APIs
+### `pkg/metering` (~20 → improved)
+- [x] ✅ Tests; `InstrumentedRater`; memory + Prometheus exporter adapters
+- [x] 🔗 Wire to `pkg/events` (`EventedMeter`) + `pkg/commerce.Money` via `CalculateCostMoney`
+- [ ] ❌ Period aggregation / rate-card mutation APIs; postgres adapter still open
 
 ---
 
@@ -245,7 +277,8 @@ Landed foundation/reuse/domain hardening (scores above are the *pre-fix* snapsho
 - [x] ✅ WebSocket origin allowlist, Hub `Shutdown`, broadcast no longer mutates under RLock
 - [x] ✅ RBAC `SmartRWMutex` + `middleware.RequirePermission`; rate-limit `KeyByUser`/`KeyByAPIKey`
 - [x] ✅ `pkg/api/errors.go`; softened overclaiming `doc.go`s; tests for RBAC/WS/HTTPStatus
-- [ ] ❌ OpenAPI helpers; Echo↔stdlib middleware bridge utilities
+- [x] ✅ OpenAPI helpers stub (`pkg/api/openapi`)
+- [ ] ❌ Echo↔stdlib middleware bridge utilities
 - [ ] ❌ WebSocket rooms / upgrade-time auth; gRPC auth + stream error-mapping interceptors
 
 ---
@@ -271,7 +304,7 @@ Landed foundation/reuse/domain hardening (scores above are the *pre-fix* snapsho
 - [x] ✅ AWS KMS Encrypt/Decrypt (`crypto/kms/adapters/awskms`) + injectable API tests
 - [x] ✅ Cloudflare WAF IP access rules (`waf/adapters/cloudflare`) + httptest tests
 - [ ] ❌ Remaining: AWS WAF, GCP/Azure KMS, cloud secret managers, scanners, GuardDuty
-- [ ] ❌ Real/vetted PQC (CIRCL/liboqs); Dilithium/ML-DSA still absent
+- [x] 🔄 PQC marked **experimental** (demo Kyber + X25519); CIRCL/liboqs not in go.mod; Dilithium/ML-DSA absent
 - [ ] 🔗 Broader hash/password reuse via crypto across auth (partial)
 
 ### `pkg/audit` (~34 → improved)
@@ -305,16 +338,17 @@ Landed foundation/reuse/domain hardening (scores above are the *pre-fix* snapsho
 ### `pkg/cloud` (~38 → 72)
 - [x] ✅ Remote libvirt JSON/HTTP (pure Go, no CGO); Firecracker unix/HTTP API; Redfish + IPMI BMC power
 - [x] ✅ Control-plane instance APIs (create/bind/unbind/list + capacity reservation)
-- [ ] ❌ PXE imaging + etcd/postgres controlplane drivers still open
+- [x] ✅ etcd HTTP controlplane adapter for host inventory persistence (`adapters/etcd`)
+- [ ] ❌ PXE imaging + postgres controlplane driver still open
 - [x] ✅ Real scheduler strategies: binpack / spread / random (memory adapter)
 - [x] ✅ Shared vocabulary note vs `pkg/compute` in docs
 - [x] ✅ Tests for controlplane / provisioning / scheduler memory adapters + new adapters
 
-### `pkg/servicemesh` (~25)
-- [ ] 🔗 **Delete or thin-wrap** circuitbreaker → `pkg/resilience`
-- [ ] 🔗 **Delete or thin-wrap** ratelimit → `pkg/algorithms/ratelimit` (+ `pkg/api/ratelimit`)
+### `pkg/servicemesh` (~25 → improved)
+- [x] 🔗 **Thin-wrap** circuitbreaker → `pkg/resilience`
+- [x] 🔗 **Thin-wrap** ratelimit → `pkg/algorithms/ratelimit` (+ `pkg/api/ratelimit`)
 - [x] ✅ Consul HTTP discovery adapter (`adapters/consul`) + httptest tests; etcd/K8s still open
-- [ ] ❌ Mesh: mTLS, retry reuse, honest docs
+- [ ] ❌ Mesh: mTLS, retry reuse, honest docs; etcd/K8s discovery
 
 ### `pkg/storage` — see Data & storage
 
@@ -331,24 +365,25 @@ Landed foundation/reuse/domain hardening (scores above are the *pre-fix* snapsho
 - [x] ✅ TaxJar + Avalara HTTP adapters (`tax/adapters/taxjar`, `tax/adapters/avalara`) with httptest tests
 - [x] ✅ Live FX `LiveRateProvider`/`Converter` via `currency/adapters/openexchangerates` (OER + Frankfurter; optional `pkg/cache`)
 
-### `pkg/enterprise` (~24)
-- [ ] ❌ Full standards layout (instrumented, adapters/memory, Config, tests)
-- [ ] 🔗 Bridge eventsource → `pkg/events` / `pkg/messaging` / `pkg/database`
-- [ ] ❌ Projection runner; durable store; fix LoadFrom/version bugs
-- [ ] ❌ Demote TODO ✅ → 🔄
+### `pkg/enterprise` (~24 → improved)
+- [x] ✅ Standards skeleton: instrumented, adapters/memory, errors, eventsource tests
+- [x] 🔗 Bridge eventsource → `pkg/events` (`evented.go`); messaging noted in docs
+- [ ] ❌ Projection runner; durable store
+- [ ] ❌ Demote TODO ✅ → 🔄 where still overclaiming
 
-### `pkg/workflow` (~38)
+### `pkg/workflow` (~38 → improved)
 - [x] ✅ Memory engine Task/Wait state-machine execution + IdempotencyKey; timeout still honored on empty/legacy path
 - [x] 🔗 Scheduler + `pkg/concurrency/distlock`; saga + `pkg/events`/`messaging`
-- [ ] ❌ Durable saga; real cron; cloud adapter completeness
+- [x] ✅ Durable saga (`StateStore` memory + file/json; `DurableExecutor.Resume` / `ResumeAll`)
+- [ ] ❌ Real cron; cloud adapter completeness
 - [ ] ❌ Saga/scheduler instrumented + interfaces
 
 ### `pkg/iot` (~28 → improved)
 - [x] ✅ Root Client/Updater interfaces + memory adapters + instrumented + tests
 - [x] 🔗 `pkg/resilience` for OTA downloads; `pkg/concurrency` for MQTT/memory
 - [x] ✅ MQTT WaitTimeout bug fixed; OTA semver via `golang.org/x/mod/semver`
-- [x] ✅ CoAP stub (`protocols/coap`) + device registry interface/memory; certs + blob firmware backing still open
-- [ ] ❌ AWS IoT / Greengrass behind root Client interface
+- [x] ✅ CoAP stub (`protocols/coap`) + device registry interface/memory
+- [x] ✅ AWS IoT behind root Client interface (`adapters/awsiot.NewAdapter`); blob-backed OTA (`device/ota.BlobUpdater`)
 - [x] ✅ Demoted TODO overclaims
 
 ### `pkg/web3` (~22)
@@ -379,7 +414,8 @@ Landed foundation/reuse/domain hardening (scores above are the *pre-fix* snapsho
 - [x] ✅ Soften Raft/Paxos/Chord/SWIM/Louvain docs as educational stubs; DistLimiter uses cache store
 - [x] ✅ Sliding window counter (weighted prev+curr windows); Local remains exact log
 - [x] 🔗 Dijkstra/A* reuse `pkg/datastructures/heap`; shared `algorithms/graph` types
-- [x] ✅ Maglev + P2C loadbalancing; health-aware / sticky LB still open
+- [x] ✅ Maglev + P2C loadbalancing; health-aware balancer (`healthaware`)
+- [ ] ❌ Sticky LB still open
 - [ ] ❌ Finish Raft/Paxos/Chord/SWIM/Louvain beyond educational stubs
 
 ### `pkg/datastructures` (~58)

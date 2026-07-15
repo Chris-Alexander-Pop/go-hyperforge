@@ -18,9 +18,9 @@ func init() {
 	})
 }
 
-// RedisCache implements cache.Cache on Redis.
+// RedisCache implements cache.Cache on Redis (standalone or cluster).
 type RedisCache struct {
-	client *redis.Client
+	client redis.UniversalClient
 }
 
 var (
@@ -29,7 +29,12 @@ var (
 )
 
 // New connects to Redis using cfg and returns a Cache.
+// When cfg.Cluster is true (or cfg.Addrs is non-empty), a Cluster client is used.
 func New(cfg cache.Config) (cache.Cache, error) {
+	if cfg.Cluster || len(cfg.Addrs) > 0 {
+		return newCluster(cfg)
+	}
+
 	opts := &redis.Options{
 		Addr:     cfg.Host + ":" + cfg.Port,
 		Password: cfg.Password,
@@ -59,9 +64,60 @@ func New(cfg cache.Config) (cache.Cache, error) {
 	return NewWithClient(client), nil
 }
 
+func newCluster(cfg cache.Config) (cache.Cache, error) {
+	addrs := append([]string(nil), cfg.Addrs...)
+	if len(addrs) == 0 {
+		if cfg.Host == "" || cfg.Port == "" {
+			return nil, errors.InvalidArgument("redis cluster requires Addrs or Host:Port", nil)
+		}
+		addrs = []string{cfg.Host + ":" + cfg.Port}
+	}
+
+	opts := &redis.ClusterOptions{
+		Addrs:    addrs,
+		Password: cfg.Password,
+	}
+	if cfg.PoolSize > 0 {
+		opts.PoolSize = cfg.PoolSize
+	}
+	if cfg.DialTimeout > 0 {
+		opts.DialTimeout = cfg.DialTimeout
+	}
+	if cfg.ReadTimeout > 0 {
+		opts.ReadTimeout = cfg.ReadTimeout
+	}
+	if cfg.WriteTimeout > 0 {
+		opts.WriteTimeout = cfg.WriteTimeout
+	}
+	if cfg.TLS {
+		opts.TLSConfig = &tls.Config{MinVersion: tls.VersionTLS12}
+	}
+
+	client := redis.NewClusterClient(opts)
+	if err := client.Ping(context.Background()).Err(); err != nil {
+		_ = client.Close()
+		return nil, errors.Wrap(err, "failed to connect to redis cluster")
+	}
+	return NewWithUniversalClient(client), nil
+}
+
 // NewWithClient wraps an existing go-redis client (useful for miniredis tests).
 func NewWithClient(client *redis.Client) cache.Cache {
 	return &RedisCache{client: client}
+}
+
+// NewWithUniversalClient wraps a UniversalClient (standalone or cluster).
+func NewWithUniversalClient(client redis.UniversalClient) cache.Cache {
+	return &RedisCache{client: client}
+}
+
+// NewCluster is a convenience constructor for Redis Cluster from seed addrs.
+func NewCluster(addrs []string, password string) (cache.Cache, error) {
+	return New(cache.Config{
+		Cluster:  true,
+		Addrs:    addrs,
+		Password: password,
+	})
 }
 
 func (r *RedisCache) Get(ctx context.Context, key string, dest interface{}) error {

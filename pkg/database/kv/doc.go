@@ -1,10 +1,11 @@
 /*
 Package kv provides a unified interface for key-value database access.
 
-This package supports multiple KV backends through a common interface:
+Shipping backends:
   - Redis: Production-grade in-memory key-value store
-  - Cassandra: Distributed wide-column store
   - Memory: In-memory store for testing
+
+Planned (not implemented): Cassandra wide-column adapter (DriverCassandra reserved).
 
 Basic usage:
 

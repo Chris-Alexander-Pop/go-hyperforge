@@ -4,6 +4,9 @@ Package events provides an in-process event bus for decoupling components via do
 It defines a standard Event structure and a Bus interface for Publish/Subscribe patterns.
 This package is intended for local process constraints. For distributed messaging, see pkg/messaging.
 
+Outbox / NewOutboxBus bridge domain events to pkg/messaging.Producer for durable fan-out
+(PACKAGE_STANDARDS §9.5). They are not a transactional outbox store.
+
 Topics use domain-based names (e.g. "users", "orders"). Event types use dot-notation
 (e.g. "user.created", "order.placed") — see PACKAGE_STANDARDS §9.
 

@@ -98,4 +98,12 @@ type Config struct {
 
 	// TLS enables TLS for Redis connections.
 	TLS bool `env:"CACHE_TLS" env-default:"false"`
+
+	// Cluster enables Redis Cluster mode. When true, DB is ignored and Addrs
+	// (or Host:Port as a single seed) are used. MGet/MSet require same-slot keys.
+	Cluster bool `env:"CACHE_CLUSTER" env-default:"false"`
+
+	// Addrs are Redis Cluster seed addresses ("host:port"). Used when Cluster is true.
+	// When empty and Cluster is true, Host:Port is used as the sole seed.
+	Addrs []string `env:"CACHE_ADDRS"`
 }

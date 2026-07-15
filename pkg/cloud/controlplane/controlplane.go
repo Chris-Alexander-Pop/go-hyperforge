@@ -78,5 +78,6 @@ type ListInstancesOptions struct {
 // Config holds configuration for the Control Plane.
 type Config struct {
 	// Driver specifies the storage backend for state: "memory", "etcd", "postgres".
+	// memory and etcd (HTTP JSON API) are implemented; postgres is reserved.
 	Driver string `env:"CONTROLPLANE_DRIVER" env-default:"memory"`
 }

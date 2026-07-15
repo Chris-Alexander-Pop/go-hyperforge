@@ -5,10 +5,10 @@
 //   - Elasticsearch: Elasticsearch adapter (often usable with OpenSearch-compatible APIs)
 //   - Meilisearch: Meilisearch adapter
 //   - Algolia: Algolia search adapter
+//   - Typesense / OpenSearch: memory-backed stubs for local scaffolding (not wire clients)
 //
-// Planned (not yet implemented):
-//   - Typesense adapter
-//   - Dedicated OpenSearch adapter
+// Planned (not yet implemented): real Typesense HTTP client; dedicated OpenSearch
+// SDK (Elasticsearch adapter remains the production OpenSearch-compatible path).
 //
 // Usage:
 //

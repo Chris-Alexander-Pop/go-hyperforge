@@ -11,17 +11,19 @@ import (
 
 // Standard error codes.
 const (
-	CodeNotFound          = "NOT_FOUND"
-	CodeInvalidArgument   = "INVALID_ARGUMENT"
-	CodeInternal          = "INTERNAL"
-	CodeUnauthorized      = "UNAUTHORIZED"
-	CodeForbidden         = "FORBIDDEN"
-	CodeConflict          = "CONFLICT"
-	CodeUnimplemented     = "UNIMPLEMENTED"
-	CodeDeadlineExceeded  = "DEADLINE_EXCEEDED"
-	CodeUnavailable       = "UNAVAILABLE"
-	CodeResourceExhausted = "RESOURCE_EXHAUSTED"
-	CodeCanceled          = "CANCELED"
+	CodeNotFound           = "NOT_FOUND"
+	CodeInvalidArgument    = "INVALID_ARGUMENT"
+	CodeInternal           = "INTERNAL"
+	CodeUnauthorized       = "UNAUTHORIZED"
+	CodeForbidden          = "FORBIDDEN"
+	CodeConflict           = "CONFLICT"
+	CodeUnimplemented      = "UNIMPLEMENTED"
+	CodeDeadlineExceeded   = "DEADLINE_EXCEEDED"
+	CodeUnavailable        = "UNAVAILABLE"
+	CodeResourceExhausted  = "RESOURCE_EXHAUSTED"
+	CodeCanceled           = "CANCELED"
+	CodeAborted            = "ABORTED"
+	CodeFailedPrecondition = "FAILED_PRECONDITION"
 
 	// Aliases
 	CodeUnauthenticated  = CodeUnauthorized
@@ -149,6 +151,22 @@ func Canceled(msg string, err error) *AppError {
 	return New(CodeCanceled, msg, err)
 }
 
+// Aborted returns an AppError with CodeAborted.
+func Aborted(msg string, err error) *AppError {
+	if msg == "" {
+		msg = "aborted"
+	}
+	return New(CodeAborted, msg, err)
+}
+
+// FailedPrecondition returns an AppError with CodeFailedPrecondition.
+func FailedPrecondition(msg string, err error) *AppError {
+	if msg == "" {
+		msg = "failed precondition"
+	}
+	return New(CodeFailedPrecondition, msg, err)
+}
+
 // HTTPStatus returns the HTTP status code for a given error.
 // If err unwraps to an AppError, the code is mapped; otherwise 500 is returned.
 func HTTPStatus(err error) int {
@@ -177,6 +195,10 @@ func HTTPStatus(err error) int {
 			return http.StatusTooManyRequests
 		case CodeCanceled:
 			return StatusClientClosedRequest
+		case CodeAborted:
+			return http.StatusConflict
+		case CodeFailedPrecondition:
+			return http.StatusBadRequest
 		}
 	}
 	return http.StatusInternalServerError
@@ -210,12 +232,89 @@ func GRPCStatus(err error) *status.Status {
 			return status.New(codes.ResourceExhausted, appErr.Message)
 		case CodeCanceled:
 			return status.New(codes.Canceled, appErr.Message)
+		case CodeAborted:
+			return status.New(codes.Aborted, appErr.Message)
+		case CodeFailedPrecondition:
+			return status.New(codes.FailedPrecondition, appErr.Message)
 		}
 	}
 	if err == nil {
 		return status.New(codes.OK, "")
 	}
 	return status.New(codes.Unknown, err.Error())
+}
+
+// FromHTTP maps an HTTP status code to an *AppError (message defaults by code).
+func FromHTTP(statusCode int, msg string) *AppError {
+	if msg == "" {
+		msg = http.StatusText(statusCode)
+	}
+	switch statusCode {
+	case http.StatusNotFound:
+		return NotFound(msg, nil)
+	case http.StatusBadRequest:
+		return InvalidArgument(msg, nil)
+	case http.StatusUnauthorized:
+		return Unauthorized(msg, nil)
+	case http.StatusForbidden:
+		return Forbidden(msg, nil)
+	case http.StatusConflict:
+		return Conflict(msg, nil)
+	case http.StatusNotImplemented:
+		return Unimplemented(msg, nil)
+	case http.StatusGatewayTimeout, http.StatusRequestTimeout:
+		return DeadlineExceeded(msg, nil)
+	case http.StatusServiceUnavailable:
+		return Unavailable(msg, nil)
+	case http.StatusTooManyRequests:
+		return ResourceExhausted(msg, nil)
+	case StatusClientClosedRequest:
+		return Canceled(msg, nil)
+	case http.StatusPreconditionFailed:
+		return FailedPrecondition(msg, nil)
+	default:
+		if statusCode >= 500 {
+			return Internal(msg, nil)
+		}
+		return InvalidArgument(msg, nil)
+	}
+}
+
+// FromGRPC maps a gRPC code to an *AppError.
+func FromGRPC(code codes.Code, msg string) *AppError {
+	if msg == "" {
+		msg = code.String()
+	}
+	switch code {
+	case codes.NotFound:
+		return NotFound(msg, nil)
+	case codes.InvalidArgument:
+		return InvalidArgument(msg, nil)
+	case codes.Unauthenticated:
+		return Unauthorized(msg, nil)
+	case codes.PermissionDenied:
+		return Forbidden(msg, nil)
+	case codes.AlreadyExists:
+		return Conflict(msg, nil)
+	case codes.Unimplemented:
+		return Unimplemented(msg, nil)
+	case codes.DeadlineExceeded:
+		return DeadlineExceeded(msg, nil)
+	case codes.Unavailable:
+		return Unavailable(msg, nil)
+	case codes.ResourceExhausted:
+		return ResourceExhausted(msg, nil)
+	case codes.Canceled:
+		return Canceled(msg, nil)
+	case codes.Aborted:
+		return Aborted(msg, nil)
+	case codes.FailedPrecondition:
+		return FailedPrecondition(msg, nil)
+	case codes.Internal:
+		return Internal(msg, nil)
+	default:
+		return Internal(msg, nil)
+	}
 }
 
 // Wrap wraps err with msg. If err is or unwraps to an *AppError, the AppError

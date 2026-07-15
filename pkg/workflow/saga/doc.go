@@ -6,6 +6,10 @@
 // Compensation errors from multiple steps are aggregated (errors.Join) and
 // wrapped with pkg/errors.Internal.
 //
+// Durable execution: use StateStore (adapters/memory or adapters/file) with
+// NewDurableExecutor to persist progress and Resume after a crash (at-least-once
+// step semantics).
+//
 // Optional observability: wrap with NewInstrumentedSaga for tracing/logging.
 //
 // Usage:

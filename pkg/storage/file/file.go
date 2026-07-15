@@ -2,16 +2,17 @@
 //
 // Shipping backends today:
 //   - Memory: In-memory file system for unit tests
+//   - Local: Real local filesystem adapter (also usable for NFS/EFS mounts)
 //
-// Planned (not implemented): NFS, AWS EFS, Azure Files, GCS FUSE.
+// Planned (not implemented): cloud-managed file APIs (AWS EFS control plane,
+// Azure Files SDK, GCS FUSE driver management).
 //
 // Usage:
 //
-//	import "github.com/chris-alexander-pop/go-hyperforge/pkg/storage/file/adapters/memory"
+//	import "github.com/chris-alexander-pop/go-hyperforge/pkg/storage/file/adapters/local"
 //
-//	store := memory.New()
-//	err := store.Write(ctx, "/path/to/file.txt", reader)
-//	reader, err := store.Read(ctx, "/path/to/file.txt")
+//	store, err := local.New("/mnt/data")
+//	err = store.Write(ctx, "/path/to/file.txt", reader)
 package file
 
 import (
@@ -23,6 +24,7 @@ import (
 // Driver constants for file storage backends
 const (
 	DriverMemory     = "memory"
+	DriverLocal      = "local"
 	DriverNFS        = "nfs"
 	DriverEFS        = "efs"
 	DriverAzureFiles = "azure-files"

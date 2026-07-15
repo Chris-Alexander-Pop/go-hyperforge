@@ -229,10 +229,23 @@ func (s *ErrorsSuite) TestGRPCStatusAllCodes() {
 		{appErrors.Unavailable("a", nil), codes.Unavailable},
 		{appErrors.ResourceExhausted("r", nil), codes.ResourceExhausted},
 		{appErrors.Canceled("x", nil), codes.Canceled},
+		{appErrors.Aborted("ab", nil), codes.Aborted},
+		{appErrors.FailedPrecondition("fp", nil), codes.FailedPrecondition},
 	}
 	for _, tc := range cases {
 		s.Equal(tc.code, appErrors.GRPCStatus(tc.err).Code(), tc.err.Code)
 	}
+}
+
+func (s *ErrorsSuite) TestFromHTTPAndFromGRPC() {
+	s.True(appErrors.IsCode(appErrors.FromHTTP(http.StatusNotFound, ""), appErrors.CodeNotFound))
+	s.True(appErrors.IsCode(appErrors.FromHTTP(http.StatusTooManyRequests, "slow"), appErrors.CodeResourceExhausted))
+	s.True(appErrors.IsCode(appErrors.FromHTTP(appErrors.StatusClientClosedRequest, ""), appErrors.CodeCanceled))
+	s.True(appErrors.IsCode(appErrors.FromHTTP(http.StatusPreconditionFailed, ""), appErrors.CodeFailedPrecondition))
+
+	s.True(appErrors.IsCode(appErrors.FromGRPC(codes.Aborted, "x"), appErrors.CodeAborted))
+	s.True(appErrors.IsCode(appErrors.FromGRPC(codes.FailedPrecondition, "y"), appErrors.CodeFailedPrecondition))
+	s.Equal(http.StatusConflict, appErrors.HTTPStatus(appErrors.Aborted("a", nil)))
 }
 
 func (s *ErrorsSuite) TestAliases() {

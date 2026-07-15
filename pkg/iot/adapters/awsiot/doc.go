@@ -1,6 +1,6 @@
-// Package awsiot provides an AWS IoT Core client (SDK wrapper).
+// Package awsiot provides an AWS IoT Core client and a pkg/iot.Client adapter.
 //
-// This adapter talks to the AWS IoT control and data-plane APIs. It is not yet
-// wired behind pkg/iot.Client; use protocols/mqtt or adapters/memory for the
-// root MQTT interface.
+// Use New / Client for control-plane (things/shadows) and data-plane Publish.
+// Use NewAdapter / NewAdapterFromClient to expose MQTT-shaped iot.Client:
+// Publish forwards to AWS; Subscribe is in-process fan-out for tests/bridges.
 package awsiot
