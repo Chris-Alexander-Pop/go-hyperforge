@@ -127,13 +127,13 @@ func (c *Calculator) withRetry(ctx context.Context, fn func(context.Context) err
 }
 
 type createTransactionRequest struct {
-	Type         string                 `json:"type"`
-	CompanyCode  string                 `json:"companyCode"`
-	Date         string                 `json:"date"`
-	CustomerCode string                 `json:"customerCode"`
-	CurrencyCode string                 `json:"currencyCode"`
-	Addresses    map[string]address     `json:"addresses"`
-	Lines        []lineItem             `json:"lines"`
+	Type         string             `json:"type"`
+	CompanyCode  string             `json:"companyCode"`
+	Date         string             `json:"date"`
+	CustomerCode string             `json:"customerCode"`
+	CurrencyCode string             `json:"currencyCode"`
+	Addresses    map[string]address `json:"addresses"`
+	Lines        []lineItem         `json:"lines"`
 }
 
 type address struct {

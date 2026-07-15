@@ -6,8 +6,8 @@ import (
 	"testing"
 
 	"github.com/chris-alexander-pop/go-hyperforge/pkg/ai/genai/llm"
-	llmmemory "github.com/chris-alexander-pop/go-hyperforge/pkg/ai/genai/llm/memory"
 	adapter "github.com/chris-alexander-pop/go-hyperforge/pkg/ai/genai/llm/adapters/memory"
+	llmmemory "github.com/chris-alexander-pop/go-hyperforge/pkg/ai/genai/llm/memory"
 )
 
 func TestSimpleMemory_MultimodalParts(t *testing.T) {

@@ -30,6 +30,7 @@ const (
 	ProviderClamAV     = "clamav"     // reserved
 	ProviderGuardDuty  = "guardduty"  // reserved
 )
+
 // Domain names for documentation and driver registries.
 const (
 	DomainCaptcha  = "captcha"

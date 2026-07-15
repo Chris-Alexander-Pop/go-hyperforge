@@ -47,11 +47,11 @@ type Config struct {
 
 // Calculator implements tax.Calculator against TaxJar's taxes API.
 type Calculator struct {
-	token      string
-	baseURL    string
-	from       fromAddress
-	client     *http.Client
-	retryCfg   resilience.RetryConfig
+	token    string
+	baseURL  string
+	from     fromAddress
+	client   *http.Client
+	retryCfg resilience.RetryConfig
 }
 
 type fromAddress struct {
@@ -150,12 +150,12 @@ type taxResponse struct {
 			City    string `json:"city"`
 		} `json:"jurisdictions"`
 		Breakdown *struct {
-			TaxCollectable      float64 `json:"tax_collectable"`
-			CombinedTaxRate     float64 `json:"combined_tax_rate"`
-			StateTaxCollectable float64 `json:"state_tax_collectable"`
-			StateTaxRate        float64 `json:"state_tax_rate"`
-			CountyTaxCollectable float64 `json:"county_tax_collectable"`
-			CityTaxCollectable  float64 `json:"city_tax_collectable"`
+			TaxCollectable        float64 `json:"tax_collectable"`
+			CombinedTaxRate       float64 `json:"combined_tax_rate"`
+			StateTaxCollectable   float64 `json:"state_tax_collectable"`
+			StateTaxRate          float64 `json:"state_tax_rate"`
+			CountyTaxCollectable  float64 `json:"county_tax_collectable"`
+			CityTaxCollectable    float64 `json:"city_tax_collectable"`
 			SpecialTaxCollectable float64 `json:"special_tax_collectable"`
 			CountryTaxCollectable float64 `json:"country_tax_collectable"`
 		} `json:"breakdown"`
