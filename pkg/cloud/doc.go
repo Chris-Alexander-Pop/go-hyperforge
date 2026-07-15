@@ -1,10 +1,11 @@
-// Package cloud provides the core primitives and interfaces for building a Private Cloud (IaaS).
+// Package cloud provides interfaces and memory adapters for a private-cloud (IaaS) control plane.
 //
-// This package encompasses the following domains:
-//   - Hypervisor: Virtual Machine management (Libvirt, QEMU, Firecracker)
-//   - Provisioning: Bare metal lifecycle (PXE, IPMI)
-//   - Scheduler: Intelligent workload placement
-//   - Control Plane: Central API and state management
+// Domains covered (scaffold / memory-only today — production hypervisors and bare-metal
+// backends are not wired; see root MISSING_CAPABILITIES.md):
+//   - Hypervisor: VM lifecycle interface (+ memory adapter)
+//   - Provisioning: bare-metal lifecycle interface (+ memory adapter)
+//   - Scheduler: placement interface (+ memory adapter)
+//   - Control Plane: API/state manager interface (+ memory adapter)
 //
-// The goal is to provide an AWS-like experience on bare metal infrastructure.
+// Treat this package as a design surface for IaaS, not a ready Libvirt/QEMU/Firecracker stack.
 package cloud

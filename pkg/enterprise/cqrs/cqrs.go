@@ -1,14 +1,3 @@
-// Package cqrs provides Command Query Responsibility Segregation patterns.
-//
-// Separates read and write operations with commands, queries, and handlers.
-//
-// Usage:
-//
-//	import "github.com/chris-alexander-pop/system-design-library/pkg/enterprise/cqrs"
-//
-//	bus := cqrs.NewCommandBus()
-//	bus.Register("CreateOrder", &CreateOrderHandler{})
-//	err := bus.Dispatch(ctx, CreateOrderCommand{...})
 package cqrs
 
 import (

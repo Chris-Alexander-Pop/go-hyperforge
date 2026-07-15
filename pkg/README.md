@@ -2,6 +2,11 @@
 
 > System Design Library - Go packages for building production systems
 
+## Readiness
+
+Many packages are interfaces + memory adapters or partial scaffolds — not production-complete.
+See the root backlog: [`/MISSING_CAPABILITIES.md`](../MISSING_CAPABILITIES.md). Package status in [`TODO.md`](./TODO.md) uses ✅ / 🔄 / ❌ honestly where reviewed.
+
 ---
 
 ## Quick Navigation
@@ -43,7 +48,7 @@
 | `database` | sql, document, vector, kv, graph, timeseries |
 | `storage` | blob, file, block, archive, controller |
 | `data` | search, etl, processing, bigdata |
-| `streaming` | Kafka, Kinesis, EventHubs, Pub/Sub |
+| `streaming` | Kinesis, EventHubs, Pub/Sub (Kafka lives under `messaging`) |
 
 ### Security
 

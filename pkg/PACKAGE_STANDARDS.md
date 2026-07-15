@@ -871,16 +871,18 @@ func TestCacheSuite(t *testing.T) {
 
 ### 6.11 `pkg/analytics` - Usage Analytics
 
-Use for tracking feature usage:
+Use for tracking unique events via HyperLogLog (memory adapter today):
 
 ```go
-import "github.com/chris-alexander-pop/system-design-library/pkg/analytics"
+import (
+    "github.com/chris-alexander-pop/system-design-library/pkg/analytics"
+    "github.com/chris-alexander-pop/system-design-library/pkg/analytics/adapters/memory"
+)
 
-// Track unique events
-tracker := analytics.NewUniqueTracker(cfg)
-if tracker.Track(userID) {
-    // First time for this user
-}
+tracker := memory.New(analytics.Config{Precision: 14})
+_ = tracker.Add(ctx, "visitors", userID)
+count, err := tracker.Count(ctx, "visitors")
+_ = tracker.Reset(ctx, "visitors")
 ```
 
 ### 6.12 `pkg/crypto` - Encryption

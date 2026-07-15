@@ -1,14 +1,3 @@
-// Package eventsource provides Event Sourcing patterns.
-//
-// Stores state as a sequence of events rather than current state snapshots.
-//
-// Usage:
-//
-//	import "github.com/chris-alexander-pop/system-design-library/pkg/enterprise/eventsource"
-//
-//	store := eventsource.NewInMemoryEventStore()
-//	err := store.Append(ctx, "order-123", events)
-//	history, err := store.Load(ctx, "order-123")
 package eventsource
 
 import (

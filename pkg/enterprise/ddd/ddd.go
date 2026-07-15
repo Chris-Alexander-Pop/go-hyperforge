@@ -1,15 +1,3 @@
-// Package ddd provides Domain-Driven Design primitives.
-//
-// Includes base types for entities, value objects, aggregates, and domain events.
-//
-// Usage:
-//
-//	import "github.com/chris-alexander-pop/system-design-library/pkg/enterprise/ddd"
-//
-//	type Order struct {
-//	    ddd.AggregateRoot
-//	    items []OrderItem
-//	}
 package ddd
 
 import (
