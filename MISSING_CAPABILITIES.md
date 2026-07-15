@@ -15,16 +15,15 @@
 ### Still open (truly remaining)
 
 Capability packages for Hyperforge are **feature-complete enough to define services**.
-The optional-depth backlog (Temporal worker hosting, ASL Choice/Parallel, Azure/GCS
-archive, real EC2/EBS SDK, continuous outbox-driven projections) is **complete**.
-Cross-cutting adoption of `SmartMutex`, domain root `errors.go`, `pkg/test.Suite`,
-and `config.Load` helpers for the named long-tail sites is **complete** on this branch.
+Named missing-capability waves on this branch are **complete**, including optional-depth
+closeout, Logic Apps MSI/ARM auth, Ceph/CSI controllers, EBS volume waiters, SmartMutex
+adoption, domain root `errors.go`, `pkg/test.Suite` (api/workflow), and `config.Load`
+helpers for the named packages.
 
-What remains is thinner polish / intentional exceptions—not new capability packages:
+What remains is thinner long-tail reuse—not new capability packages:
 
-- 🔗 Broader `pkg/errors` / `resilience` / `validator` / `algorithms` / `datastructures` / `events` adoption beyond the SmartMutex+skeleton wave (true long-tail call sites)
+- 🔗 Broader `pkg/errors` / `resilience` / `validator` / `algorithms` / `datastructures` / `events` adoption at remaining call sites (ongoing hygiene, not blockers)
 - ⚠️ Keep `pkg/TODO.md` honest as packages deepen
-- 🔄 Optional production polish only: Logic Apps ARM+MSI; Ceph/CSI controllers; EBS volume-state waiters
 - 🔗 Intentional `sync.Mutex` keepers: `pkg/logger` (import cycle with concurrency); `pkg/concurrency` internals wrapping `sync.Mutex`; `pkg/datastructures/*` (simpler layout); `algorithms/concurrency/adaptive` (imported by concurrency → cycle); educational consensus sketches may keep raw mutexes where race tests are fragile
 
 ### Progress since review (branch `branch/package-readiness-review-35ed`)
@@ -95,6 +94,7 @@ Landed foundation/reuse/domain hardening (scores above are the *pre-fix* snapsho
 - ✅ Workflow/metering/storage/enterprise polish: Temporal SDK status enums + ListWorkflow visibility + Close; Step Functions RoleArn + waitForTaskToken Signal; Logic Apps remote run fetch + Close; metering UpdateRate/DeleteRate/ListRateHistory; EBS from-snapshot + ListSnapshots; Glacier in-progress restore; controller LVM local sparse adapter; ProjectionRunner Run/ResetCheckpoint/backoff/metrics + Config + InstrumentedProjectionRunner
 - ✅ Optional-depth closeout: Temporal NewWorker hosting; memory Choice/Parallel; Azure+GCS archive adapters; EBS AWS SDK VolumeStore; ContinuousProjector (EventStore + outbox)
 - ✅ Cross-cutting adoption closeout: SmartMutex/SmartRWMutex on ratelimit/LB/bounded-hash/coap/graphql/logicapps/archive/training/distlock/discovery; domain root `errors.go` (ai/commerce/compute/enterprise/storage/cloud/servicemesh/data); `pkg/test.Suite` for api+workflow; `LoadConfig` for api/storage/compute/commerce; skipped root `instrumented.go` where no root Client interface (communication/database/domain umbrellas); adaptive kept `sync.Mutex` (concurrency import cycle)
+- ✅ Optional production polish: Logic Apps MSI/DefaultAzureCredential ARM auth; Ceph RBD + CSI VolumeController adapters; EBS WaitUntilVolume{Available,InUse,Deleted} + WaitUntilSnapshotCompleted
 
 ---
 
@@ -251,7 +251,8 @@ Landed foundation/reuse/domain hardening (scores above are the *pre-fix* snapsho
 - [x] ✅ Controller `adapters/lvm` local sparse-file VolumeController for tests
 - [x] ✅ Real EC2/EBS SDK client (`adapters/ebs` NewSDK/NewSDKFromAPI)
 - [x] ✅ Azure Blob Archive + GCS ARCHIVE cold archive adapters
-- [ ] ❌ Ceph/CSI production controllers
+- [x] ✅ Ceph RBD + CSI VolumeController adapters (`adapters/ceph`, `adapters/csi`; injectable clients, not librados/gRPC CSI sidecar)
+- [x] ✅ EBS volume/snapshot waiters (`WaitUntilVolumeAvailable` / `InUse` / `Deleted` / `WaitUntilSnapshotCompleted`)
 
 ### `pkg/data` (~56 → improved)
 - [x] ✅ Docs: top-level `etl` / `processing` marked planned-only (`data/doc.go`, `pkg/README`)
@@ -421,7 +422,7 @@ Landed foundation/reuse/domain hardening (scores above are the *pre-fix* snapsho
 - [x] ✅ Real cron via robfig/cron (`scheduler/cron.go`); instrumented durable saga executor + instrumented scheduler
 - [x] ✅ Temporal: SDK status enums, ListWorkflow visibility, Close; Step Functions RoleArn + callback Signal; Logic Apps remote run status + Close
 - [x] ✅ Temporal worker hosting (NewWorker / NewWorkerFromEngine); memory ASL Choice + Parallel
-- [ ] ❌ Logic Apps ARM deploy + MSI auth
+- [x] ✅ Logic Apps MSI / DefaultAzureCredential / client-secret ARM auth (`AuthMode`, IMDS IdentityBase, TokenSource)
 
 ### `pkg/iot` (~28 → improved)
 - [x] ✅ Root Client/Updater interfaces + memory adapters + instrumented + tests

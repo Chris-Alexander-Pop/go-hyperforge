@@ -210,7 +210,7 @@
 | `pkg/workflow` | ✅ | state-machine | Workflow Engine Interface + Memory Adapter |
 | `pkg/workflow/adapters/stepfunctions` | 🔄 | state-machine | AWS Step Functions (thin; completeness varies) |
 | `pkg/workflow/adapters/temporal` | 🔄 | durable-execution| Temporal Client (thin; completeness varies) |
-| `pkg/workflow/adapters/logicapps` | 🔄 | integration | Azure Logic Apps (thin; completeness varies) |
+| `pkg/workflow/adapters/logicapps` | ✅ | integration | Azure Logic Apps (ARM + MSI/client-secret/DefaultAzureCredential) |
 | `pkg/workflow/saga` | ✅ | order-manager | Saga Pattern Orchestrator |
 | `pkg/workflow/scheduler` | ✅ | cron-service | Distributed Job Scheduler |
 
@@ -333,7 +333,7 @@
 | **Network** | `pkg/network/sdn` | 🔄 | Software Defined Networking (VPC/Overlay) — scaffold |
 | **Network** | `pkg/network/dhcp` | 🔄 | IP Address Management System (IPAM) — scaffold |
 | **Network** | `pkg/network/firewall` | 🔄 | Distributed Firewall / Security Groups — scaffold |
-| **Storage** | `pkg/storage/controller` | 🔄 | Volume Controller (Ceph/LVM wrapper) — scaffold |
+| **Storage** | `pkg/storage/controller` | ✅ | Volume Controller (memory + LVM + Ceph RBD-shaped + CSI-shaped) |
 | **Identity** | `pkg/security/iam/provider` | 🔄 | Identity Provider Server (OIDC/SAML issuer) — scaffold |
 | **Billing** | `pkg/metering` | 🔄 | Usage Metering & Rating + Prometheus exporter |
 | **Control** | `pkg/cloud/controlplane` | 🔄 | API Server & State Manager (memory + etcd HTTP) |
