@@ -1,11 +1,8 @@
 // Package apigateway provides a unified interface for API gateway management.
 //
-// Supported backends:
-//   - Memory: In-memory API gateway for testing
-//   - AWSAPIGateway: AWS API Gateway (REST and HTTP APIs)
-//   - Apigee: Google Apigee
-//   - AzureAPIManagement: Azure API Management
-//   - Kong: Kong API Gateway
+// Only the memory adapter ships today. AWS API Gateway / Apigee / Azure API
+// Management / Kong driver constants are reserved placeholders — no cloud
+// adapters yet.
 //
 // Usage:
 //
@@ -21,12 +18,13 @@ import (
 )
 
 // Driver constants for API gateway backends.
+// Only DriverMemory ships; cloud/gateway drivers are reserved placeholders.
 const (
 	DriverMemory = "memory"
-	DriverAWS    = "aws"
-	DriverApigee = "apigee"
-	DriverAzure  = "azure"
-	DriverKong   = "kong"
+	DriverAWS    = "aws"    // reserved — not implemented
+	DriverApigee = "apigee" // reserved — not implemented
+	DriverAzure  = "azure"  // reserved — not implemented
+	DriverKong   = "kong"   // reserved — not implemented
 )
 
 // APIType represents the API type.

@@ -4,15 +4,14 @@ package memory
 import (
 	"context"
 	"net"
-	"sync"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/errors"
+	"github.com/chris-alexander-pop/system-design-library/pkg/concurrency"
 	"github.com/chris-alexander-pop/system-design-library/pkg/network/ip"
 )
 
 // Service implements an in-memory IP intelligence service for testing.
 type Service struct {
-	mu         sync.RWMutex
+	mu         *concurrency.SmartRWMutex
 	locations  map[string]*ip.GeoLocation
 	threats    map[string]*ip.ThreatInfo
 	blockedIPs map[string]bool
@@ -21,6 +20,7 @@ type Service struct {
 // New creates a new in-memory IP intelligence service.
 func New() *Service {
 	s := &Service{
+		mu:         concurrency.NewSmartRWMutex(concurrency.MutexConfig{Name: "memory-ip"}),
 		locations:  make(map[string]*ip.GeoLocation),
 		threats:    make(map[string]*ip.ThreatInfo),
 		blockedIPs: make(map[string]bool),
@@ -74,7 +74,7 @@ func (s *Service) Lookup(ctx context.Context, ipAddr string) (*ip.GeoLocation, e
 	// Return default for unknown IPs
 	parsedIP := net.ParseIP(ipAddr)
 	if parsedIP == nil {
-		return nil, errors.InvalidArgument("invalid IP address", nil)
+		return nil, ip.ErrInvalidIP
 	}
 
 	return &ip.GeoLocation{
@@ -106,7 +106,7 @@ func (s *Service) GetThreatInfo(ctx context.Context, ipAddr string) (*ip.ThreatI
 
 	parsedIP := net.ParseIP(ipAddr)
 	if parsedIP == nil {
-		return nil, errors.InvalidArgument("invalid IP address", nil)
+		return nil, ip.ErrInvalidIP
 	}
 
 	// Return safe default

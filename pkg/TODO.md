@@ -239,15 +239,17 @@
 ## 7. Core Infrastructure (`pkg/network`, `pkg/compute`)
 
 ### Networking
+> 🔄 CDN/APIGW/IP/DNS are interface + memory only (Route53/CloudFront/etc. reserved). LB has AWS/GCP adapters. See [`MISSING_CAPABILITIES.md`](../MISSING_CAPABILITIES.md#pkgnetwork-50).
+
 | Package | Status | Enables Services | Description |
 |---------|--------|------------------|-------------|
 | `pkg/network/loadbalancer` | ✅ | private-cloud | Load Balancer Interface + Memory Adapter |
 | `pkg/network/loadbalancer/adapters/aws`| ✅ | cloud-infra | AWS ELB/ALB Management |
 | `pkg/network/loadbalancer/adapters/gcp`| ✅ | cloud-infra | GCP Load Balancing |
-| `pkg/network/dns` | ✅ | service-discovery| DNS Management Interface + Memory Adapter |
-| `pkg/network/cdn` | ✅ | content-delivery | CDN Management Interface + Memory Adapter |
-| `pkg/network/apigateway` | ✅ | api-routing | API Gateway Interface + Memory Adapter |
-| `pkg/network/ip` | ✅ | geo-blocking | IP Intelligence Interface + Memory Adapter |
+| `pkg/network/dns` | 🔄 | service-discovery| DNS Interface + Memory (Route53/CloudDNS reserved) |
+| `pkg/network/cdn` | 🔄 | content-delivery | CDN Interface + Memory (CloudFront/etc. reserved) |
+| `pkg/network/apigateway` | 🔄 | api-routing | API Gateway Interface + Memory (AWS/Kong reserved) |
+| `pkg/network/ip` | 🔄 | geo-blocking | IP Intelligence + Memory (MaxMind/etc. reserved) |
 
 ### Compute
 > 🔄 VM has interface + memory only (no EC2/GCE/Azure adapters). See [`MISSING_CAPABILITIES.md`](../MISSING_CAPABILITIES.md#pkgcompute-52).

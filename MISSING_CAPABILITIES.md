@@ -49,7 +49,7 @@ Landed foundation/reuse/domain hardening (scores above are the *pre-fix* snapsho
 | data | 62 | Search+Suggest; bigdata errors/instrumented; etl/processing planned |
 | compute | 52→improved | Root + sentinels + k8s ID fix; EC2/Docker still reserved |
 | concurrency | 58 | SmartMutex strong; distlock retry + honest Redis docs |
-| network | 50* | LB/DNS OK; CDN/APIGW/IP thin; no algo reuse |
+| network | 50* | LB/DNS/CDN/APIGW/IP instrumented; cloud adapters reserved |
 | api | 48 | Broad surface; GraphQL stub; standards weak |
 | test | 45 | Thin Suite; low adoption; dead containers |
 | commerce | 42→68 | Money + payment depth; billing plans; tax multi-jurisdiction; FX still memory |
@@ -265,11 +265,12 @@ Landed foundation/reuse/domain hardening (scores above are the *pre-fix* snapsho
 
 ## 5. Infrastructure
 
-### `pkg/network` (~50)
+### `pkg/network` (~50 → improved)
 - [x] 🔗 Wire `pkg/algorithms/loadbalancing` into LB selection (memory `SelectTarget`)
-- [ ] ❌ `instrumented.go` + `errors.go` for cdn/apigateway/ip + root TCP/UDP
-- [ ] ❌ Cloud adapters matching TODO (Route53, CloudFront, etc.) or demote ✅
-- [ ] 🔗 `pkg/concurrency` in all memory adapters
+- [x] ✅ `instrumented.go` + `errors.go` for cdn/apigateway/ip + root TCP/UDP
+- [x] ✅ Softened cloud claims (Route53/CloudFront/etc. reserved; TODO demoted to 🔄)
+- [x] 🔗 `pkg/concurrency.SmartRWMutex` in all memory adapters (cdn/apigateway/ip)
+- [x] ✅ Memory adapter tests for cdn/apigateway/ip
 
 ### `pkg/compute` (~52 → improved)
 - [ ] ❌ VM adapters EC2/GCE/Azure; Docker; Azure Functions (docs demoted to reserved)

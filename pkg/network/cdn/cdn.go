@@ -1,18 +1,14 @@
 // Package cdn provides a unified interface for CDN management.
 //
-// Supported backends:
-//   - Memory: In-memory CDN manager for testing
-//   - CloudFront: AWS CloudFront
-//   - CloudCDN: Google Cloud CDN
-//   - AzureCDN: Azure CDN
-//   - Akamai: Akamai CDN
+// Only the memory adapter ships today. CloudFront / Cloud CDN / Azure CDN /
+// Akamai driver constants are reserved placeholders — no cloud adapters yet.
 //
 // Usage:
 //
 //	import "github.com/chris-alexander-pop/system-design-library/pkg/network/cdn/adapters/memory"
 //
 //	manager := memory.New()
-//	dist, err := manager.CreateDistribution(ctx, cdn.CreateDistributionOptions{Origin: "example.com"})
+//	dist, err := manager.CreateDistribution(ctx, cdn.CreateDistributionOptions{OriginDomain: "example.com"})
 package cdn
 
 import (
@@ -21,12 +17,13 @@ import (
 )
 
 // Driver constants for CDN backends.
+// Only DriverMemory ships; cloud drivers are reserved placeholders.
 const (
 	DriverMemory     = "memory"
-	DriverCloudFront = "cloudfront"
-	DriverCloudCDN   = "cloudcdn"
-	DriverAzureCDN   = "azurecdn"
-	DriverAkamai     = "akamai"
+	DriverCloudFront = "cloudfront" // reserved — not implemented
+	DriverCloudCDN   = "cloudcdn"   // reserved — not implemented
+	DriverAzureCDN   = "azurecdn"   // reserved — not implemented
+	DriverAkamai     = "akamai"     // reserved — not implemented
 )
 
 // DistributionStatus represents the distribution status.

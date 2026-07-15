@@ -4,23 +4,23 @@ package memory
 import (
 	"context"
 	"fmt"
-	"sync"
 	"time"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/errors"
+	"github.com/chris-alexander-pop/system-design-library/pkg/concurrency"
 	"github.com/chris-alexander-pop/system-design-library/pkg/network/apigateway"
 	"github.com/google/uuid"
 )
 
 // Manager implements an in-memory API gateway manager for testing.
 type Manager struct {
-	mu   sync.RWMutex
+	mu   *concurrency.SmartRWMutex
 	apis map[string]*apigateway.API
 }
 
 // New creates a new in-memory API gateway manager.
 func New() *Manager {
 	return &Manager{
+		mu:   concurrency.NewSmartRWMutex(concurrency.MutexConfig{Name: "memory-apigateway"}),
 		apis: make(map[string]*apigateway.API),
 	}
 }
@@ -57,7 +57,7 @@ func (m *Manager) GetAPI(ctx context.Context, id string) (*apigateway.API, error
 
 	api, ok := m.apis[id]
 	if !ok {
-		return nil, errors.NotFound("API not found", nil)
+		return nil, apigateway.ErrAPINotFound
 	}
 	return api, nil
 }
@@ -78,7 +78,7 @@ func (m *Manager) DeleteAPI(ctx context.Context, id string) error {
 	defer m.mu.Unlock()
 
 	if _, ok := m.apis[id]; !ok {
-		return errors.NotFound("API not found", nil)
+		return apigateway.ErrAPINotFound
 	}
 	delete(m.apis, id)
 	return nil
@@ -90,7 +90,7 @@ func (m *Manager) AddRoute(ctx context.Context, apiID string, route apigateway.R
 
 	api, ok := m.apis[apiID]
 	if !ok {
-		return nil, errors.NotFound("API not found", nil)
+		return nil, apigateway.ErrAPINotFound
 	}
 
 	route.ID = uuid.NewString()[:8]
@@ -104,7 +104,7 @@ func (m *Manager) RemoveRoute(ctx context.Context, apiID, routeID string) error 
 
 	api, ok := m.apis[apiID]
 	if !ok {
-		return errors.NotFound("API not found", nil)
+		return apigateway.ErrAPINotFound
 	}
 
 	for i, r := range api.Routes {
@@ -113,7 +113,7 @@ func (m *Manager) RemoveRoute(ctx context.Context, apiID, routeID string) error 
 			return nil
 		}
 	}
-	return errors.NotFound("route not found", nil)
+	return apigateway.ErrRouteNotFound
 }
 
 func (m *Manager) Deploy(ctx context.Context, apiID, stageName string) (*apigateway.Stage, error) {
@@ -122,7 +122,7 @@ func (m *Manager) Deploy(ctx context.Context, apiID, stageName string) (*apigate
 
 	api, ok := m.apis[apiID]
 	if !ok {
-		return nil, errors.NotFound("API not found", nil)
+		return nil, apigateway.ErrAPINotFound
 	}
 
 	// Check if stage exists, update it
@@ -149,7 +149,7 @@ func (m *Manager) GetStage(ctx context.Context, apiID, stageName string) (*apiga
 
 	api, ok := m.apis[apiID]
 	if !ok {
-		return nil, errors.NotFound("API not found", nil)
+		return nil, apigateway.ErrAPINotFound
 	}
 
 	for _, s := range api.Stages {
@@ -157,5 +157,5 @@ func (m *Manager) GetStage(ctx context.Context, apiID, stageName string) (*apiga
 			return &s, nil
 		}
 	}
-	return nil, errors.NotFound("stage not found", nil)
+	return nil, apigateway.ErrStageNotFound
 }

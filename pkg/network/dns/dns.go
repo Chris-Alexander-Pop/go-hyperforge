@@ -1,11 +1,7 @@
 // Package dns provides a unified interface for DNS management.
 //
-// Supported backends:
-//   - Memory: In-memory DNS for testing
-//   - Route53: AWS Route 53
-//   - CloudDNS: Google Cloud DNS
-//   - AzureDNS: Azure DNS
-//   - Cloudflare: Cloudflare DNS
+// Only the memory adapter ships today. Route53 / Cloud DNS / Azure DNS /
+// Cloudflare driver constants are reserved placeholders — no cloud adapters yet.
 //
 // Usage:
 //
@@ -21,12 +17,13 @@ import (
 )
 
 // Driver constants for DNS backends.
+// Only DriverMemory ships; cloud drivers are reserved placeholders.
 const (
 	DriverMemory     = "memory"
-	DriverRoute53    = "route53"
-	DriverCloudDNS   = "cloud-dns"
-	DriverAzureDNS   = "azure-dns"
-	DriverCloudflare = "cloudflare"
+	DriverRoute53    = "route53"    // reserved — not implemented
+	DriverCloudDNS   = "cloud-dns"  // reserved — not implemented
+	DriverAzureDNS   = "azure-dns"  // reserved — not implemented
+	DriverCloudflare = "cloudflare" // reserved — not implemented
 )
 
 // RecordType represents DNS record types.
