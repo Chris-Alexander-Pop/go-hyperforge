@@ -869,9 +869,10 @@ func TestCacheSuite(t *testing.T) {
 }
 ```
 
-### 6.11 `pkg/analytics` - Usage Analytics
+### 6.11 `pkg/analytics` - Uniqueness Tracking
 
-Use for tracking unique events via HyperLogLog (memory adapter today):
+Approximate unique-element counts via HyperLogLog (not warehouse analytics).
+Adapters: `adapters/memory` (pkg/datastructures/hyperloglog) and `adapters/redis` (PFADD/PFCOUNT/PFMERGE).
 
 ```go
 import (
@@ -879,9 +880,15 @@ import (
     "github.com/chris-alexander-pop/system-design-library/pkg/analytics/adapters/memory"
 )
 
-tracker := memory.New(analytics.Config{Precision: 14})
+tracker, err := memory.New(analytics.DefaultConfig())
+if err != nil {
+    return err
+}
+defer tracker.Close()
+
 _ = tracker.Add(ctx, "visitors", userID)
-count, err := tracker.Count(ctx, "visitors")
+count, err := tracker.Count(ctx, "visitors") // missing counter → (0, nil)
+_ = tracker.Merge(ctx, "week", "monday")
 _ = tracker.Reset(ctx, "visitors")
 ```
 

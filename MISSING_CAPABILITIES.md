@@ -172,8 +172,9 @@
 
 ### `pkg/analytics` (~32)
 - [ ] ❌ Event ingest model + streaming/warehouse sinks (catalog analytics)
-- [ ] ❌ Redis HLL adapter; Merge/windows; exact counters
-- [ ] ❌ Fix PACKAGE_STANDARDS §6.11 dead `NewUniqueTracker` example
+- [x] ✅ Redis HLL adapter (PFADD/PFCOUNT/PFMERGE); Merge on Tracker; precision 4–16
+- [ ] ❌ Windows / exact counters (out of uniqueness-only scope today)
+- [x] ✅ Fix PACKAGE_STANDARDS §6.11 example (`memory.New` + Close/Merge)
 
 ### `pkg/metering` (~20)
 - [ ] ❌ Tests; `InstrumentedRater`; postgres/prometheus adapters or honest Config
