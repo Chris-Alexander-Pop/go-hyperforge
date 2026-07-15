@@ -12,7 +12,7 @@ Ensure `$(go env GOPATH)/bin` is on `PATH` before linting (needed for `golangci-
 
 ### Optional local infra
 
-`make up` starts Postgres (`5432`), Redis (`6379`), and NATS+JetStream (`4222`/`8222`) via `compose.yml`. Useful for exercising real adapters; **not required** for `make test` / CI.
+`make up` starts Postgres (`5432`), Redis (`6379`), and NATS+JetStream (`4222`) via `compose.yml`. Useful for exercising real adapters; **not required** for `make test` / CI. Note: compose publishes `8222` but the container command is only `-js`, so the NATS HTTP monitoring endpoint is not actually enabled unless `-m 8222` is added.
 
 If Docker is installed in this VM but the daemon is down: start `dockerd` (fuse-overlayfs storage driver), and ensure the agent user can reach `/var/run/docker.sock`.
 
