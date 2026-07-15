@@ -27,4 +27,7 @@ var (
 
 	// ErrBulkPartialFailure is returned when some bulk operations failed.
 	ErrBulkPartialFailure = errors.Internal("some bulk operations failed", nil)
+
+	// ErrSuggestUnsupported is returned when an adapter does not implement Suggest.
+	ErrSuggestUnsupported = errors.Unimplemented("search suggest/autocomplete not supported by this adapter", nil)
 )

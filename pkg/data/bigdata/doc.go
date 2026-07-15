@@ -1,10 +1,11 @@
 /*
-Package bigdata provides detailed interfaces for Big Data processing and analytics.
+Package bigdata provides interfaces for analytical query clients and related helpers.
 
 Features:
-  - Generic Client interface for Data Warehouses (BigQuery, Redshift)
-  - Compute abstractions (MapReduce, Spark)
+  - Generic Client interface for data warehouses (BigQuery, Redshift; Snowflake planned)
+  - Compute helpers (in-process MapReduce; local spark-submit wrapper — not Spark Connect)
   - Data formats (Avro, Parquet)
+  - Pipeline scaffolds (DAG executor, ETL scaffold under pipeline/etl)
 
 Usage:
 

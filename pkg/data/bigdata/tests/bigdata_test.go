@@ -13,7 +13,7 @@ func TestBigDataClient(t *testing.T) {
 	client := memory.New()
 
 	// Wrap with instrumentation
-	instrumented := bigdata.NewInstrumentedClient(client)
+	instrumented := bigdata.NewInstrumentedClient(client, "memory")
 	defer instrumented.Close()
 
 	// Execute query

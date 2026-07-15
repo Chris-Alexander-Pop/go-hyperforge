@@ -184,6 +184,28 @@ func (s *InstrumentedEngine) Search(ctx context.Context, indexName string, query
 	return result, nil
 }
 
+func (s *InstrumentedEngine) Suggest(ctx context.Context, indexName string, query SuggestQuery) ([]Suggestion, error) {
+	ctx, span := s.startSpan(ctx, "Suggest",
+		attribute.String("search.index", indexName),
+		attribute.String("search.prefix", query.Prefix),
+		attribute.Int("search.size", query.Size),
+	)
+	defer span.End()
+
+	logger.L().DebugContext(ctx, "suggesting", "index", indexName, "prefix", query.Prefix)
+
+	suggestions, err := s.next.Suggest(ctx, indexName, query)
+	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
+		logger.L().ErrorContext(ctx, "suggest failed", "index", indexName, "prefix", query.Prefix, "error", err)
+		return nil, err
+	}
+
+	span.SetAttributes(attribute.Int("search.suggestions", len(suggestions)))
+	return suggestions, nil
+}
+
 func (s *InstrumentedEngine) Bulk(ctx context.Context, indexName string, ops []BulkOperation) (*BulkResult, error) {
 	ctx, span := s.startSpan(ctx, "Bulk",
 		attribute.String("search.index", indexName),

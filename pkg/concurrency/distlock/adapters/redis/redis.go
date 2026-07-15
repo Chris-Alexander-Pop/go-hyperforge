@@ -5,11 +5,12 @@ import (
 	"time"
 
 	"github.com/chris-alexander-pop/system-design-library/pkg/concurrency/distlock"
+	"github.com/chris-alexander-pop/system-design-library/pkg/errors"
 	"github.com/google/uuid"
 	"github.com/redis/go-redis/v9"
 )
 
-// Adapter implements distlock.Locker using Redis.
+// Adapter implements distlock.Locker using a single Redis instance (SET NX).
 type Adapter struct {
 	client redis.Cmdable
 	prefix string
@@ -38,7 +39,7 @@ func (a *Adapter) Close() error {
 	return nil
 }
 
-// Lock implements a Redis-based lock.
+// Lock implements a Redis-based lock (single instance, not Redlock).
 type Lock struct {
 	client redis.Cmdable
 	key    string
@@ -51,7 +52,7 @@ type Lock struct {
 func (l *Lock) Acquire(ctx context.Context) (bool, error) {
 	success, err := l.client.SetNX(ctx, l.key, l.value, l.ttl).Result()
 	if err != nil {
-		return false, err
+		return false, errors.Unavailable("redis lock acquire failed", err)
 	}
 	l.held = success
 	return success, nil
@@ -74,10 +75,15 @@ func (l *Lock) Release(ctx context.Context) error {
 
 	result, err := releaseScript.Run(ctx, l.client, []string{l.key}, l.value).Int64()
 	if err != nil {
-		return err
+		return errors.Unavailable("redis lock release failed", err)
 	}
 
-	l.held = result == 1
+	if result == 0 {
+		l.held = false
+		return errors.Conflict("redis lock not held by this client", nil)
+	}
+
+	l.held = false
 	return nil
 }
 
@@ -92,15 +98,20 @@ end
 
 func (l *Lock) Extend(ctx context.Context, ttl time.Duration) error {
 	if !l.held {
-		return nil
+		return errors.Conflict("redis lock not held by this client", nil)
 	}
 
 	result, err := extendScript.Run(ctx, l.client, []string{l.key}, l.value, ttl.Milliseconds()).Int64()
 	if err != nil {
-		return err
+		return errors.Unavailable("redis lock extend failed", err)
 	}
 
-	l.held = result == 1
+	if result == 0 {
+		l.held = false
+		return errors.Conflict("redis lock not held by this client", nil)
+	}
+
+	l.ttl = ttl
 	return nil
 }
 

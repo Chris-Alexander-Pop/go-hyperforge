@@ -21,7 +21,11 @@ func (m *MockBus) Publish(ctx context.Context, topic string, event events.Event)
 	return nil
 }
 
-func (m *MockBus) Subscribe(ctx context.Context, topic string, handler events.Handler) error {
+func (m *MockBus) Subscribe(ctx context.Context, topic string, handler events.Handler) (events.Subscription, error) {
+	return "", nil
+}
+
+func (m *MockBus) Unsubscribe(ctx context.Context, id events.Subscription) error {
 	return nil
 }
 

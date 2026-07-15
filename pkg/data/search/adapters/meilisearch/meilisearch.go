@@ -330,3 +330,8 @@ func (e *Engine) Refresh(ctx context.Context, indexName string) error {
 func (e *Engine) Close() error {
 	return nil
 }
+
+// Suggest is not yet implemented for Meilisearch; use the memory adapter for autocomplete in tests.
+func (e *Engine) Suggest(ctx context.Context, indexName string, query search.SuggestQuery) ([]search.Suggestion, error) {
+	return nil, search.ErrSuggestUnsupported
+}

@@ -237,6 +237,33 @@ func (s *SearchEngineSuite) TestBulk() {
 	s.NoError(err)
 }
 
+func (s *SearchEngineSuite) TestSuggest() {
+	docs := []struct {
+		id  string
+		doc map[string]interface{}
+	}{
+		{"1", map[string]interface{}{"title": "laptop bag"}},
+		{"2", map[string]interface{}{"title": "laptop stand"}},
+		{"3", map[string]interface{}{"title": "phone case"}},
+	}
+	for _, d := range docs {
+		err := s.engine.Index(s.ctx, "products", d.id, d.doc)
+		s.Require().NoError(err)
+	}
+
+	suggestions, err := s.engine.Suggest(s.ctx, "products", search.SuggestQuery{
+		Prefix: "lap",
+		Field:  "title",
+		Size:   10,
+	})
+	s.Require().NoError(err)
+	s.NotEmpty(suggestions)
+	for _, sug := range suggestions {
+		s.True(len(sug.Text) >= 3)
+		s.Contains(sug.Text, "lap")
+	}
+}
+
 func (s *SearchEngineSuite) TestRefresh() {
 	err := s.engine.Index(s.ctx, "products", "doc1", map[string]interface{}{"name": "Test"})
 	s.Require().NoError(err)

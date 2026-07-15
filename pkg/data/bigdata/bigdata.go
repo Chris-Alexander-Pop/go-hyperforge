@@ -11,7 +11,8 @@ type Config struct {
 }
 
 // Client is a generic interface for executing analytical queries.
-// It abstracts Data Warehouses like BigQuery, Redshift, Snowflake, etc.
+// It abstracts data warehouses such as BigQuery and Redshift.
+// Snowflake is planned and not yet implemented.
 type Client interface {
 	// Query executes a SQL query and returns the results.
 	// The result type is generic, often []map[string]interface{}.

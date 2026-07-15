@@ -59,3 +59,43 @@ func DefaultLockConfig() LockConfig {
 		RetryCount: 100,
 	}
 }
+
+// AcquireWithRetry attempts to acquire lock using cfg.RetryCount and cfg.RetryDelay.
+// Returns true if acquired. Honors ctx cancellation between attempts.
+// A RetryCount of 0 means a single attempt (no retries after the first failure to acquire).
+func AcquireWithRetry(ctx context.Context, lock Lock, cfg LockConfig) (bool, error) {
+	if cfg.RetryDelay <= 0 {
+		cfg.RetryDelay = DefaultLockConfig().RetryDelay
+	}
+	if cfg.RetryCount < 0 {
+		cfg.RetryCount = 0
+	}
+
+	attempts := cfg.RetryCount + 1
+	for i := 0; i < attempts; i++ {
+		if err := ctx.Err(); err != nil {
+			return false, err
+		}
+
+		acquired, err := lock.Acquire(ctx)
+		if err != nil {
+			return false, err
+		}
+		if acquired {
+			return true, nil
+		}
+
+		if i == attempts-1 {
+			break
+		}
+
+		timer := time.NewTimer(cfg.RetryDelay)
+		select {
+		case <-ctx.Done():
+			timer.Stop()
+			return false, ctx.Err()
+		case <-timer.C:
+		}
+	}
+	return false, nil
+}
