@@ -2,10 +2,9 @@ package memory
 
 import (
 	"context"
-	"sync"
 	"time"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/errors"
+	"github.com/chris-alexander-pop/system-design-library/pkg/concurrency"
 	"github.com/chris-alexander-pop/system-design-library/pkg/workflow"
 	"github.com/google/uuid"
 )
@@ -22,23 +21,53 @@ func copyExecution(src *workflow.Execution) *workflow.Execution {
 
 // Engine implements an in-memory workflow engine for testing.
 type Engine struct {
-	mu         sync.RWMutex
+	mu         *concurrency.SmartRWMutex
 	workflows  map[string]*workflow.WorkflowDefinition
 	executions map[string]*workflow.Execution
 	signals    map[string]map[string]interface{} // execID -> signalName -> data
 	waiters    map[string][]chan *workflow.Execution
 	config     workflow.Config
+	// workDuration is how long simulateExecution takes before completing (tests may shorten).
+	workDuration time.Duration
 }
 
 // New creates a new in-memory workflow engine.
 func New() workflow.WorkflowEngine {
 	return &Engine{
-		workflows:  make(map[string]*workflow.WorkflowDefinition),
-		executions: make(map[string]*workflow.Execution),
-		signals:    make(map[string]map[string]interface{}),
-		waiters:    make(map[string][]chan *workflow.Execution),
-		config:     workflow.Config{DefaultTimeout: time.Hour},
+		mu:           concurrency.NewSmartRWMutex(concurrency.MutexConfig{Name: "workflow-memory"}),
+		workflows:    make(map[string]*workflow.WorkflowDefinition),
+		executions:   make(map[string]*workflow.Execution),
+		signals:      make(map[string]map[string]interface{}),
+		waiters:      make(map[string][]chan *workflow.Execution),
+		config:       workflow.Config{DefaultTimeout: time.Hour},
+		workDuration: 100 * time.Millisecond,
 	}
+}
+
+// NewWithConfig creates an engine with an explicit config (e.g. DefaultTimeout).
+func NewWithConfig(cfg workflow.Config) workflow.WorkflowEngine {
+	if cfg.DefaultTimeout <= 0 {
+		cfg.DefaultTimeout = time.Hour
+	}
+	return &Engine{
+		mu:           concurrency.NewSmartRWMutex(concurrency.MutexConfig{Name: "workflow-memory"}),
+		workflows:    make(map[string]*workflow.WorkflowDefinition),
+		executions:   make(map[string]*workflow.Execution),
+		signals:      make(map[string]map[string]interface{}),
+		waiters:      make(map[string][]chan *workflow.Execution),
+		config:       cfg,
+		workDuration: 100 * time.Millisecond,
+	}
+}
+
+func (e *Engine) notifyWaitersLocked(exec *workflow.Execution) {
+	for _, ch := range e.waiters[exec.ID] {
+		select {
+		case ch <- copyExecution(exec):
+		default:
+		}
+	}
+	delete(e.waiters, exec.ID)
 }
 
 func (e *Engine) RegisterWorkflow(ctx context.Context, def workflow.WorkflowDefinition) error {
@@ -60,19 +89,19 @@ func (e *Engine) GetWorkflow(ctx context.Context, workflowID string) (*workflow.
 
 	wf, ok := e.workflows[workflowID]
 	if !ok {
-		return nil, errors.NotFound("workflow not found", nil)
+		return nil, workflow.ErrWorkflowNotFound
 	}
 
-	return wf, nil
+	cp := *wf
+	return &cp, nil
 }
 
 func (e *Engine) Start(ctx context.Context, opts workflow.StartOptions) (*workflow.Execution, error) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 
-	// Check workflow exists
 	if _, ok := e.workflows[opts.WorkflowID]; !ok {
-		return nil, errors.NotFound("workflow not found", nil)
+		return nil, workflow.ErrWorkflowNotFound
 	}
 
 	execID := opts.ExecutionID
@@ -80,9 +109,8 @@ func (e *Engine) Start(ctx context.Context, opts workflow.StartOptions) (*workfl
 		execID = uuid.NewString()
 	}
 
-	// Check for duplicate execution ID
 	if _, exists := e.executions[execID]; exists {
-		return nil, errors.Conflict("execution already exists", nil)
+		return nil, workflow.ErrExecutionAlreadyExists
 	}
 
 	exec := &workflow.Execution{
@@ -96,39 +124,53 @@ func (e *Engine) Start(ctx context.Context, opts workflow.StartOptions) (*workfl
 	e.executions[execID] = exec
 	e.signals[execID] = make(map[string]interface{})
 
-	// Simulate async execution
-	go e.simulateExecution(ctx, exec, opts.Timeout)
+	timeout := opts.Timeout
+	if timeout <= 0 {
+		timeout = e.config.DefaultTimeout
+	}
+
+	go e.simulateExecution(ctx, exec, timeout)
 
 	return copyExecution(exec), nil
 }
 
-func (e *Engine) simulateExecution(ctx context.Context, exec *workflow.Execution, timeout time.Duration) {
-	if timeout == 0 {
-		_ = e.config.DefaultTimeout
+func (e *Engine) simulateExecution(parent context.Context, exec *workflow.Execution, timeout time.Duration) {
+	ctx := parent
+	var cancel context.CancelFunc
+	if timeout > 0 {
+		ctx, cancel = context.WithTimeout(parent, timeout)
+		defer cancel()
 	}
 
-	// Simulate some work
-	select {
-	case <-time.After(100 * time.Millisecond):
-		e.mu.Lock()
-		exec.Status = workflow.StatusCompleted
-		exec.Output = exec.Input
-		exec.CompletedAt = time.Now()
+	work := e.workDuration
+	if work <= 0 {
+		work = 100 * time.Millisecond
+	}
 
-		// Notify waiters
-		for _, ch := range e.waiters[exec.ID] {
-			select {
-			case ch <- exec:
-			default:
-			}
+	select {
+	case <-time.After(work):
+		e.mu.Lock()
+		if exec.Status == workflow.StatusRunning {
+			exec.Status = workflow.StatusCompleted
+			exec.Output = exec.Input
+			exec.CompletedAt = time.Now()
+			e.notifyWaitersLocked(exec)
 		}
-		delete(e.waiters, exec.ID)
 		e.mu.Unlock()
 
 	case <-ctx.Done():
 		e.mu.Lock()
-		exec.Status = workflow.StatusCancelled
-		exec.CompletedAt = time.Now()
+		if exec.Status == workflow.StatusRunning {
+			// Prefer timeout when our deadline fired; otherwise treat as cancel.
+			if ctx.Err() == context.DeadlineExceeded {
+				exec.Status = workflow.StatusTimedOut
+				exec.Error = workflow.ErrExecutionTimeout.Error()
+			} else {
+				exec.Status = workflow.StatusCancelled
+			}
+			exec.CompletedAt = time.Now()
+			e.notifyWaitersLocked(exec)
+		}
 		e.mu.Unlock()
 	}
 }
@@ -139,7 +181,7 @@ func (e *Engine) GetExecution(ctx context.Context, executionID string) (*workflo
 
 	exec, ok := e.executions[executionID]
 	if !ok {
-		return nil, errors.NotFound("execution not found", nil)
+		return nil, workflow.ErrExecutionNotFound
 	}
 
 	return copyExecution(exec), nil
@@ -154,7 +196,6 @@ func (e *Engine) ListExecutions(ctx context.Context, opts workflow.ListOptions) 
 	}
 
 	for _, exec := range e.executions {
-		// Apply filters
 		if opts.WorkflowID != "" && exec.WorkflowID != opts.WorkflowID {
 			continue
 		}
@@ -164,7 +205,6 @@ func (e *Engine) ListExecutions(ctx context.Context, opts workflow.ListOptions) 
 		result.Executions = append(result.Executions, copyExecution(exec))
 	}
 
-	// Apply limit
 	if opts.Limit > 0 && len(result.Executions) > opts.Limit {
 		result.Executions = result.Executions[:opts.Limit]
 		result.NextPageToken = "more"
@@ -179,15 +219,16 @@ func (e *Engine) Cancel(ctx context.Context, executionID string) error {
 
 	exec, ok := e.executions[executionID]
 	if !ok {
-		return errors.NotFound("execution not found", nil)
+		return workflow.ErrExecutionNotFound
 	}
 
 	if exec.Status != workflow.StatusRunning {
-		return errors.Conflict("execution is not running", nil)
+		return workflow.ErrExecutionNotRunning
 	}
 
 	exec.Status = workflow.StatusCancelled
 	exec.CompletedAt = time.Now()
+	e.notifyWaitersLocked(exec)
 
 	return nil
 }
@@ -198,11 +239,11 @@ func (e *Engine) Signal(ctx context.Context, executionID string, signalName stri
 
 	exec, ok := e.executions[executionID]
 	if !ok {
-		return errors.NotFound("execution not found", nil)
+		return workflow.ErrExecutionNotFound
 	}
 
 	if exec.Status != workflow.StatusRunning {
-		return errors.Conflict("execution is not running", nil)
+		return workflow.ErrExecutionNotRunning
 	}
 
 	e.signals[executionID][signalName] = data
@@ -214,16 +255,14 @@ func (e *Engine) Wait(ctx context.Context, executionID string) (*workflow.Execut
 	exec, ok := e.executions[executionID]
 	if !ok {
 		e.mu.Unlock()
-		return nil, errors.NotFound("execution not found", nil)
+		return nil, workflow.ErrExecutionNotFound
 	}
 
-	// Already completed
 	if exec.Status != workflow.StatusRunning && exec.Status != workflow.StatusPending {
 		e.mu.Unlock()
 		return copyExecution(exec), nil
 	}
 
-	// Create waiter
 	ch := make(chan *workflow.Execution, 1)
 	e.waiters[executionID] = append(e.waiters[executionID], ch)
 	e.mu.Unlock()

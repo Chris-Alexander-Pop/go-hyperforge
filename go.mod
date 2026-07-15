@@ -74,6 +74,7 @@ require (
 	github.com/plutov/paypal/v4 v4.17.0
 	github.com/rabbitmq/amqp091-go v1.10.0
 	github.com/redis/go-redis/v9 v9.17.2
+	github.com/robfig/cron v1.2.0
 	github.com/sendgrid/sendgrid-go v3.16.1+incompatible
 	github.com/sideshow/apns2 v0.25.0
 	github.com/slack-go/slack v0.17.3
@@ -287,7 +288,6 @@ require (
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/power-devops/perfstat v0.0.0-20210106213030-5aafc221ea8c // indirect
 	github.com/rcrowley/go-metrics v0.0.0-20250401214520-65e299d6c5c9 // indirect
-	github.com/robfig/cron v1.2.0 // indirect
 	github.com/segmentio/asm v1.2.0 // indirect
 	github.com/sendgrid/rest v2.6.9+incompatible // indirect
 	github.com/shirou/gopsutil v3.21.11+incompatible // indirect

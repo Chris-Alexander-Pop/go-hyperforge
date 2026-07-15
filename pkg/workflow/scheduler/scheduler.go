@@ -1,23 +1,11 @@
-// Package scheduler provides distributed job scheduling.
-//
-// Features:
-//   - Cron-based scheduling
-//   - One-time delayed jobs
-//   - Distributed locking for single execution
-//   - Job persistence and recovery
-//
-// Usage:
-//
-//	sched := scheduler.New(store, locker)
-//	sched.Schedule("daily-report", "0 0 * * *", generateReportJob)
-//	sched.Start(ctx)
 package scheduler
 
 import (
 	"context"
-	"sync"
 	"time"
 
+	"github.com/chris-alexander-pop/system-design-library/pkg/concurrency"
+	"github.com/chris-alexander-pop/system-design-library/pkg/concurrency/distlock"
 	"github.com/chris-alexander-pop/system-design-library/pkg/errors"
 	"github.com/google/uuid"
 )
@@ -87,9 +75,13 @@ type JobExecution struct {
 	CompletedAt time.Time
 }
 
+const defaultLockTTL = 30 * time.Second
+
 // Scheduler manages scheduled jobs.
 type Scheduler struct {
-	mu         sync.RWMutex
+	mu         *concurrency.SmartRWMutex
+	store      Store
+	locker     distlock.Locker
 	jobs       map[string]*Job
 	handlers   map[string]JobFunc
 	executions map[string][]*JobExecution
@@ -98,9 +90,18 @@ type Scheduler struct {
 	interval   time.Duration
 }
 
-// New creates a new scheduler.
-func New() *Scheduler {
+// New creates a scheduler.
+//
+// store may be nil (ephemeral in-memory maps only). Prefer NewMemoryStore for persistence
+// across restarts within a process, or a durable Store implementation.
+// locker may be nil (no distributed locking; fine for single-node). Pass a
+// pkg/concurrency/distlock.Locker (e.g. memory or Redis adapter) so only one
+// node runs each due job.
+func New(store Store, locker distlock.Locker) *Scheduler {
 	return &Scheduler{
+		mu:         concurrency.NewSmartRWMutex(concurrency.MutexConfig{Name: "workflow-scheduler"}),
+		store:      store,
+		locker:     locker,
 		jobs:       make(map[string]*Job),
 		handlers:   make(map[string]JobFunc),
 		executions: make(map[string][]*JobExecution),
@@ -108,12 +109,32 @@ func New() *Scheduler {
 	}
 }
 
-// Schedule registers a job with a cron-like schedule.
-func (s *Scheduler) Schedule(name, schedule string, handler JobFunc) error {
+// SetTickInterval overrides the polling interval (useful in tests).
+func (s *Scheduler) SetTickInterval(d time.Duration) {
+	if d <= 0 {
+		return
+	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	s.interval = d
+}
 
-	nextRun := parseCron(schedule)
+// Schedule registers a job with a cron schedule.
+func (s *Scheduler) Schedule(name, schedule string, handler JobFunc) error {
+	if name == "" {
+		return errors.InvalidArgument("job name required", nil)
+	}
+	if handler == nil {
+		return errors.InvalidArgument("job handler required", nil)
+	}
+
+	nextRun, err := nextRunTime(schedule, time.Now())
+	if err != nil {
+		return errors.InvalidArgument("invalid schedule", err)
+	}
+
+	s.mu.Lock()
+	defer s.mu.Unlock()
 
 	job := &Job{
 		ID:        uuid.NewString(),
@@ -128,11 +149,24 @@ func (s *Scheduler) Schedule(name, schedule string, handler JobFunc) error {
 	s.jobs[name] = job
 	s.handlers[name] = handler
 
+	if s.store != nil {
+		if err := s.store.SaveJob(context.Background(), job); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
 // ScheduleOnce schedules a one-time job.
 func (s *Scheduler) ScheduleOnce(name string, runAt time.Time, handler JobFunc) error {
+	if name == "" {
+		return errors.InvalidArgument("job name required", nil)
+	}
+	if handler == nil {
+		return errors.InvalidArgument("job handler required", nil)
+	}
+
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -149,31 +183,13 @@ func (s *Scheduler) ScheduleOnce(name string, runAt time.Time, handler JobFunc) 
 	s.jobs[name] = job
 	s.handlers[name] = handler
 
-	return nil
-}
-
-// parseCron parses a simple cron expression and returns next run time.
-// Supports: "* * * * *" (minute hour day month weekday) or "@hourly", "@daily".
-func parseCron(schedule string) time.Time {
-	now := time.Now()
-
-	switch schedule {
-	case "@hourly":
-		return now.Truncate(time.Hour).Add(time.Hour)
-	case "@daily":
-		return time.Date(now.Year(), now.Month(), now.Day()+1, 0, 0, 0, 0, now.Location())
-	case "@weekly":
-		daysUntilSunday := (7 - int(now.Weekday())) % 7
-		if daysUntilSunday == 0 {
-			daysUntilSunday = 7
+	if s.store != nil {
+		if err := s.store.SaveJob(context.Background(), job); err != nil {
+			return err
 		}
-		return time.Date(now.Year(), now.Month(), now.Day()+daysUntilSunday, 0, 0, 0, 0, now.Location())
-	case "once":
-		return time.Time{}
-	default:
-		// Simple: just run every minute for demo purposes
-		return now.Truncate(time.Minute).Add(time.Minute)
 	}
+
+	return nil
 }
 
 // Start begins the scheduler loop.
@@ -185,9 +201,10 @@ func (s *Scheduler) Start(ctx context.Context) error {
 	}
 	s.running = true
 	s.stopCh = make(chan struct{})
+	interval := s.interval
 	s.mu.Unlock()
 
-	go s.run(ctx)
+	go s.run(ctx, interval)
 	return nil
 }
 
@@ -202,8 +219,8 @@ func (s *Scheduler) Stop() {
 	}
 }
 
-func (s *Scheduler) run(ctx context.Context) {
-	ticker := time.NewTicker(s.interval)
+func (s *Scheduler) run(ctx context.Context, interval time.Duration) {
+	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
 
 	for {
@@ -224,25 +241,40 @@ func (s *Scheduler) tick(ctx context.Context) {
 	var dueJobs []*Job
 
 	for _, job := range s.jobs {
-		if job.Enabled && !job.NextRun.IsZero() && job.NextRun.Before(now) {
-			dueJobs = append(dueJobs, job)
+		if job.Enabled && !job.NextRun.IsZero() && !job.NextRun.After(now) {
+			cp := *job
+			dueJobs = append(dueJobs, &cp)
 		}
 	}
 	s.mu.RUnlock()
 
 	for _, job := range dueJobs {
-		go s.executeJob(ctx, job)
+		go s.executeJob(ctx, job.Name)
 	}
 }
 
-func (s *Scheduler) executeJob(ctx context.Context, job *Job) {
-	s.mu.Lock()
-	handler, ok := s.handlers[job.Name]
-	if !ok {
-		s.mu.Unlock()
+func (s *Scheduler) executeJob(ctx context.Context, name string) {
+	s.mu.RLock()
+	job, ok := s.jobs[name]
+	handler, hasHandler := s.handlers[name]
+	s.mu.RUnlock()
+	if !ok || !hasHandler {
 		return
 	}
-	s.mu.Unlock()
+
+	// Distributed lock so only one node runs the job.
+	if s.locker != nil {
+		ttl := job.Timeout
+		if ttl <= 0 {
+			ttl = defaultLockTTL
+		}
+		lock := s.locker.NewLock("workflow:scheduler:"+name, ttl)
+		acquired, err := lock.Acquire(ctx)
+		if err != nil || !acquired {
+			return
+		}
+		defer func() { _ = lock.Release(ctx) }()
+	}
 
 	exec := &JobExecution{
 		ID:        uuid.NewString(),
@@ -251,10 +283,9 @@ func (s *Scheduler) executeJob(ctx context.Context, job *Job) {
 		StartedAt: time.Now(),
 	}
 
-	// Apply timeout
 	execCtx := ctx
+	var cancel context.CancelFunc
 	if job.Timeout > 0 {
-		var cancel context.CancelFunc
 		execCtx, cancel = context.WithTimeout(ctx, job.Timeout)
 		defer cancel()
 	}
@@ -262,7 +293,11 @@ func (s *Scheduler) executeJob(ctx context.Context, job *Job) {
 	err := handler(execCtx)
 
 	s.mu.Lock()
-	defer s.mu.Unlock()
+	job = s.jobs[name]
+	if job == nil {
+		s.mu.Unlock()
+		return
+	}
 
 	exec.CompletedAt = time.Now()
 	if err != nil {
@@ -275,14 +310,22 @@ func (s *Scheduler) executeJob(ctx context.Context, job *Job) {
 	job.LastRun = exec.StartedAt
 	job.LastStatus = exec.Status
 
-	// Update next run
 	if job.Schedule != "once" {
-		job.NextRun = parseCron(job.Schedule)
+		if next, nerr := nextRunTime(job.Schedule, time.Now()); nerr == nil {
+			job.NextRun = next
+		}
 	} else {
-		job.Enabled = false // Disable one-time jobs after execution
+		job.Enabled = false
 	}
 
-	s.executions[job.Name] = append(s.executions[job.Name], exec)
+	s.executions[name] = append(s.executions[name], exec)
+	jobCopy := *job
+	s.mu.Unlock()
+
+	if s.store != nil {
+		_ = s.store.SaveJob(ctx, &jobCopy)
+		_ = s.store.SaveExecution(ctx, name, exec)
+	}
 }
 
 // GetJob retrieves a job by name.
@@ -294,8 +337,8 @@ func (s *Scheduler) GetJob(name string) (*Job, error) {
 	if !ok {
 		return nil, errors.NotFound("job not found", nil)
 	}
-
-	return job, nil
+	cp := *job
+	return &cp, nil
 }
 
 // ListJobs returns all registered jobs.
@@ -305,9 +348,9 @@ func (s *Scheduler) ListJobs() []*Job {
 
 	jobs := make([]*Job, 0, len(s.jobs))
 	for _, job := range s.jobs {
-		jobs = append(jobs, job)
+		cp := *job
+		jobs = append(jobs, &cp)
 	}
-
 	return jobs
 }
 
@@ -320,8 +363,10 @@ func (s *Scheduler) EnableJob(name string) error {
 	if !ok {
 		return errors.NotFound("job not found", nil)
 	}
-
 	job.Enabled = true
+	if s.store != nil {
+		_ = s.store.SaveJob(context.Background(), job)
+	}
 	return nil
 }
 
@@ -334,12 +379,14 @@ func (s *Scheduler) DisableJob(name string) error {
 	if !ok {
 		return errors.NotFound("job not found", nil)
 	}
-
 	job.Enabled = false
+	if s.store != nil {
+		_ = s.store.SaveJob(context.Background(), job)
+	}
 	return nil
 }
 
-// RunNow immediately executes a job.
+// RunNow immediately executes a job (still respects distributed locking when configured).
 func (s *Scheduler) RunNow(ctx context.Context, name string) (*JobExecution, error) {
 	s.mu.RLock()
 	job, ok := s.jobs[name]
@@ -348,6 +395,22 @@ func (s *Scheduler) RunNow(ctx context.Context, name string) (*JobExecution, err
 
 	if !ok || !hasHandler {
 		return nil, errors.NotFound("job not found", nil)
+	}
+
+	if s.locker != nil {
+		ttl := job.Timeout
+		if ttl <= 0 {
+			ttl = defaultLockTTL
+		}
+		lock := s.locker.NewLock("workflow:scheduler:"+name, ttl)
+		acquired, err := lock.Acquire(ctx)
+		if err != nil {
+			return nil, err
+		}
+		if !acquired {
+			return nil, errors.Conflict("job already running on another node", nil)
+		}
+		defer func() { _ = lock.Release(ctx) }()
 	}
 
 	exec := &JobExecution{
@@ -361,18 +424,26 @@ func (s *Scheduler) RunNow(ctx context.Context, name string) (*JobExecution, err
 	exec.CompletedAt = time.Now()
 
 	s.mu.Lock()
-	defer s.mu.Unlock()
-
+	job = s.jobs[name]
 	if err != nil {
 		exec.Status = JobStatusFailed
 		exec.Error = err.Error()
 	} else {
 		exec.Status = JobStatusCompleted
 	}
-
-	job.LastRun = exec.StartedAt
-	job.LastStatus = exec.Status
+	if job != nil {
+		job.LastRun = exec.StartedAt
+		job.LastStatus = exec.Status
+	}
 	s.executions[name] = append(s.executions[name], exec)
+	s.mu.Unlock()
+
+	if s.store != nil {
+		_ = s.store.SaveExecution(ctx, name, exec)
+		if job != nil {
+			_ = s.store.SaveJob(ctx, job)
+		}
+	}
 
 	return exec, err
 }

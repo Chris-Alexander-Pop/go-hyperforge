@@ -1,17 +1,3 @@
-// Package workflow provides a unified interface for workflow orchestration.
-//
-// Supported backends:
-//   - Memory: In-memory workflow engine for testing
-//   - StepFunctions: AWS Step Functions
-//   - Temporal: Temporal.io durable execution
-//   - LogicApps: Azure Logic Apps
-//
-// Usage:
-//
-//	import "github.com/chris-alexander-pop/system-design-library/pkg/workflow/adapters/memory"
-//
-//	engine := memory.New()
-//	exec, err := engine.Start(ctx, workflow.StartOptions{WorkflowID: "order-123", Input: orderData})
 package workflow
 
 import (
