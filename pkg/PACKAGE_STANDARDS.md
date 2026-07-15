@@ -910,12 +910,22 @@ hash := hasher.Hash(data)
 
 ### 6.13 `pkg/datastructures` - Data Structures
 
-Use built-in data structures:
+Use built-in data structures — **prefer reuse over local copies**:
+
+| Need | Prefer |
+|------|--------|
+| Priority queue / Dijkstra-style PQ | `datastructures/heap` (`NewMinHeap`) |
+| Probabilistic membership / negative cache | `datastructures/bloomfilter` |
+| Bounded hot-key cache | `datastructures/lru` (or LFU/ARC) |
+| FIFO / ring / delay | `datastructures/queue` |
+
+Known reuse: `algorithms/graph/{dijkstra,astar,prim}` → heap; `cache` bloom wrapper + `messaging` dedup → bloomfilter; `workflow/adapters/memory` definition hot-cache → lru.
 
 ```go
 import (
     "github.com/chris-alexander-pop/go-hyperforge/pkg/datastructures/bloomfilter"
     "github.com/chris-alexander-pop/go-hyperforge/pkg/datastructures/heap"
+    "github.com/chris-alexander-pop/go-hyperforge/pkg/datastructures/lru"
     "github.com/chris-alexander-pop/go-hyperforge/pkg/datastructures/queue"
 )
 ```

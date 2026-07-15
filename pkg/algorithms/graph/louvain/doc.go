@@ -1,9 +1,10 @@
 /*
 Package louvain is an educational sketch of Louvain community detection for
-learning and API exploration only.
+learning and API exploration.
 
-Detect performs a naive greedy pass with placeholder modularity gains. It is
-not a correct Louvain implementation and must not be used for production
-graph analytics.
+Detect runs the first-phase greedy modularity optimization with a real ΔQ
+calculation (unweighted undirected graphs). Hierarchical aggregation and
+weighted edges are not implemented. Prefer a mature graph-analytics library for
+production community detection.
 */
 package louvain

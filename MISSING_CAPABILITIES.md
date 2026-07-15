@@ -14,12 +14,12 @@
 
 ### Still open (truly remaining)
 
-After sibling domain agents land, residual backlog is mostly **cross-cutting adoption debt**, plus a few honest adapter gaps:
+Residual backlog is **cross-cutting adoption debt** plus a few honest adapter gaps:
 
 - 🔗 Adopt `pkg/errors` (no raw `fmt.Errorf` / stdlib `errors.New` for domain errors) at remaining call sites
 - 🔗 Adopt `pkg/concurrency.SmartMutex` / `SmartRWMutex` instead of bare `sync.Mutex` / `RWMutex` (high-traffic packages partially done; datastructures + long tail remain)
 - 🔗 Adopt `pkg/resilience` for remaining external I/O paths that still roll their own retry/CB
-- 🔗 Prefer `pkg/algorithms/*` / `pkg/datastructures/*` / `pkg/events` / `pkg/validator` over local copies where standards apply
+- 🔗 Prefer `pkg/algorithms/*` / `pkg/datastructures/*` / `pkg/events` / `pkg/validator` over local copies where standards apply (graph heaps / bloom / workflow LRU landed; long-tail sites remain)
 - ❌ PACKAGE_STANDARDS skeletons (`errors.go` + `instrumented.go` + `adapters/memory/`) on packages that still lack them
 - ❌ Broader `pkg/test.Suite` / interface conformance tests beyond the packages already migrated
 - ❌ Broader `config.Load` adoption beyond search/web3/iot/starter
@@ -27,6 +27,8 @@ After sibling domain agents land, residual backlog is mostly **cross-cutting ado
 - 🔄 `pkg/workflow`: Temporal worker hosting; full ASL Choice/Parallel; Logic Apps ARM deploy + MSI
 - 🔄 `pkg/storage`: real EC2/EBS SDK; Azure/GCS archive; Ceph/CSI
 - 🔄 `pkg/enterprise`: snapshot store + outbox-driven continuous projections beyond catch-up Run
+- 🔄 `pkg/security`: Dilithium/ML-DSA; Azure Key Vault secrets; ClamAV scanner
+- 🔄 `pkg/metering`: rate-card mutation APIs
 
 ### Progress since review (branch `branch/package-readiness-review-35ed`)
 
@@ -54,6 +56,9 @@ Landed foundation/reuse/domain hardening (scores above are the *pre-fix* snapsho
 - ✅ `streaming`: PutRecords + optional Consume (memory consumer)
 - ✅ `analytics`: Event Sink + memory sink + WindowedUniqueness + warehouse bigdata sink
 - ✅ Deep Hyperforge remaining: CIRCL ML-KEM PQC; GraphQL complexity/depth+OTel; auth password Hasher; Raft/Paxos/Chord docs softened
+- ✅ Algorithms deepen: Paxos Learner+Multi-Paxos; Chord Join/Stabilize/Notify+InProcessTransport; SWIM Events/Stop/incarnation refute; Louvain real ΔQ; docs softened
+- ✅ GraphQL DX: SchemaRegistry + LoadSDL(File); playground config; introspection toggle + tests
+- ✅ Datastructures reuse: prim→heap; workflow memory def LRU; PACKAGE_STANDARDS §6.13 + datastructures/doc.go reuse guidance
 - ✅ `ai` (critical): LLM `StreamChat` + memory streaming, `errors.go`/instrumented, context-first conversation memory, embedding/image memory adapters; softened dual `ai/llm` vs `genai/llm` ledger; Chat (not Generate) docs
 - ✅ `test`: Suite self-tests + examples; StartPostgres/StartRedis Short-skip + t.Cleanup
 - ✅ `auth` SAML: SP client interface + memory ACS/AuthnRequest stub (XML crypto Unimplemented)
@@ -97,7 +102,7 @@ Landed foundation/reuse/domain hardening (scores above are the *pre-fix* snapsho
 | cache | 60→improved | Exists/MGet/MSet/Expire/TTL; NewFromConfig; miniredis; Cluster Config |
 | logger | 58→improved | Init/Async/Shutdown/redact fixed |
 | errors | 58→improved | Codes/IsCode/Wrap/FromHTTP/FromGRPC |
-| datastructures | 58 | Broad catalog; many stubs / low reuse |
+| datastructures | 58→improved | Heap/bloom/LRU reuse into algorithms/cache/workflow documented |
 | communication | 58 | Ready: root drivers/errors/resilience, html/text templates, adapter tests |
 | data | 62→improved | Search+Suggest; Typesense/OpenSearch HTTP; Snowflake SQL/HTTP; bigdata errors/instrumented |
 | compute | 52→78 | EC2/GCE/Docker + k8s Exec; Azure VM/Functions scaffolds |
@@ -108,7 +113,7 @@ Landed foundation/reuse/domain hardening (scores above are the *pre-fix* snapsho
 | commerce | 42→78 | Money + payment depth; billing proration+dunning; TaxJar/Avalara; live FX |
 | events | 42→improved | Config/errors/lifecycle + Outbox messaging bridge |
 | workflow | 38→improved | Task/Wait SM + distlock/events |
-| algorithms | 38→improved | Maglev/P2C/sticky; Raft/Paxos/Chord remain educational sketches |
+| algorithms | 38→improved | Maglev/P2C/sticky; Paxos/Chord/SWIM/Louvain deepened (still educational) |
 | cloud | 38→72 | Libvirt/Firecracker/Redfish/IPMI/PXE + instance bind APIs |
 | telemetry | 36→improved | OTLP/noop/stdout traces+metrics MeterProvider |
 | ai | 36→improved | StreamChat/gateway/prompt; multimodal Parts; evals; RAG↔vector/rerank; Textract |
@@ -291,6 +296,7 @@ Landed foundation/reuse/domain hardening (scores above are the *pre-fix* snapsho
 ### `pkg/api` (~48 → improved)
 - [x] ✅ GraphQL schema injection via `api.Config.GraphQLSchema` (no no-op stub); honest docs
 - [x] ✅ GraphQL complexity limit (gqlgen FixedComplexityLimit), depth limit (AroundFields), OTel op spans
+- [x] ✅ GraphQL DX: SchemaRegistry / LoadSDL(File); PlaygroundConfig; EnableIntrospection toggle + tests
 - [x] ✅ gRPC health (`grpc.health.v1`), stream recovery, unary `GRPCStatus` ErrorInterceptor
 - [x] ✅ REST `ReadTimeout`/`WriteTimeout` applied; full `HTTPStatus` error map
 - [x] ✅ WebSocket origin allowlist, Hub `Shutdown`, broadcast no longer mutates under RLock
@@ -447,15 +453,15 @@ Landed foundation/reuse/domain hardening (scores above are the *pre-fix* snapsho
 - [x] ✅ Implement standards-cited `search/binarysearch`, `graph/bfs`, `graph/dfs` (+ tests)
 - [x] ✅ Soften Raft/Paxos/Chord/SWIM/Louvain docs as educational sketches (not production); DistLimiter uses cache store
 - [x] ✅ Sliding window counter (weighted prev+curr windows); Local remains exact log
-- [x] 🔗 Dijkstra/A* reuse `pkg/datastructures/heap`; shared `algorithms/graph` types
+- [x] 🔗 Dijkstra/A*/Prim reuse `pkg/datastructures/heap`; shared `algorithms/graph` types
 - [x] ✅ Maglev + P2C loadbalancing; health-aware balancer (`healthaware`)
 - [x] ✅ Sticky session-affinity balancer (`loadbalancing/sticky`)
-- [x] ✅ Finish Raft/Paxos/Chord/SWIM/Louvain beyond educational sketches (sibling consensus wave)
+- [x] ✅ Paxos Learner + Multi-Paxos slots; Chord Join/Stabilize/Notify + InProcessTransport; SWIM Events/Stop/refute; Louvain real ΔQ (still educational, not production)
 
 ### `pkg/datastructures` (~58)
 - [x] ✅ Tests for ARC/CRDT/roaring/cuckoo/scalable/graph/DAG; G-Set CRDT implemented
 - [x] ✅ Honest docs (drop Consistent Hashing/Red-Black; G-Set real; root doc softened)
-- [x] 🔗 Drive reuse into algorithms/cache/workflow (sibling datastructures wave)
+- [x] 🔗 Drive reuse into algorithms/cache/workflow (prim→heap; cache/messaging bloom; workflow memory LRU; docs in PACKAGE_STANDARDS §6.13)
 - [x] ✅ Quarantine placeholders as experimental (tdigest, histogram, disruptor, hllpp, roaring)
 
 ---

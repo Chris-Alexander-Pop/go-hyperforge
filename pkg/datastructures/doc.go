@@ -10,6 +10,12 @@ This package includes implementations for:
   - Graph: directed adjacency-list graphs and DAG with topological sort
   - Other: SkipList, Heap, Set/Union-Find, ConcurrentMap, Timer wheel, Suffix array
 
+Preferred reuse (do not reinvent local copies elsewhere in pkg/):
+
+  - heap — priority queues in algorithms (dijkstra, astar, prim, …)
+  - bloomfilter — negative-cache / dedup (cache.Bloom, messaging dedup)
+  - lru — bounded hot caches (workflow memory definition cache, …)
+
 Maturity varies by subpackage. Several sketch/bitmap/queue variants are marked
 experimental in their package docs and should be treated as building blocks,
 not production-hardened libraries.

@@ -7,9 +7,13 @@ import (
 	"time"
 
 	"github.com/chris-alexander-pop/go-hyperforge/pkg/concurrency"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/datastructures/lru"
 	"github.com/chris-alexander-pop/go-hyperforge/pkg/workflow"
 	"github.com/google/uuid"
 )
+
+// defaultDefCacheCap bounds the hot workflow-definition LRU.
+const defaultDefCacheCap = 128
 
 // copyExecution creates a shallow copy of the execution to avoid data races
 // when returning the object to callers while the engine might be updating it.
@@ -25,6 +29,7 @@ func copyExecution(src *workflow.Execution) *workflow.Execution {
 type Engine struct {
 	mu         *concurrency.SmartRWMutex
 	workflows  map[string]*workflow.WorkflowDefinition
+	defCache   *lru.Cache[string, workflow.WorkflowDefinition] // hot-path reuse of pkg/datastructures/lru
 	executions map[string]*workflow.Execution
 	signals    map[string]map[string]interface{} // execID -> signalName -> data
 	waiters    map[string][]chan *workflow.Execution
@@ -52,6 +57,7 @@ func newEngine(cfg workflow.Config) *Engine {
 	return &Engine{
 		mu:           concurrency.NewSmartRWMutex(concurrency.MutexConfig{Name: "workflow-memory"}),
 		workflows:    make(map[string]*workflow.WorkflowDefinition),
+		defCache:     lru.New[string, workflow.WorkflowDefinition](defaultDefCacheCap),
 		executions:   make(map[string]*workflow.Execution),
 		signals:      make(map[string]map[string]interface{}),
 		waiters:      make(map[string][]chan *workflow.Execution),
@@ -97,19 +103,25 @@ func (e *Engine) RegisterWorkflow(ctx context.Context, def workflow.WorkflowDefi
 	def.CreatedAt = time.Now()
 
 	e.workflows[def.ID] = &def
+	e.defCache.Set(def.ID, def)
 	return nil
 }
 
 func (e *Engine) GetWorkflow(ctx context.Context, workflowID string) (*workflow.WorkflowDefinition, error) {
-	e.mu.RLock()
-	defer e.mu.RUnlock()
+	if cached, ok := e.defCache.Get(workflowID); ok {
+		cp := cached
+		return &cp, nil
+	}
 
+	e.mu.RLock()
 	wf, ok := e.workflows[workflowID]
+	e.mu.RUnlock()
 	if !ok {
 		return nil, workflow.ErrWorkflowNotFound
 	}
 
 	cp := *wf
+	e.defCache.Set(workflowID, cp)
 	return &cp, nil
 }
 
