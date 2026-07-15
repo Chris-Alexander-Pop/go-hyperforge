@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/cloud"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/cloud"
 )
 
 // ControlPlane serves as the central brain of the private cloud.

@@ -4,8 +4,8 @@ import (
 	"context"
 	"testing"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/data/bigdata"
-	"github.com/chris-alexander-pop/system-design-library/pkg/data/bigdata/adapters/memory"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/data/bigdata"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/data/bigdata/adapters/memory"
 )
 
 func TestBigDataClient(t *testing.T) {

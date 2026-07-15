@@ -4,8 +4,8 @@ import (
 	"context"
 	"testing"
 
-	apigrpc "github.com/chris-alexander-pop/system-design-library/pkg/api/grpc"
-	"github.com/chris-alexander-pop/system-design-library/pkg/errors"
+	apigrpc "github.com/chris-alexander-pop/go-hyperforge/pkg/api/grpc"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"

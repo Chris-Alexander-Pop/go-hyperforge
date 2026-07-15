@@ -9,10 +9,12 @@
 //
 // Usage:
 //
-//	import "github.com/chris-alexander-pop/system-design-library/pkg/servicemesh/discovery/adapters/memory"
+//	import "github.com/chris-alexander-pop/go-hyperforge/pkg/servicemesh/discovery/adapters/memory"
 //
 //	registry := memory.New()
 //	err := registry.Register(ctx, discovery.Service{Name: "api", Address: "10.0.0.1", Port: 8080})
+//
+// Consul HTTP adapter: adapters/consul (agent/health API; httptest-tested).
 package discovery
 
 import (

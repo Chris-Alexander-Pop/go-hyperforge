@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/api/ratelimit"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/api/ratelimit"
 	"github.com/stretchr/testify/assert"
 )
 

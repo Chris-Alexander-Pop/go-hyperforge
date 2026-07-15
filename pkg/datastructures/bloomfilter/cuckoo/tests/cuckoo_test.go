@@ -3,7 +3,7 @@ package cuckoo_test
 import (
 	"testing"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/datastructures/bloomfilter/cuckoo"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/datastructures/bloomfilter/cuckoo"
 )
 
 func TestCuckoo_AddContainsDelete(t *testing.T) {

@@ -5,8 +5,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/errors"
-	"github.com/chris-alexander-pop/system-design-library/pkg/servicemesh/discovery"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/servicemesh/discovery"
 	"github.com/google/uuid"
 )
 

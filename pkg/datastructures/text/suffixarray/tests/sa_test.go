@@ -1,7 +1,7 @@
 package suffixarray_test
 
 import (
-	"github.com/chris-alexander-pop/system-design-library/pkg/datastructures/text/suffixarray"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/datastructures/text/suffixarray"
 	"reflect"
 	"sort"
 	"testing"

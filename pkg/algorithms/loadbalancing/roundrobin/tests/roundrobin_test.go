@@ -2,7 +2,7 @@ package roundrobin_test
 
 import (
 	"context"
-	"github.com/chris-alexander-pop/system-design-library/pkg/algorithms/loadbalancing/roundrobin"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/algorithms/loadbalancing/roundrobin"
 	"testing"
 )
 

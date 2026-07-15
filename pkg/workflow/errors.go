@@ -1,6 +1,6 @@
 package workflow
 
-import "github.com/chris-alexander-pop/system-design-library/pkg/errors"
+import "github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 
 // Sentinel errors for workflow operations.
 var (

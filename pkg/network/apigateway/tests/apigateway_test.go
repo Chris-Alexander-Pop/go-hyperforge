@@ -4,8 +4,8 @@ import (
 	"context"
 	"testing"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/network/apigateway"
-	"github.com/chris-alexander-pop/system-design-library/pkg/network/apigateway/adapters/memory"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/network/apigateway"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/network/apigateway/adapters/memory"
 	"github.com/stretchr/testify/require"
 )
 

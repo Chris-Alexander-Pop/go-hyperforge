@@ -6,7 +6,7 @@
 //
 // Usage:
 //
-//	import "github.com/chris-alexander-pop/system-design-library/pkg/network/apigateway/adapters/memory"
+//	import "github.com/chris-alexander-pop/go-hyperforge/pkg/network/apigateway/adapters/memory"
 //
 //	gw := memory.New()
 //	api, err := gw.CreateAPI(ctx, apigateway.CreateAPIOptions{Name: "my-api"})

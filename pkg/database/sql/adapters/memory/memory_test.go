@@ -4,8 +4,8 @@ import (
 	"context"
 	"testing"
 
-	dbsql "github.com/chris-alexander-pop/system-design-library/pkg/database/sql"
-	"github.com/chris-alexander-pop/system-design-library/pkg/database/sql/adapters/memory"
+	dbsql "github.com/chris-alexander-pop/go-hyperforge/pkg/database/sql"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/database/sql/adapters/memory"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

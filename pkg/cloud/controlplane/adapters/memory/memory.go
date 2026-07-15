@@ -4,10 +4,10 @@ import (
 	"context"
 	"time"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/cloud"
-	"github.com/chris-alexander-pop/system-design-library/pkg/cloud/controlplane"
-	"github.com/chris-alexander-pop/system-design-library/pkg/concurrency"
-	pkgerrors "github.com/chris-alexander-pop/system-design-library/pkg/errors"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/cloud"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/cloud/controlplane"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/concurrency"
+	pkgerrors "github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 	"github.com/google/uuid"
 )
 

@@ -2,7 +2,7 @@
 //
 // Usage:
 //
-//	import "github.com/chris-alexander-pop/system-design-library/pkg/ai/ml/inference"
+//	import "github.com/chris-alexander-pop/go-hyperforge/pkg/ai/ml/inference"
 //
 //	server := inference.New(inference.Config{ModelPath: "/models/resnet50"})
 //	result, err := server.Predict(ctx, input)

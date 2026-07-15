@@ -9,7 +9,7 @@
 //
 // Usage:
 //
-//	import "github.com/chris-alexander-pop/system-design-library/pkg/storage/archive/adapters/memory"
+//	import "github.com/chris-alexander-pop/go-hyperforge/pkg/storage/archive/adapters/memory"
 //
 //	store := memory.New()
 //	err := store.Archive(ctx, "backup/db-2024.dump", reader, archive.ArchiveOptions{})

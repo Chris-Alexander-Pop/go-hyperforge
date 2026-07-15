@@ -5,9 +5,9 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/audit"
-	"github.com/chris-alexander-pop/system-design-library/pkg/messaging"
-	"github.com/chris-alexander-pop/system-design-library/pkg/resilience"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/audit"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/messaging"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/resilience"
 )
 
 // Ensure compile-time interface compliance.

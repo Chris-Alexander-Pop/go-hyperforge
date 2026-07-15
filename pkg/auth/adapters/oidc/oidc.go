@@ -4,8 +4,8 @@ import (
 	"context"
 	"strings"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/auth"
-	"github.com/chris-alexander-pop/system-design-library/pkg/errors"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/auth"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 	"github.com/coreos/go-oidc/v3/oidc"
 	"golang.org/x/oauth2"
 )

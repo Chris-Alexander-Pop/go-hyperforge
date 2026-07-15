@@ -4,9 +4,9 @@ import (
 	"context"
 	"testing"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/ai/genai/prompt"
-	"github.com/chris-alexander-pop/system-design-library/pkg/ai/genai/prompt/adapters/memory"
-	"github.com/chris-alexander-pop/system-design-library/pkg/errors"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/ai/genai/prompt"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/ai/genai/prompt/adapters/memory"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 )
 
 func TestPromptVersioning(t *testing.T) {

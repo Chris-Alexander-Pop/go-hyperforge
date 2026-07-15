@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/IBM/sarama"
-	"github.com/chris-alexander-pop/system-design-library/pkg/messaging"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/messaging"
 	"github.com/google/uuid"
 )
 

@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/datastructures/bloomfilter"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/datastructures/bloomfilter"
 )
 
 // BloomCache wraps a Cache with a Bloom filter for negative caching.

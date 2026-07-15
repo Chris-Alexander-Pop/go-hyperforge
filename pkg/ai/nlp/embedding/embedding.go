@@ -2,7 +2,7 @@
 //
 // Usage:
 //
-//	import "github.com/chris-alexander-pop/system-design-library/pkg/ai/nlp/embedding"
+//	import "github.com/chris-alexander-pop/go-hyperforge/pkg/ai/nlp/embedding"
 //
 //	service := embedding.New(config)
 //	vectors, err := service.Embed(ctx, []string{"hello world"})

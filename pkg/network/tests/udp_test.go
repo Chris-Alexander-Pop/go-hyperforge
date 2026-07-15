@@ -2,7 +2,7 @@ package network_test
 
 import (
 	"context"
-	"github.com/chris-alexander-pop/system-design-library/pkg/network"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/network"
 	"net"
 	"testing"
 	"time"

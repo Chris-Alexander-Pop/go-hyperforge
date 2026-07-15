@@ -9,7 +9,7 @@ Features:
 
 Usage:
 
-	import "github.com/chris-alexander-pop/system-design-library/pkg/data/bigdata/adapters/bigquery"
+	import "github.com/chris-alexander-pop/go-hyperforge/pkg/data/bigdata/adapters/bigquery"
 
 	client := bigquery.New(cfg)
 	res, err := client.Query(ctx, "SELECT * FROM users LIMIT 10")

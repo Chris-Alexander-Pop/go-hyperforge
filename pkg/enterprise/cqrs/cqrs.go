@@ -4,7 +4,7 @@
 //
 // Usage:
 //
-//	import "github.com/chris-alexander-pop/system-design-library/pkg/enterprise/cqrs"
+//	import "github.com/chris-alexander-pop/go-hyperforge/pkg/enterprise/cqrs"
 //
 //	bus := cqrs.NewCommandBus()
 //	bus.Register("CreateOrder", &CreateOrderHandler{})
@@ -15,7 +15,7 @@ import (
 	"context"
 	"reflect"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/concurrency"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/concurrency"
 )
 
 // Command represents a command that mutates state.

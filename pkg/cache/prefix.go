@@ -3,7 +3,7 @@ package cache
 import (
 	"context"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/errors"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 )
 
 // PrefixDeleter is implemented by backends that can delete by key prefix.

@@ -5,7 +5,7 @@
 //
 // Usage:
 //
-//	import "github.com/chris-alexander-pop/system-design-library/pkg/network/dns/adapters/memory"
+//	import "github.com/chris-alexander-pop/go-hyperforge/pkg/network/dns/adapters/memory"
 //
 //	manager := memory.New()
 //	err := manager.CreateRecord(ctx, dns.Record{Name: "api.example.com", Type: dns.TypeA, Value: "10.0.0.1"})

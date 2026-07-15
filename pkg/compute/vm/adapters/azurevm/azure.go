@@ -7,8 +7,8 @@ package azurevm
 import (
 	"context"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/compute/vm"
-	pkgerrors "github.com/chris-alexander-pop/system-design-library/pkg/errors"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/compute/vm"
+	pkgerrors "github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 )
 
 // Config holds Azure VM adapter configuration.

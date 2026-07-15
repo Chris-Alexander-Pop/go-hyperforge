@@ -3,7 +3,7 @@ package kruskal
 import (
 	"sort"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/datastructures/set/disjoint"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/datastructures/set/disjoint"
 )
 
 // Edge represents a graph edge.

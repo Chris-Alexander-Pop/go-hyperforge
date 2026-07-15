@@ -3,9 +3,9 @@ package memory
 import (
 	"context"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/concurrency"
-	"github.com/chris-alexander-pop/system-design-library/pkg/database/document"
-	"github.com/chris-alexander-pop/system-design-library/pkg/errors"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/concurrency"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/database/document"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 )
 
 // Adapter implements document.Interface with an in-memory store.

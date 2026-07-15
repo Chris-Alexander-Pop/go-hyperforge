@@ -4,10 +4,10 @@ import (
 	"context"
 	"testing"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/errors"
-	"github.com/chris-alexander-pop/system-design-library/pkg/security/crypto"
-	cryptomem "github.com/chris-alexander-pop/system-design-library/pkg/security/crypto/adapters/memory"
-	"github.com/chris-alexander-pop/system-design-library/pkg/test"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/security/crypto"
+	cryptomem "github.com/chris-alexander-pop/go-hyperforge/pkg/security/crypto/adapters/memory"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/test"
 )
 
 type CryptoTestSuite struct {

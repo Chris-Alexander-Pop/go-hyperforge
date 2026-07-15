@@ -5,7 +5,7 @@
 //
 // Usage:
 //
-//	import "github.com/chris-alexander-pop/system-design-library/pkg/workflow/adapters/temporal"
+//	import "github.com/chris-alexander-pop/go-hyperforge/pkg/workflow/adapters/temporal"
 //
 //	engine, err := temporal.New(temporal.Config{Host: "localhost:7233", Namespace: "default"})
 //	exec, err := engine.Start(ctx, workflow.StartOptions{WorkflowID: "order-123", Input: data})
@@ -15,8 +15,8 @@ import (
 	"context"
 	"time"
 
-	pkgerrors "github.com/chris-alexander-pop/system-design-library/pkg/errors"
-	"github.com/chris-alexander-pop/system-design-library/pkg/workflow"
+	pkgerrors "github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/workflow"
 	"go.temporal.io/sdk/client"
 )
 

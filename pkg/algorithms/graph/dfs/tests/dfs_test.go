@@ -4,8 +4,8 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/algorithms/graph"
-	"github.com/chris-alexander-pop/system-design-library/pkg/algorithms/graph/dfs"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/algorithms/graph"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/algorithms/graph/dfs"
 )
 
 func TestReachable(t *testing.T) {

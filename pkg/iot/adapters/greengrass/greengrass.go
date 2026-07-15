@@ -8,7 +8,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/greengrassv2"
 	"github.com/aws/aws-sdk-go-v2/service/greengrassv2/types"
-	pkgerrors "github.com/chris-alexander-pop/system-design-library/pkg/errors"
+	pkgerrors "github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 )
 
 // Config holds Greengrass configuration.

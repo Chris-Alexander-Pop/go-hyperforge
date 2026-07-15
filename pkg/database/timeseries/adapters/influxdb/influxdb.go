@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/database/timeseries"
-	"github.com/chris-alexander-pop/system-design-library/pkg/errors"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/database/timeseries"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 	influxdb2 "github.com/influxdata/influxdb-client-go/v2"
 	"github.com/influxdata/influxdb-client-go/v2/api"
 	"github.com/influxdata/influxdb-client-go/v2/api/write"

@@ -9,8 +9,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/errors"
-	"github.com/chris-alexander-pop/system-design-library/pkg/security/captcha"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/security/captcha"
 )
 
 const defaultSiteVerifyURL = "https://www.google.com/recaptcha/api/siteverify"

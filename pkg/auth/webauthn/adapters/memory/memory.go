@@ -6,9 +6,9 @@ import (
 	"encoding/base64"
 	"fmt"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/auth/webauthn"
-	"github.com/chris-alexander-pop/system-design-library/pkg/concurrency"
-	"github.com/chris-alexander-pop/system-design-library/pkg/errors"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/auth/webauthn"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/concurrency"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 )
 
 // SessionData is returned from Begin* and must be passed back to Finish*.

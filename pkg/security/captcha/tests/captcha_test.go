@@ -7,12 +7,12 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/errors"
-	"github.com/chris-alexander-pop/system-design-library/pkg/security"
-	"github.com/chris-alexander-pop/system-design-library/pkg/security/captcha"
-	"github.com/chris-alexander-pop/system-design-library/pkg/security/captcha/adapters/memory"
-	"github.com/chris-alexander-pop/system-design-library/pkg/security/captcha/adapters/recaptcha"
-	"github.com/chris-alexander-pop/system-design-library/pkg/test"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/security"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/security/captcha"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/security/captcha/adapters/memory"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/security/captcha/adapters/recaptcha"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/test"
 )
 
 type CaptchaTestSuite struct {

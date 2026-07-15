@@ -4,8 +4,8 @@ import (
 	"context"
 	"sync/atomic"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/analytics"
-	"github.com/chris-alexander-pop/system-design-library/pkg/errors"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/analytics"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 	goredis "github.com/redis/go-redis/v9"
 )
 

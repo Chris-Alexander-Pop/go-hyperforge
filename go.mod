@@ -1,4 +1,4 @@
-module github.com/chris-alexander-pop/system-design-library
+module github.com/chris-alexander-pop/go-hyperforge
 
 go 1.25.5
 

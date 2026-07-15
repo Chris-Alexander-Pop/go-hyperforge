@@ -5,8 +5,8 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/network/loadbalancer"
-	"github.com/chris-alexander-pop/system-design-library/pkg/network/loadbalancer/adapters/memory"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/network/loadbalancer"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/network/loadbalancer/adapters/memory"
 	"github.com/stretchr/testify/suite"
 )
 

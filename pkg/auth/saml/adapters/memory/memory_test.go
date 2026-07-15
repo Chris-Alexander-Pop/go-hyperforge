@@ -7,11 +7,11 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/auth"
-	"github.com/chris-alexander-pop/system-design-library/pkg/auth/saml"
-	"github.com/chris-alexander-pop/system-design-library/pkg/auth/saml/adapters/memory"
-	"github.com/chris-alexander-pop/system-design-library/pkg/errors"
-	"github.com/chris-alexander-pop/system-design-library/pkg/test"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/auth"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/auth/saml"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/auth/saml/adapters/memory"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/test"
 )
 
 type SAMLSuite struct {

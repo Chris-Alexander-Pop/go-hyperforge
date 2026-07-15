@@ -3,7 +3,7 @@ package memory
 import (
 	"context"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/security/captcha"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/security/captcha"
 )
 
 // Verifier implements captcha.Verifier using simple memory checks.

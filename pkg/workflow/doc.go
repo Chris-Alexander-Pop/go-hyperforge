@@ -16,7 +16,7 @@
 //
 // Usage:
 //
-//	import "github.com/chris-alexander-pop/system-design-library/pkg/workflow/adapters/memory"
+//	import "github.com/chris-alexander-pop/go-hyperforge/pkg/workflow/adapters/memory"
 //
 //	engine := memory.New()
 //	exec, err := engine.Start(ctx, workflow.StartOptions{WorkflowID: "order-123", Input: orderData})

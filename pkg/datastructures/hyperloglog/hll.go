@@ -13,7 +13,7 @@ import (
 	"math"
 	"math/bits"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/concurrency"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/concurrency"
 )
 
 // HyperLogLog is a probabilistic cardinality estimator.

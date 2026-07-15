@@ -4,8 +4,8 @@ import (
 	"context"
 	"time"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/concurrency/distlock"
-	"github.com/chris-alexander-pop/system-design-library/pkg/errors"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/concurrency/distlock"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 	"github.com/google/uuid"
 	"github.com/redis/go-redis/v9"
 )

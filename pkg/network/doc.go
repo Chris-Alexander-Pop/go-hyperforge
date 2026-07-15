@@ -6,7 +6,7 @@ For HTTP/REST APIs, use pkg/api instead.
 
 Usage:
 
-	import "github.com/chris-alexander-pop/system-design-library/pkg/network"
+	import "github.com/chris-alexander-pop/go-hyperforge/pkg/network"
 
 	// Create a TCP server
 	server := network.NewTCPServer(network.Config{

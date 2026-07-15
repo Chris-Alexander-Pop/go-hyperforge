@@ -9,6 +9,6 @@ to provide high-level rate limiting capabilities for APIs:
   - Middleware integration for HTTP/gRPC
 
 For the underlying algorithm implementations, see:
-github.com/chris-alexander-pop/system-design-library/pkg/algorithms/ratelimit
+github.com/chris-alexander-pop/go-hyperforge/pkg/algorithms/ratelimit
 */
 package ratelimit

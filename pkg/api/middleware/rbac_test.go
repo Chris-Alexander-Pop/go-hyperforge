@@ -6,8 +6,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/api/middleware"
-	"github.com/chris-alexander-pop/system-design-library/pkg/api/rbac"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/api/middleware"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/api/rbac"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

@@ -42,6 +42,11 @@ Landed foundation/reuse/domain hardening (scores above are the *pre-fix* snapsho
 - 🔄 Remaining large gaps still listed below (cloud IaaS adapters, security scanners/GuardDuty/GCP-Azure KMS, Cassandra KV, etc.)
 - ✅ `security`: Vault KV v2, AWS KMS Encrypt/Decrypt, Cloudflare WAF IP access rules
 - ✅ `audit`: SQL/Postgres durable store, messaging fanout, hash-chain, retention/GDPR
+- ✅ Module branding: `go.mod` + all imports → `github.com/chris-alexander-pop/go-hyperforge` (was `system-design-library`)
+- ✅ `servicemesh/discovery/adapters/consul` HTTP agent/health API + httptest tests
+- ✅ `iot`: CoAP stub protocol (`protocols/coap`) + `device/registry` interface/memory
+- ✅ `algorithms/loadbalancing`: Maglev + P2C
+- ✅ `workflow` memory engine: real Task/Wait state-machine execution + idempotency key
 
 ---
 
@@ -92,7 +97,7 @@ Landed foundation/reuse/domain hardening (scores above are the *pre-fix* snapsho
 - [ ] 🔗 Emit domain events via `pkg/events` where standards §9 apply
 - [ ] ❌ Package `errors.go` + `instrumented.go` + `adapters/memory/` where PACKAGE_STANDARDS require them
 - [ ] ❌ Interface tests / `pkg/test` suites for every adapter surface
-- [ ] ⚠️ Align module branding (`go-hyperforge` vs `system-design-library` in go.mod/imports)
+- [x] ✅ Align module branding (`go.mod` + imports → `github.com/chris-alexander-pop/go-hyperforge`; rename done)
 - [ ] ⚠️ Demote false ✅ in `pkg/TODO.md` to 🔄/❌ to match this backlog
 
 ---
@@ -308,7 +313,7 @@ Landed foundation/reuse/domain hardening (scores above are the *pre-fix* snapsho
 ### `pkg/servicemesh` (~25)
 - [ ] 🔗 **Delete or thin-wrap** circuitbreaker → `pkg/resilience`
 - [ ] 🔗 **Delete or thin-wrap** ratelimit → `pkg/algorithms/ratelimit` (+ `pkg/api/ratelimit`)
-- [ ] ❌ Keep/expand discovery with Consul/etcd/K8s adapters
+- [x] ✅ Consul HTTP discovery adapter (`adapters/consul`) + httptest tests; etcd/K8s still open
 - [ ] ❌ Mesh: mTLS, retry reuse, honest docs
 
 ### `pkg/storage` — see Data & storage
@@ -333,8 +338,8 @@ Landed foundation/reuse/domain hardening (scores above are the *pre-fix* snapsho
 - [ ] ❌ Demote TODO ✅ → 🔄
 
 ### `pkg/workflow` (~38)
-- [ ] ❌ Real state-machine execution; honor timeout/idempotency
-- [ ] 🔗 Scheduler + `pkg/concurrency/distlock`; saga + `pkg/events`/`messaging`
+- [x] ✅ Memory engine Task/Wait state-machine execution + IdempotencyKey; timeout still honored on empty/legacy path
+- [x] 🔗 Scheduler + `pkg/concurrency/distlock`; saga + `pkg/events`/`messaging`
 - [ ] ❌ Durable saga; real cron; cloud adapter completeness
 - [ ] ❌ Saga/scheduler instrumented + interfaces
 
@@ -342,7 +347,7 @@ Landed foundation/reuse/domain hardening (scores above are the *pre-fix* snapsho
 - [x] ✅ Root Client/Updater interfaces + memory adapters + instrumented + tests
 - [x] 🔗 `pkg/resilience` for OTA downloads; `pkg/concurrency` for MQTT/memory
 - [x] ✅ MQTT WaitTimeout bug fixed; OTA semver via `golang.org/x/mod/semver`
-- [ ] ❌ CoAP; device registry/certs; `pkg/storage/blob` firmware backing
+- [x] ✅ CoAP stub (`protocols/coap`) + device registry interface/memory; certs + blob firmware backing still open
 - [ ] ❌ AWS IoT / Greengrass behind root Client interface
 - [x] ✅ Demoted TODO overclaims
 
@@ -374,7 +379,7 @@ Landed foundation/reuse/domain hardening (scores above are the *pre-fix* snapsho
 - [x] ✅ Soften Raft/Paxos/Chord/SWIM/Louvain docs as educational stubs; DistLimiter uses cache store
 - [x] ✅ Sliding window counter (weighted prev+curr windows); Local remains exact log
 - [x] 🔗 Dijkstra/A* reuse `pkg/datastructures/heap`; shared `algorithms/graph` types
-- [ ] ❌ Health-aware / sticky LB; Maglev/P2C
+- [x] ✅ Maglev + P2C loadbalancing; health-aware / sticky LB still open
 - [ ] ❌ Finish Raft/Paxos/Chord/SWIM/Louvain beyond educational stubs
 
 ### `pkg/datastructures` (~58)

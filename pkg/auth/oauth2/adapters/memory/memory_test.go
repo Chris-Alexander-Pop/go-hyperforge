@@ -7,9 +7,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/auth/oauth2"
-	"github.com/chris-alexander-pop/system-design-library/pkg/auth/oauth2/adapters/memory"
-	"github.com/chris-alexander-pop/system-design-library/pkg/errors"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/auth/oauth2"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/auth/oauth2/adapters/memory"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 )
 
 func TestAuthorizationCodeFlow(t *testing.T) {

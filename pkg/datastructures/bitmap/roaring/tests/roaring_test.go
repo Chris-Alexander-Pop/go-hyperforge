@@ -3,7 +3,7 @@ package roaring_test
 import (
 	"testing"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/datastructures/bitmap/roaring"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/datastructures/bitmap/roaring"
 )
 
 func TestRoaring_AddContains(t *testing.T) {

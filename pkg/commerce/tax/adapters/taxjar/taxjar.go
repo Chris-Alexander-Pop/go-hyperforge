@@ -11,11 +11,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/commerce"
-	"github.com/chris-alexander-pop/system-design-library/pkg/commerce/tax"
-	"github.com/chris-alexander-pop/system-design-library/pkg/errors"
-	"github.com/chris-alexander-pop/system-design-library/pkg/resilience"
-	"github.com/chris-alexander-pop/system-design-library/pkg/validator"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/commerce"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/commerce/tax"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/resilience"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/validator"
 )
 
 const defaultBaseURL = "https://api.taxjar.com"

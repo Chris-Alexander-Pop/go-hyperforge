@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/cloud"
-	"github.com/chris-alexander-pop/system-design-library/pkg/cloud/hypervisor"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/cloud"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/cloud/hypervisor"
 	"github.com/google/uuid"
 )
 

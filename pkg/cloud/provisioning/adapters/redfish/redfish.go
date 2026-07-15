@@ -9,9 +9,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/cloud"
-	"github.com/chris-alexander-pop/system-design-library/pkg/cloud/provisioning"
-	pkgerrors "github.com/chris-alexander-pop/system-design-library/pkg/errors"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/cloud"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/cloud/provisioning"
+	pkgerrors "github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 )
 
 // Config holds Redfish BMC configuration.

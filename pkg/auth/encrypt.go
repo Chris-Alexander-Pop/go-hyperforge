@@ -5,7 +5,7 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/security/crypto"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/security/crypto"
 )
 
 // NewAESEncryptorFromKey builds an AES-GCM encryptor from a configured key string.

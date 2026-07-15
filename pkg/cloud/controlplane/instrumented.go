@@ -3,8 +3,8 @@ package controlplane
 import (
 	"context"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/cloud"
-	"github.com/chris-alexander-pop/system-design-library/pkg/logger"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/cloud"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/logger"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"

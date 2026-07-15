@@ -5,7 +5,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/compute/vm"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/compute/vm"
 	compute "google.golang.org/api/compute/v1"
 )
 

@@ -1,6 +1,6 @@
 package oauth2
 
-import "github.com/chris-alexander-pop/system-design-library/pkg/errors"
+import "github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 
 // Re-export auth domain codes for oauth2 callers that import this package only.
 const (

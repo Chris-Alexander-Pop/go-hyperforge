@@ -3,7 +3,7 @@ package transfer
 import (
 	"context"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/errors" // Import our error package
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/errors" // Import our error package
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )

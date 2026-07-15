@@ -11,10 +11,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/errors"
-	"github.com/chris-alexander-pop/system-design-library/pkg/resilience"
-	"github.com/chris-alexander-pop/system-design-library/pkg/security/waf"
-	"github.com/chris-alexander-pop/system-design-library/pkg/validator"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/resilience"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/security/waf"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/validator"
 )
 
 const defaultAPIBase = "https://api.cloudflare.com/client/v4"

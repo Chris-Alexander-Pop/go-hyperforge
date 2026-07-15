@@ -7,8 +7,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/compute/vm"
-	pkgerrors "github.com/chris-alexander-pop/system-design-library/pkg/errors"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/compute/vm"
+	pkgerrors "github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 	compute "google.golang.org/api/compute/v1"
 	"google.golang.org/api/option"
 )

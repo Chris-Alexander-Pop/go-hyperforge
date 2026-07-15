@@ -3,8 +3,8 @@ package messaging
 import (
 	"context"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/concurrency"
-	"github.com/chris-alexander-pop/system-design-library/pkg/datastructures/bloomfilter"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/concurrency"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/datastructures/bloomfilter"
 )
 
 // DeduplicatingConsumer wraps a Consumer with message deduplication using a Bloom filter.

@@ -4,8 +4,8 @@ package chains
 import (
 	"context"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/ai/genai/llm"
-	"github.com/chris-alexander-pop/system-design-library/pkg/ai/genai/llm/memory"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/ai/genai/llm"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/ai/genai/llm/memory"
 )
 
 // Chain is a unit of work.

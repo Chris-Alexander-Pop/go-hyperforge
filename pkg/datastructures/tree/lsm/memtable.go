@@ -3,7 +3,7 @@ package lsm
 import (
 	"sync"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/datastructures/skiplist"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/datastructures/skiplist"
 )
 
 // MemTable is an in-memory table sorted by key (using a SkipList).

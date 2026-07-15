@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/algorithms/ratelimit/tokenbucket"
-	"github.com/chris-alexander-pop/system-design-library/pkg/cache/adapters/memory"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/algorithms/ratelimit/tokenbucket"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/cache/adapters/memory"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

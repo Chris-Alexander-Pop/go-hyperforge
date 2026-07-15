@@ -1,7 +1,7 @@
 package disruptor_test
 
 import (
-	"github.com/chris-alexander-pop/system-design-library/pkg/datastructures/queue/disruptor"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/datastructures/queue/disruptor"
 	"sync"
 	"testing"
 )

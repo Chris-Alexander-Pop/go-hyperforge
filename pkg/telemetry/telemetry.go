@@ -5,9 +5,9 @@ import (
 	"io"
 	"strings"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/errors"
-	"github.com/chris-alexander-pop/system-design-library/pkg/telemetry/adapters/noop"
-	"github.com/chris-alexander-pop/system-design-library/pkg/telemetry/adapters/stdout"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/telemetry/adapters/noop"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/telemetry/adapters/stdout"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"

@@ -9,7 +9,7 @@ package saml
 import (
 	"context"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/auth"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/auth"
 )
 
 // Config configures a SAML Service Provider client.

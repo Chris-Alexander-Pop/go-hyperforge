@@ -11,8 +11,8 @@ Subpackages:
 
 Usage:
 
-	import "github.com/chris-alexander-pop/system-design-library/pkg/storage/blob"
-	import "github.com/chris-alexander-pop/system-design-library/pkg/storage/blob/adapters/s3"
+	import "github.com/chris-alexander-pop/go-hyperforge/pkg/storage/blob"
+	import "github.com/chris-alexander-pop/go-hyperforge/pkg/storage/blob/adapters/s3"
 
 	store, err := s3.New(ctx, cfg)
 	err = store.Upload(ctx, "key", data)

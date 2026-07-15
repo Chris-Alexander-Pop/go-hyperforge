@@ -13,8 +13,8 @@ Planned but not yet implemented: Mailgun, WebPush, and first-party WebSocket cha
 
 Usage:
 
-	import "github.com/chris-alexander-pop/system-design-library/pkg/communication/email"
-	import "github.com/chris-alexander-pop/system-design-library/pkg/communication/email/adapters/sendgrid"
+	import "github.com/chris-alexander-pop/go-hyperforge/pkg/communication/email"
+	import "github.com/chris-alexander-pop/go-hyperforge/pkg/communication/email/adapters/sendgrid"
 
 	sender, err := sendgrid.New(cfg)
 	err = sender.Send(ctx, &email.Message{To: []string{"user@example.com"}, Subject: "Hello"})

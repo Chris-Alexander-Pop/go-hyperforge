@@ -8,9 +8,9 @@ import (
 	"time"
 
 	"github.com/alicebob/miniredis/v2"
-	"github.com/chris-alexander-pop/system-design-library/pkg/cache"
-	"github.com/chris-alexander-pop/system-design-library/pkg/cache/adapters/memory"
-	cacheredis "github.com/chris-alexander-pop/system-design-library/pkg/cache/adapters/redis"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/cache"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/cache/adapters/memory"
+	cacheredis "github.com/chris-alexander-pop/go-hyperforge/pkg/cache/adapters/redis"
 	goredis "github.com/redis/go-redis/v9"
 )
 

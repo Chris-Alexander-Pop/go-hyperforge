@@ -4,7 +4,7 @@ import (
 	"context"
 	"sync"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/algorithms/loadbalancing"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/algorithms/loadbalancing"
 )
 
 // Balancer selects the node with the fewest active connections.

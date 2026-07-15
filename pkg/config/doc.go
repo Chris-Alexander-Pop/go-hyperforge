@@ -10,7 +10,7 @@ pkg/errors.InvalidArgument.
 
 Usage:
 
-	import "github.com/chris-alexander-pop/system-design-library/pkg/config"
+	import "github.com/chris-alexander-pop/go-hyperforge/pkg/config"
 
 	type AppConfig struct {
 		Port     int    `env:"PORT" env-default:"8080"`

@@ -12,8 +12,8 @@ import (
 	"encoding/json"
 	"log/slog"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/audit"
-	pkglogger "github.com/chris-alexander-pop/system-design-library/pkg/logger"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/audit"
+	pkglogger "github.com/chris-alexander-pop/go-hyperforge/pkg/logger"
 )
 
 // Ensure compile-time interface compliance.

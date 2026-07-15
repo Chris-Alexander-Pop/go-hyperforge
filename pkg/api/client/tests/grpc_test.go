@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/api/client/grpc"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/api/client/grpc"
 )
 
 func TestNewGRPCClient(t *testing.T) {

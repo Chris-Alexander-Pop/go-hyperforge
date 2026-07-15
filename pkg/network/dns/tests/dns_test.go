@@ -4,8 +4,8 @@ import (
 	"context"
 	"testing"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/network/dns"
-	"github.com/chris-alexander-pop/system-design-library/pkg/network/dns/adapters/memory"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/network/dns"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/network/dns/adapters/memory"
 	"github.com/stretchr/testify/suite"
 )
 

@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/database/kv"
-	"github.com/chris-alexander-pop/system-design-library/pkg/errors"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/database/kv"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 	"github.com/redis/go-redis/v9"
 )
 

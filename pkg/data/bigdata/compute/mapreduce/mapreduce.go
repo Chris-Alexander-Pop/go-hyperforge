@@ -4,7 +4,7 @@ import (
 	"context"
 	"sync"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/concurrency"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/concurrency"
 )
 
 // Mapper function: Key, Value -> []KeyValue

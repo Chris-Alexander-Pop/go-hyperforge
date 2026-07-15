@@ -6,7 +6,7 @@ new code; this package is not yet adapted behind the root Client interface.
 
 Usage:
 
-	import "github.com/chris-alexander-pop/system-design-library/pkg/web3/blockchain/ethereum"
+	import "github.com/chris-alexander-pop/go-hyperforge/pkg/web3/blockchain/ethereum"
 
 	client, err := ethereum.New(ethereum.Config{RPCURL: "https://mainnet.infura.io/v3/..."})
 	balance, err := client.GetBalance(ctx, "0x...")

@@ -5,8 +5,8 @@ import (
 	"strings"
 	"sync/atomic"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/concurrency"
-	"github.com/chris-alexander-pop/system-design-library/pkg/iot"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/concurrency"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/iot"
 )
 
 // Ensure compile-time interface compliance.

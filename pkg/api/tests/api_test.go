@@ -3,9 +3,9 @@ package api_test
 import (
 	"testing"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/api"
-	"github.com/chris-alexander-pop/system-design-library/pkg/api/rest"
-	"github.com/chris-alexander-pop/system-design-library/pkg/errors"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/api"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/api/rest"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

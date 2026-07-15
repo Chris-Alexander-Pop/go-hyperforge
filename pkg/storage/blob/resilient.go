@@ -5,7 +5,7 @@ import (
 	"io"
 	"time"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/resilience"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/resilience"
 )
 
 // ResilientConfig configures the resilient blob store wrapper.

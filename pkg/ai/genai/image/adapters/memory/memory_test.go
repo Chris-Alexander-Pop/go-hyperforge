@@ -5,9 +5,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/ai/genai/image"
-	imgmemory "github.com/chris-alexander-pop/system-design-library/pkg/ai/genai/image/adapters/memory"
-	"github.com/chris-alexander-pop/system-design-library/pkg/errors"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/ai/genai/image"
+	imgmemory "github.com/chris-alexander-pop/go-hyperforge/pkg/ai/genai/image/adapters/memory"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 )
 
 func TestGenerate(t *testing.T) {

@@ -5,12 +5,12 @@ import (
 	"crypto/subtle"
 	"time"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/auth"
-	"github.com/chris-alexander-pop/system-design-library/pkg/auth/mfa"
-	"github.com/chris-alexander-pop/system-design-library/pkg/auth/mfa/otp"
-	"github.com/chris-alexander-pop/system-design-library/pkg/concurrency"
-	pkgerrors "github.com/chris-alexander-pop/system-design-library/pkg/errors"
-	"github.com/chris-alexander-pop/system-design-library/pkg/security/crypto"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/auth"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/auth/mfa"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/auth/mfa/otp"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/concurrency"
+	pkgerrors "github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/security/crypto"
 )
 
 // MFAProvider implements mfa.Provider using in-memory storage.

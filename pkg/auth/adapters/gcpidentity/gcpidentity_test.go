@@ -8,9 +8,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/auth"
-	"github.com/chris-alexander-pop/system-design-library/pkg/auth/adapters/gcpidentity"
-	"github.com/chris-alexander-pop/system-design-library/pkg/errors"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/auth"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/auth/adapters/gcpidentity"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 )
 
 type roundTripFunc func(*http.Request) (*http.Response, error)

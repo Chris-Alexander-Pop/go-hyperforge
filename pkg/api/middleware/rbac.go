@@ -3,7 +3,7 @@ package middleware
 import (
 	"net/http"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/api/rbac"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/api/rbac"
 )
 
 // RequirePermission returns middleware that allows the request only when one of

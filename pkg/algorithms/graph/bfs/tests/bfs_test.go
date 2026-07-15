@@ -4,8 +4,8 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/algorithms/graph"
-	"github.com/chris-alexander-pop/system-design-library/pkg/algorithms/graph/bfs"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/algorithms/graph"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/algorithms/graph/bfs"
 )
 
 func sampleGraph() graph.AdjacencyList {

@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/datastructures/graph"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/datastructures/graph"
 )
 
 func TestGraph_BFS(t *testing.T) {

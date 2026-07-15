@@ -7,7 +7,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/kinesis"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/streaming"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/streaming"
 )
 
 // Ensure Adapter implements streaming.Client.

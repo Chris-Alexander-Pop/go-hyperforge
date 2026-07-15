@@ -2,7 +2,7 @@
 //
 // Usage:
 //
-//	import "github.com/chris-alexander-pop/system-design-library/pkg/ai/ml/vertexai"
+//	import "github.com/chris-alexander-pop/go-hyperforge/pkg/ai/ml/vertexai"
 //
 //	trainer, err := vertexai.New(vertexai.Config{ProjectID: "my-project", Region: "us-central1"})
 //	job, err := trainer.StartJob(ctx, training.JobConfig{...})
@@ -16,8 +16,8 @@ import (
 
 	aiplatform "cloud.google.com/go/aiplatform/apiv1"
 	"cloud.google.com/go/aiplatform/apiv1/aiplatformpb"
-	"github.com/chris-alexander-pop/system-design-library/pkg/ai/ml/training"
-	pkgerrors "github.com/chris-alexander-pop/system-design-library/pkg/errors"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/ai/ml/training"
+	pkgerrors "github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/option"
 	"google.golang.org/protobuf/types/known/structpb"

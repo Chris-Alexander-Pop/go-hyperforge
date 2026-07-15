@@ -4,10 +4,10 @@ import (
 	"context"
 	"testing"
 
-	embedmem "github.com/chris-alexander-pop/system-design-library/pkg/ai/nlp/embedding/adapters/memory"
-	"github.com/chris-alexander-pop/system-design-library/pkg/ai/nlp/rag"
-	"github.com/chris-alexander-pop/system-design-library/pkg/database/rerank"
-	vecmem "github.com/chris-alexander-pop/system-design-library/pkg/database/vector/adapters/memory"
+	embedmem "github.com/chris-alexander-pop/go-hyperforge/pkg/ai/nlp/embedding/adapters/memory"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/ai/nlp/rag"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/database/rerank"
+	vecmem "github.com/chris-alexander-pop/go-hyperforge/pkg/database/vector/adapters/memory"
 )
 
 func TestRAG_RetrieveWithRerankAndFilter(t *testing.T) {

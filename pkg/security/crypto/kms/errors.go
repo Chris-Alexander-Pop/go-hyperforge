@@ -1,6 +1,6 @@
 package kms
 
-import "github.com/chris-alexander-pop/system-design-library/pkg/errors"
+import "github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 
 const (
 	CodeInvalidArgument = "KMS_INVALID_ARGUMENT"

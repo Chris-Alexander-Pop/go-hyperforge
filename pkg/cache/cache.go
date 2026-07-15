@@ -7,8 +7,8 @@
 // Usage:
 //
 //	import (
-//		"github.com/chris-alexander-pop/system-design-library/pkg/cache"
-//		_ "github.com/chris-alexander-pop/system-design-library/pkg/cache/adapters/memory"
+//		"github.com/chris-alexander-pop/go-hyperforge/pkg/cache"
+//		_ "github.com/chris-alexander-pop/go-hyperforge/pkg/cache/adapters/memory"
 //	)
 //
 //	c, err := cache.NewFromConfig(cache.Config{Driver: "memory"})

@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/AzureAD/microsoft-authentication-library-for-go/apps/public"
-	"github.com/chris-alexander-pop/system-design-library/pkg/auth/cloud"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/auth/cloud"
 )
 
 type Adapter struct {

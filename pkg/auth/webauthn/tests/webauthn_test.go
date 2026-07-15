@@ -3,9 +3,9 @@ package tests
 import (
 	"testing"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/auth/webauthn"
-	"github.com/chris-alexander-pop/system-design-library/pkg/auth/webauthn/adapters/memory"
-	"github.com/chris-alexander-pop/system-design-library/pkg/test"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/auth/webauthn"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/auth/webauthn/adapters/memory"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/test"
 )
 
 type WebAuthnTestSuite struct {

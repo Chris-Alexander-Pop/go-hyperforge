@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"testing"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/data/bigdata/formats/parquet"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/data/bigdata/formats/parquet"
 )
 
 type User struct {

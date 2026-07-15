@@ -5,10 +5,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/ai/genai/gateway"
-	"github.com/chris-alexander-pop/system-design-library/pkg/ai/genai/llm"
-	"github.com/chris-alexander-pop/system-design-library/pkg/ai/genai/llm/adapters/memory"
-	"github.com/chris-alexander-pop/system-design-library/pkg/errors"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/ai/genai/gateway"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/ai/genai/llm"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/ai/genai/llm/adapters/memory"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 )
 
 // failingClient always fails Chat/StreamChat.

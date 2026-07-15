@@ -2,7 +2,7 @@
 //
 // Usage:
 //
-//	import "github.com/chris-alexander-pop/system-design-library/pkg/ai/ml/azureml"
+//	import "github.com/chris-alexander-pop/go-hyperforge/pkg/ai/ml/azureml"
 //
 //	trainer, err := azureml.New(azureml.Config{SubscriptionID: "...", ResourceGroup: "rg", Workspace: "ws"})
 //	job, err := trainer.StartJob(ctx, training.JobConfig{...})
@@ -17,8 +17,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/ai/ml/training"
-	pkgerrors "github.com/chris-alexander-pop/system-design-library/pkg/errors"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/ai/ml/training"
+	pkgerrors "github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 )
 
 // Config holds Azure ML configuration.

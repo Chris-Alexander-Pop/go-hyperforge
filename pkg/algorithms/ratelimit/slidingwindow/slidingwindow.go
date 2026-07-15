@@ -5,9 +5,9 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/algorithms/ratelimit"
-	"github.com/chris-alexander-pop/system-design-library/pkg/cache"
-	"github.com/chris-alexander-pop/system-design-library/pkg/errors"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/algorithms/ratelimit"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/cache"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 )
 
 // Limiter implements a true sliding-window counter using two adjacent fixed

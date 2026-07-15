@@ -4,7 +4,7 @@ import (
 	"crypto/rand"
 	"testing"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/datastructures/sketch/hllpp"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/datastructures/sketch/hllpp"
 )
 
 func BenchmarkAdd(b *testing.B) {

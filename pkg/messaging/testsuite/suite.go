@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/messaging"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/messaging"
 )
 
 // RunBrokerTests runs the full test suite against a Broker implementation.

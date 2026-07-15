@@ -3,8 +3,8 @@ package memory
 import (
 	"context"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/ai/perception/ocr"
-	"github.com/chris-alexander-pop/system-design-library/pkg/errors"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/ai/perception/ocr"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 )
 
 // OCRClient implements ocr.OCRClient using mock data.

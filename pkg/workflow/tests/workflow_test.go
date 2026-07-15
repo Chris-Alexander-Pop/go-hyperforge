@@ -8,13 +8,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/concurrency/distlock/adapters/memory"
-	"github.com/chris-alexander-pop/system-design-library/pkg/events"
-	eventsmemory "github.com/chris-alexander-pop/system-design-library/pkg/events/adapters/memory"
-	"github.com/chris-alexander-pop/system-design-library/pkg/workflow"
-	workflowmemory "github.com/chris-alexander-pop/system-design-library/pkg/workflow/adapters/memory"
-	"github.com/chris-alexander-pop/system-design-library/pkg/workflow/saga"
-	"github.com/chris-alexander-pop/system-design-library/pkg/workflow/scheduler"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/concurrency/distlock/adapters/memory"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/events"
+	eventsmemory "github.com/chris-alexander-pop/go-hyperforge/pkg/events/adapters/memory"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/workflow"
+	workflowmemory "github.com/chris-alexander-pop/go-hyperforge/pkg/workflow/adapters/memory"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/workflow/saga"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/workflow/scheduler"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -200,6 +200,49 @@ func (s *WorkflowEngineSuite) TestInstrumentedEngine() {
 	exec, err := engine.Start(s.ctx, workflow.StartOptions{WorkflowID: "inst-wf"})
 	s.Require().NoError(err)
 	s.NotEmpty(exec.ID)
+}
+
+func (s *WorkflowEngineSuite) TestStateMachineTaskAndWait() {
+	raw := workflowmemory.New()
+	eng := raw.(*workflowmemory.Engine)
+	eng.RegisterTaskHandler("double", func(ctx context.Context, input interface{}) (interface{}, error) {
+		m := input.(map[string]int)
+		return map[string]int{"n": m["n"] * 2}, nil
+	})
+
+	err := eng.RegisterWorkflow(s.ctx, workflow.WorkflowDefinition{
+		ID:      "sm-wf",
+		StartAt: "wait-a-bit",
+		States: []workflow.State{
+			{Name: "wait-a-bit", Type: "Wait", Seconds: 0, Next: "double"},
+			{Name: "double", Type: "Task", Resource: "double", End: true},
+		},
+	})
+	s.Require().NoError(err)
+
+	exec, err := eng.Start(s.ctx, workflow.StartOptions{
+		WorkflowID:     "sm-wf",
+		Input:          map[string]int{"n": 21},
+		IdempotencyKey: "sm-once",
+	})
+	s.Require().NoError(err)
+
+	// Idempotent re-start returns the same execution.
+	again, err := eng.Start(s.ctx, workflow.StartOptions{
+		WorkflowID:     "sm-wf",
+		Input:          map[string]int{"n": 99},
+		IdempotencyKey: "sm-once",
+	})
+	s.Require().NoError(err)
+	s.Equal(exec.ID, again.ID)
+
+	ctx, cancel := context.WithTimeout(s.ctx, time.Second)
+	defer cancel()
+	result, err := eng.Wait(ctx, exec.ID)
+	s.Require().NoError(err)
+	s.Equal(workflow.StatusCompleted, result.Status)
+	out := result.Output.(map[string]int)
+	s.Equal(42, out["n"])
 }
 
 // SagaSuite tests the Saga pattern.

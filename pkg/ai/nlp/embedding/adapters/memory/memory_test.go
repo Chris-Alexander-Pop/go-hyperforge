@@ -4,8 +4,8 @@ import (
 	"context"
 	"testing"
 
-	embmemory "github.com/chris-alexander-pop/system-design-library/pkg/ai/nlp/embedding/adapters/memory"
-	"github.com/chris-alexander-pop/system-design-library/pkg/errors"
+	embmemory "github.com/chris-alexander-pop/go-hyperforge/pkg/ai/nlp/embedding/adapters/memory"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 )
 
 func TestEmbedDeterministic(t *testing.T) {

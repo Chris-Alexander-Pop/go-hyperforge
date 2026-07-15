@@ -24,8 +24,8 @@ Package enterprise provides Domain-Driven Design (DDD), CQRS, and Event Sourcing
 
 Import a subpackage directly:
 
-	import "github.com/chris-alexander-pop/system-design-library/pkg/enterprise/ddd"
-	import "github.com/chris-alexander-pop/system-design-library/pkg/enterprise/cqrs"
-	import "github.com/chris-alexander-pop/system-design-library/pkg/enterprise/eventsource"
+	import "github.com/chris-alexander-pop/go-hyperforge/pkg/enterprise/ddd"
+	import "github.com/chris-alexander-pop/go-hyperforge/pkg/enterprise/cqrs"
+	import "github.com/chris-alexander-pop/go-hyperforge/pkg/enterprise/eventsource"
 */
 package enterprise

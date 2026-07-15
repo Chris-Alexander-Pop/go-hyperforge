@@ -2,7 +2,7 @@
 //
 // Usage:
 //
-//	import "github.com/chris-alexander-pop/system-design-library/pkg/ai/genai/llm"
+//	import "github.com/chris-alexander-pop/go-hyperforge/pkg/ai/genai/llm"
 //
 //	client, err := openai.New("key")
 //	resp, err := client.Chat(ctx, []llm.Message{{Role: llm.RoleUser, Content: "Hello"}})

@@ -7,9 +7,9 @@ import (
 	"time"
 	"unicode"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/concurrency"
-	"github.com/chris-alexander-pop/system-design-library/pkg/data/search"
-	"github.com/chris-alexander-pop/system-design-library/pkg/errors"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/concurrency"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/data/search"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 )
 
 // document represents a stored document.

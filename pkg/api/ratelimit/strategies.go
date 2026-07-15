@@ -1,12 +1,12 @@
 package ratelimit
 
 import (
-	"github.com/chris-alexander-pop/system-design-library/pkg/algorithms/ratelimit"
-	"github.com/chris-alexander-pop/system-design-library/pkg/algorithms/ratelimit/fixedwindow"
-	"github.com/chris-alexander-pop/system-design-library/pkg/algorithms/ratelimit/leakybucket"
-	"github.com/chris-alexander-pop/system-design-library/pkg/algorithms/ratelimit/slidingwindow"
-	"github.com/chris-alexander-pop/system-design-library/pkg/algorithms/ratelimit/tokenbucket"
-	"github.com/chris-alexander-pop/system-design-library/pkg/cache"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/algorithms/ratelimit"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/algorithms/ratelimit/fixedwindow"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/algorithms/ratelimit/leakybucket"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/algorithms/ratelimit/slidingwindow"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/algorithms/ratelimit/tokenbucket"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/cache"
 )
 
 // Strategy defines the rate limiting algorithm.

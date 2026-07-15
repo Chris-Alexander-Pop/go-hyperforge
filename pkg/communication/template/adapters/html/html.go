@@ -8,10 +8,10 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/communication"
-	tmpl "github.com/chris-alexander-pop/system-design-library/pkg/communication/template"
-	"github.com/chris-alexander-pop/system-design-library/pkg/concurrency"
-	"github.com/chris-alexander-pop/system-design-library/pkg/errors"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/communication"
+	tmpl "github.com/chris-alexander-pop/go-hyperforge/pkg/communication/template"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/concurrency"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 )
 
 // Engine renders templates using the standard library html/template package

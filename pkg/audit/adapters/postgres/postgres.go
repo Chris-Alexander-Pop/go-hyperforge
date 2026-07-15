@@ -10,7 +10,7 @@ package postgres
 import (
 	"database/sql"
 
-	auditsql "github.com/chris-alexander-pop/system-design-library/pkg/audit/adapters/sql"
+	auditsql "github.com/chris-alexander-pop/go-hyperforge/pkg/audit/adapters/sql"
 )
 
 // Config mirrors auditsql.Config without Dialect (always Postgres).

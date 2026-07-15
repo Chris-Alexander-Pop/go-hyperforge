@@ -3,7 +3,7 @@ package tax
 import (
 	"context"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/commerce"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/commerce"
 )
 
 // Config holds tax configuration.

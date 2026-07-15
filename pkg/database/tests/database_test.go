@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/database/sql"
-	"github.com/chris-alexander-pop/system-design-library/pkg/database/sql/adapters/postgres"
-	"github.com/chris-alexander-pop/system-design-library/pkg/test"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/database/sql"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/database/sql/adapters/postgres"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/test"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )

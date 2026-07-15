@@ -1,6 +1,6 @@
 package sdn
 
-import "github.com/chris-alexander-pop/system-design-library/pkg/errors"
+import "github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 
 var (
 	// ErrNetworkNotFound is returned when a requested network ID does not exist.

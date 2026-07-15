@@ -3,8 +3,8 @@ package neo4j_test
 import (
 	"testing"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/database/graph"
-	"github.com/chris-alexander-pop/system-design-library/pkg/database/graph/adapters/neo4j"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/database/graph"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/database/graph/adapters/neo4j"
 )
 
 func TestNew_RequiresHost(t *testing.T) {

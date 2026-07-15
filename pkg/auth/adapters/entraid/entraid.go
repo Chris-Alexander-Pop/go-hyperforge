@@ -6,8 +6,8 @@ import (
 	"sync"
 
 	"github.com/AzureAD/microsoft-authentication-library-for-go/apps/public"
-	pkgauth "github.com/chris-alexander-pop/system-design-library/pkg/auth"
-	"github.com/chris-alexander-pop/system-design-library/pkg/errors"
+	pkgauth "github.com/chris-alexander-pop/go-hyperforge/pkg/auth"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 	"github.com/coreos/go-oidc/v3/oidc"
 )
 

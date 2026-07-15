@@ -96,7 +96,14 @@ type State struct {
 
 	// TimeoutSeconds is the state timeout.
 	TimeoutSeconds int
+
+	// Seconds is the wait duration for Wait states (Step Functions-style).
+	Seconds int
 }
+
+// TaskHandler executes a Task state resource. Input is the current execution data;
+// the returned value becomes the next state's input (and final Output on End).
+type TaskHandler func(ctx context.Context, input interface{}) (interface{}, error)
 
 // RetryPolicy defines retry behavior.
 type RetryPolicy struct {

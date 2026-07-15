@@ -3,7 +3,7 @@ package arc
 import (
 	"container/list"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/concurrency"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/concurrency"
 )
 
 // Cache is a thread-safe Adaptive Replacement Cache.

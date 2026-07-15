@@ -4,10 +4,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/commerce"
-	"github.com/chris-alexander-pop/system-design-library/pkg/commerce/billing"
-	"github.com/chris-alexander-pop/system-design-library/pkg/commerce/billing/adapters/memory"
-	"github.com/chris-alexander-pop/system-design-library/pkg/test"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/commerce"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/commerce/billing"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/commerce/billing/adapters/memory"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/test"
 )
 
 type BillingTestSuite struct {

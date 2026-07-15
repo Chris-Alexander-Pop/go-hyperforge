@@ -6,12 +6,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/audit"
-	auditmem "github.com/chris-alexander-pop/system-design-library/pkg/audit/adapters/memory"
-	auditmsg "github.com/chris-alexander-pop/system-design-library/pkg/audit/adapters/messaging"
-	"github.com/chris-alexander-pop/system-design-library/pkg/messaging"
-	msgmem "github.com/chris-alexander-pop/system-design-library/pkg/messaging/adapters/memory"
-	"github.com/chris-alexander-pop/system-design-library/pkg/test"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/audit"
+	auditmem "github.com/chris-alexander-pop/go-hyperforge/pkg/audit/adapters/memory"
+	auditmsg "github.com/chris-alexander-pop/go-hyperforge/pkg/audit/adapters/messaging"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/messaging"
+	msgmem "github.com/chris-alexander-pop/go-hyperforge/pkg/messaging/adapters/memory"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/test"
 )
 
 type FanoutSuite struct {

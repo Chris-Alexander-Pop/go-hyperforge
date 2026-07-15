@@ -4,11 +4,11 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/api/ratelimit"
-	"github.com/chris-alexander-pop/system-design-library/pkg/audit"
-	auditlogger "github.com/chris-alexander-pop/system-design-library/pkg/audit/adapters/logger"
-	"github.com/chris-alexander-pop/system-design-library/pkg/cache"
-	"github.com/chris-alexander-pop/system-design-library/pkg/resilience"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/api/ratelimit"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/audit"
+	auditlogger "github.com/chris-alexander-pop/go-hyperforge/pkg/audit/adapters/logger"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/cache"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/resilience"
 )
 
 // Config contains all security configurations.

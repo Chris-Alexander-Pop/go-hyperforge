@@ -3,7 +3,7 @@ package mqtt
 import (
 	"time"
 
-	pkgerrors "github.com/chris-alexander-pop/system-design-library/pkg/errors"
+	pkgerrors "github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 	paho "github.com/eclipse/paho.mqtt.golang"
 )
 

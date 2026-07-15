@@ -4,8 +4,8 @@ import (
 	"context"
 	"sync"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/database/sharding"
-	"github.com/chris-alexander-pop/system-design-library/pkg/errors"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/database/sharding"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 	"gorm.io/gorm"
 )
 

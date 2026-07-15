@@ -1,7 +1,7 @@
 package paxos_test
 
 import (
-	"github.com/chris-alexander-pop/system-design-library/pkg/algorithms/consensus/paxos"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/algorithms/consensus/paxos"
 	"testing"
 )
 

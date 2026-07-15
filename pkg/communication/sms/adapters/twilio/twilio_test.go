@@ -4,9 +4,9 @@ import (
 	"context"
 	"testing"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/communication"
-	"github.com/chris-alexander-pop/system-design-library/pkg/communication/sms"
-	"github.com/chris-alexander-pop/system-design-library/pkg/communication/sms/adapters/twilio"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/communication"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/communication/sms"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/communication/sms/adapters/twilio"
 	"github.com/stretchr/testify/require"
 )
 

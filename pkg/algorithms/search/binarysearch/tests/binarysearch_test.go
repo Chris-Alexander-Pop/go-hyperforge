@@ -3,7 +3,7 @@ package binarysearch_test
 import (
 	"testing"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/algorithms/search/binarysearch"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/algorithms/search/binarysearch"
 )
 
 func TestSearch(t *testing.T) {

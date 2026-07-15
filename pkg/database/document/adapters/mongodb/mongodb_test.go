@@ -3,8 +3,8 @@ package mongodb
 import (
 	"testing"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/database"
-	"github.com/chris-alexander-pop/system-design-library/pkg/database/document"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/database"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/database/document"
 	"github.com/stretchr/testify/assert"
 )
 

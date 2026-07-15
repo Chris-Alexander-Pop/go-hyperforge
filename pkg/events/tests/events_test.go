@@ -8,9 +8,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/errors"
-	"github.com/chris-alexander-pop/system-design-library/pkg/events"
-	"github.com/chris-alexander-pop/system-design-library/pkg/events/adapters/memory"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/events"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/events/adapters/memory"
 )
 
 func TestMemoryBusPublishSubscribe(t *testing.T) {

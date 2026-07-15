@@ -5,7 +5,7 @@ import (
 	"math/rand"
 	"sync"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/algorithms/loadbalancing"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/algorithms/loadbalancing"
 )
 
 // Balancer implementation for Random selection.

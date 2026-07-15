@@ -5,9 +5,9 @@ import (
 	"io"
 	"strings"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/errors"
-	"github.com/chris-alexander-pop/system-design-library/pkg/storage/blob"
-	"github.com/chris-alexander-pop/system-design-library/pkg/test"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/storage/blob"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/test"
 )
 
 type BlobSuite struct {

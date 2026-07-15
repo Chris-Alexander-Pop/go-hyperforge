@@ -3,7 +3,7 @@ package arc_test
 import (
 	"testing"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/datastructures/arc"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/datastructures/arc"
 )
 
 func TestARC_BasicGetSet(t *testing.T) {

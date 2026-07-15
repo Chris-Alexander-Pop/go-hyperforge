@@ -4,8 +4,8 @@ import (
 	"context"
 	"time"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/communication"
-	"github.com/chris-alexander-pop/system-design-library/pkg/resilience"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/communication"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/resilience"
 )
 
 // ResilientSender wraps a Sender with retry (and optional circuit breaker) support.

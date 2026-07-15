@@ -5,8 +5,8 @@ import (
 	"context"
 	"hash/fnv"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/ai/nlp/embedding"
-	"github.com/chris-alexander-pop/system-design-library/pkg/errors"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/ai/nlp/embedding"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 )
 
 // Service implements embedding.Service with deterministic pseudo-vectors.

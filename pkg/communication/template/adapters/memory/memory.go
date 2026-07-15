@@ -6,9 +6,9 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/communication"
-	"github.com/chris-alexander-pop/system-design-library/pkg/concurrency"
-	"github.com/chris-alexander-pop/system-design-library/pkg/errors"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/communication"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/concurrency"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 )
 
 // Engine is an in-memory implementation of the template.Engine interface,

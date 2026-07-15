@@ -6,7 +6,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/messaging/azeventhubs"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/streaming"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/streaming"
 )
 
 // Ensure Adapter implements streaming.Client.

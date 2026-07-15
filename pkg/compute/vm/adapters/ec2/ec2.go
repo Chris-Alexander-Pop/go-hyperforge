@@ -10,8 +10,8 @@ import (
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	awsec2 "github.com/aws/aws-sdk-go-v2/service/ec2"
 	"github.com/aws/aws-sdk-go-v2/service/ec2/types"
-	"github.com/chris-alexander-pop/system-design-library/pkg/compute/vm"
-	pkgerrors "github.com/chris-alexander-pop/system-design-library/pkg/errors"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/compute/vm"
+	pkgerrors "github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 )
 
 // Config holds EC2 adapter configuration with env tags matching vm.Config.

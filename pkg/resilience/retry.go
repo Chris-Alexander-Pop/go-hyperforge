@@ -6,7 +6,7 @@ import (
 	"math/rand"
 	"time"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/errors"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 )
 
 // Retry executes the function with automatic retries and exponential backoff.

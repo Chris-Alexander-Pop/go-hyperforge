@@ -4,7 +4,7 @@
 //
 // Usage:
 //
-//	import "github.com/chris-alexander-pop/system-design-library/pkg/ai/ml/training"
+//	import "github.com/chris-alexander-pop/go-hyperforge/pkg/ai/ml/training"
 //
 //	trainer := training.New(training.Config{Backend: "tensorflow"})
 //	job, err := trainer.StartJob(ctx, training.JobConfig{Model: "resnet50", Dataset: "imagenet"})

@@ -7,9 +7,9 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/commerce"
-	"github.com/chris-alexander-pop/system-design-library/pkg/commerce/tax"
-	"github.com/chris-alexander-pop/system-design-library/pkg/commerce/tax/adapters/taxjar"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/commerce"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/commerce/tax"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/commerce/tax/adapters/taxjar"
 )
 
 func TestCalculateTaxSuccess(t *testing.T) {

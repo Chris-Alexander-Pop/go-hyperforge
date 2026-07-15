@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/resilience"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/resilience"
 )
 
 // ResilientCache wraps a Cache with circuit breaker and retry support.

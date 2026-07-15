@@ -12,7 +12,7 @@
 //
 // Usage:
 //
-//	import "github.com/chris-alexander-pop/system-design-library/pkg/data/search/adapters/memory"
+//	import "github.com/chris-alexander-pop/go-hyperforge/pkg/data/search/adapters/memory"
 //
 //	engine := memory.New()
 //	err := engine.Index(ctx, "products", "123", product)

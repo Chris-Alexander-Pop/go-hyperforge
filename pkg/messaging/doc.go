@@ -32,8 +32,8 @@ The package follows the adapter pattern with decoupled dependencies:
 # Usage
 
 	import (
-	    "github.com/chris-alexander-pop/system-design-library/pkg/messaging"
-	    "github.com/chris-alexander-pop/system-design-library/pkg/messaging/adapters/memory"
+	    "github.com/chris-alexander-pop/go-hyperforge/pkg/messaging"
+	    "github.com/chris-alexander-pop/go-hyperforge/pkg/messaging/adapters/memory"
 	)
 
 	broker, err := messaging.NewFromConfig(messaging.Config{Driver: "memory", BufferSize: 100})

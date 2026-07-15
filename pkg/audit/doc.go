@@ -12,8 +12,8 @@ This package includes:
 Usage:
 
 	import (
-		"github.com/chris-alexander-pop/system-design-library/pkg/audit"
-		"github.com/chris-alexander-pop/system-design-library/pkg/audit/adapters/memory"
+		"github.com/chris-alexander-pop/go-hyperforge/pkg/audit"
+		"github.com/chris-alexander-pop/go-hyperforge/pkg/audit/adapters/memory"
 	)
 
 	store := memory.NewChainedStore()

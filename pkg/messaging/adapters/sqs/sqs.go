@@ -31,7 +31,7 @@ import (
 	"context"
 	"strconv"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/concurrency"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/concurrency"
 
 	"time"
 
@@ -40,7 +40,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/sqs"
 	"github.com/aws/aws-sdk-go-v2/service/sqs/types"
-	"github.com/chris-alexander-pop/system-design-library/pkg/messaging"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/messaging"
 	"github.com/google/uuid"
 )
 

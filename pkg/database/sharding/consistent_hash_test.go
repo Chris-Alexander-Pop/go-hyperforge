@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/database/sharding"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/database/sharding"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

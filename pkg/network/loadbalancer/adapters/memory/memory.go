@@ -6,13 +6,13 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/algorithms/loadbalancing"
-	"github.com/chris-alexander-pop/system-design-library/pkg/algorithms/loadbalancing/leastconnections"
-	"github.com/chris-alexander-pop/system-design-library/pkg/algorithms/loadbalancing/random"
-	"github.com/chris-alexander-pop/system-design-library/pkg/algorithms/loadbalancing/roundrobin"
-	"github.com/chris-alexander-pop/system-design-library/pkg/algorithms/loadbalancing/weightedroundrobin"
-	"github.com/chris-alexander-pop/system-design-library/pkg/concurrency"
-	"github.com/chris-alexander-pop/system-design-library/pkg/network/loadbalancer"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/algorithms/loadbalancing"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/algorithms/loadbalancing/leastconnections"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/algorithms/loadbalancing/random"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/algorithms/loadbalancing/roundrobin"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/algorithms/loadbalancing/weightedroundrobin"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/concurrency"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/network/loadbalancer"
 	"github.com/google/uuid"
 )
 

@@ -1,7 +1,7 @@
 package crdt
 
 import (
-	"github.com/chris-alexander-pop/system-design-library/pkg/concurrency"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/concurrency"
 )
 
 // GCounter is a Grow-only Counter CRDT.

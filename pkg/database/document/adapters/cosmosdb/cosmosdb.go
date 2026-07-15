@@ -9,8 +9,8 @@ import (
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/data/azcosmos"
-	"github.com/chris-alexander-pop/system-design-library/pkg/database/document"
-	"github.com/chris-alexander-pop/system-design-library/pkg/errors"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/database/document"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 )
 
 // NOTE: This implementation assumes the Azure SDK for Go is available.

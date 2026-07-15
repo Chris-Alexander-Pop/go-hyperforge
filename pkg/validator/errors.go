@@ -3,7 +3,7 @@ package validator
 import (
 	"fmt"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/errors"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 	playground "github.com/go-playground/validator/v10"
 )
 

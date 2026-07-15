@@ -11,9 +11,9 @@ import (
 	"testing"
 	"time"
 
-	pkgerrors "github.com/chris-alexander-pop/system-design-library/pkg/errors"
-	"github.com/chris-alexander-pop/system-design-library/pkg/iot"
-	"github.com/chris-alexander-pop/system-design-library/pkg/iot/device/ota"
+	pkgerrors "github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/iot"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/iot/device/ota"
 )
 
 func sha256Hex(b []byte) string {

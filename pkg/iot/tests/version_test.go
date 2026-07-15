@@ -3,8 +3,8 @@ package iot_test
 import (
 	"testing"
 
-	pkgerrors "github.com/chris-alexander-pop/system-design-library/pkg/errors"
-	"github.com/chris-alexander-pop/system-design-library/pkg/iot"
+	pkgerrors "github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/iot"
 )
 
 func TestCompareVersions(t *testing.T) {

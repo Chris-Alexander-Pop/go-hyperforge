@@ -6,9 +6,9 @@
 // Production path (Twilio):
 //
 //	import (
-//	    twilio "github.com/chris-alexander-pop/system-design-library/pkg/communication/sms/adapters/twilio"
-//	    "github.com/chris-alexander-pop/system-design-library/pkg/communication/sms"
-//	    mfasms "github.com/chris-alexander-pop/system-design-library/pkg/auth/mfa/adapters/sms"
+//	    twilio "github.com/chris-alexander-pop/go-hyperforge/pkg/communication/sms/adapters/twilio"
+//	    "github.com/chris-alexander-pop/go-hyperforge/pkg/communication/sms"
+//	    mfasms "github.com/chris-alexander-pop/go-hyperforge/pkg/auth/mfa/adapters/sms"
 //	)
 //
 //	sender, err := twilio.New(sms.Config{

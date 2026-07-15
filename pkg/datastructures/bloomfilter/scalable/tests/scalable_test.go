@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/datastructures/bloomfilter/scalable"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/datastructures/bloomfilter/scalable"
 )
 
 func TestScalable_AddContains(t *testing.T) {

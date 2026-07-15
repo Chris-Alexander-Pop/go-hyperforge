@@ -5,7 +5,7 @@
 //
 // Usage:
 //
-//	import "github.com/chris-alexander-pop/system-design-library/pkg/network/cdn/adapters/memory"
+//	import "github.com/chris-alexander-pop/go-hyperforge/pkg/network/cdn/adapters/memory"
 //
 //	manager := memory.New()
 //	dist, err := manager.CreateDistribution(ctx, cdn.CreateDistributionOptions{OriginDomain: "example.com"})

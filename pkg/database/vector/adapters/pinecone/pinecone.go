@@ -9,8 +9,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/database/vector"
-	"github.com/chris-alexander-pop/system-design-library/pkg/errors"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/database/vector"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 )
 
 // Store implements vector.Store for Pinecone.

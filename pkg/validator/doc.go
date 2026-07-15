@@ -12,7 +12,7 @@ Validation failures are mapped to pkg/errors.InvalidArgument. Prefer the
 Validator interface (implemented by Engine) and wrap with
 NewInstrumentedValidator for logging and OpenTelemetry spans.
 
-	import "github.com/chris-alexander-pop/system-design-library/pkg/validator"
+	import "github.com/chris-alexander-pop/go-hyperforge/pkg/validator"
 
 	v := validator.NewInstrumentedValidator(validator.New())
 

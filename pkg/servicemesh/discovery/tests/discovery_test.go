@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/servicemesh/discovery"
-	"github.com/chris-alexander-pop/system-design-library/pkg/servicemesh/discovery/adapters/memory"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/servicemesh/discovery"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/servicemesh/discovery/adapters/memory"
 	"github.com/stretchr/testify/suite"
 )
 

@@ -1,7 +1,7 @@
 package bk_test
 
 import (
-	"github.com/chris-alexander-pop/system-design-library/pkg/datastructures/tree/bk"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/datastructures/tree/bk"
 	"sort"
 	"testing"
 )

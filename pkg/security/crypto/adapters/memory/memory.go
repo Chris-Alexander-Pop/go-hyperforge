@@ -3,7 +3,7 @@ package memory
 import (
 	"context"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/security/crypto"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/security/crypto"
 )
 
 // KeyProvider is an in-memory crypto.KeyProvider for tests and local development.

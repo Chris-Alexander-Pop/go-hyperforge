@@ -1,6 +1,6 @@
 // Package circuitbreaker is a mesh-facing facade over pkg/resilience.
 //
-// Prefer github.com/chris-alexander-pop/system-design-library/pkg/resilience
+// Prefer github.com/chris-alexander-pop/go-hyperforge/pkg/resilience
 // for application code. This package keeps the historical Options/Execute
 // shapes used by service-mesh integrations while delegating state and
 // execution to resilience.CircuitBreaker.
@@ -20,8 +20,8 @@ import (
 	"context"
 	"time"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/errors"
-	"github.com/chris-alexander-pop/system-design-library/pkg/resilience"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/resilience"
 )
 
 // State represents the circuit breaker state (mesh-facing string values).

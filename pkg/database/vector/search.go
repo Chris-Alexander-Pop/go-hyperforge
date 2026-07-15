@@ -4,9 +4,9 @@ import (
 	"context"
 	"runtime"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/concurrency"
-	"github.com/chris-alexander-pop/system-design-library/pkg/datastructures/heap"
-	"github.com/chris-alexander-pop/system-design-library/pkg/errors"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/concurrency"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/datastructures/heap"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 	"golang.org/x/sync/errgroup"
 )
 

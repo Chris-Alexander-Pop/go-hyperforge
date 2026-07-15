@@ -5,9 +5,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/auth/mfa"
-	mfasms "github.com/chris-alexander-pop/system-design-library/pkg/auth/mfa/adapters/sms"
-	smsmemory "github.com/chris-alexander-pop/system-design-library/pkg/communication/sms/adapters/memory"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/auth/mfa"
+	mfasms "github.com/chris-alexander-pop/go-hyperforge/pkg/auth/mfa/adapters/sms"
+	smsmemory "github.com/chris-alexander-pop/go-hyperforge/pkg/communication/sms/adapters/memory"
 )
 
 func TestSMSChannelWithMemorySender(t *testing.T) {

@@ -1,6 +1,6 @@
 // Package ratelimit is a mesh-facing facade over pkg/algorithms/ratelimit.
 //
-// Prefer github.com/chris-alexander-pop/system-design-library/pkg/algorithms/ratelimit
+// Prefer github.com/chris-alexander-pop/go-hyperforge/pkg/algorithms/ratelimit
 // (tokenbucket / slidingwindow Local limiters) for new code. This package adapts
 // those implementations to a simple Limiter interface used by mesh integrations.
 //
@@ -17,8 +17,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/algorithms/ratelimit/slidingwindow"
-	"github.com/chris-alexander-pop/system-design-library/pkg/algorithms/ratelimit/tokenbucket"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/algorithms/ratelimit/slidingwindow"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/algorithms/ratelimit/tokenbucket"
 )
 
 // Algorithm represents the rate limiting algorithm.

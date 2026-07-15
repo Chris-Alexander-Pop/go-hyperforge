@@ -5,8 +5,8 @@ import (
 	"context"
 	"net"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/concurrency"
-	"github.com/chris-alexander-pop/system-design-library/pkg/network/ip"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/concurrency"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/network/ip"
 )
 
 // Service implements an in-memory IP intelligence service for testing.

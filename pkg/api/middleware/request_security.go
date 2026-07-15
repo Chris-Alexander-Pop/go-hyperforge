@@ -3,7 +3,7 @@ package middleware
 import (
 	"net/http"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/validator"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/validator"
 	"github.com/google/uuid"
 )
 

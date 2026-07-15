@@ -7,7 +7,7 @@ alongside the TracerProvider unless Config.DisableMetrics is set.
 
 Usage:
 
-	import "github.com/chris-alexander-pop/system-design-library/pkg/telemetry"
+	import "github.com/chris-alexander-pop/go-hyperforge/pkg/telemetry"
 
 	shutdown, err := telemetry.Init(ctx, telemetry.Config{
 		ServiceName: "my-service",

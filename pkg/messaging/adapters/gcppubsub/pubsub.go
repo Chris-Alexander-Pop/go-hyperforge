@@ -36,13 +36,13 @@ import (
 	"os"
 	"time"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/concurrency"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/concurrency"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/protobuf/types/known/durationpb"
 
 	"cloud.google.com/go/pubsub/v2"
 	pubsubpb "cloud.google.com/go/pubsub/v2/apiv1/pubsubpb"
-	"github.com/chris-alexander-pop/system-design-library/pkg/messaging"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/messaging"
 	"github.com/google/uuid"
 	"google.golang.org/api/option"
 )

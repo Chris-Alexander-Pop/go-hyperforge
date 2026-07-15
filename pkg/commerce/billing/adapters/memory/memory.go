@@ -4,9 +4,9 @@ import (
 	"context"
 	"time"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/commerce"
-	"github.com/chris-alexander-pop/system-design-library/pkg/commerce/billing"
-	"github.com/chris-alexander-pop/system-design-library/pkg/concurrency"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/commerce"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/commerce/billing"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/concurrency"
 	"github.com/google/uuid"
 )
 

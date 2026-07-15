@@ -7,9 +7,9 @@ import (
 	"testing"
 	"time"
 
-	pkgerrors "github.com/chris-alexander-pop/system-design-library/pkg/errors"
-	"github.com/chris-alexander-pop/system-design-library/pkg/iot"
-	"github.com/chris-alexander-pop/system-design-library/pkg/iot/adapters/memory"
+	pkgerrors "github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/iot"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/iot/adapters/memory"
 )
 
 func TestClient_PublishSubscribe(t *testing.T) {

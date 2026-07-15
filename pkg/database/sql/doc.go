@@ -15,8 +15,8 @@ Optional retries and circuit breaking: NewResilientSQL (Execute is the main entr
 Basic usage:
 
 	import (
-		"github.com/chris-alexander-pop/system-design-library/pkg/database/sql"
-		"github.com/chris-alexander-pop/system-design-library/pkg/database/sql/adapters/postgres"
+		"github.com/chris-alexander-pop/go-hyperforge/pkg/database/sql"
+		"github.com/chris-alexander-pop/go-hyperforge/pkg/database/sql/adapters/postgres"
 	)
 
 	cfg := sql.Config{

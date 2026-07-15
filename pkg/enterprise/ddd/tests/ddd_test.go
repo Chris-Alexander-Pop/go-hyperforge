@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/enterprise/ddd"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/enterprise/ddd"
 )
 
 type person struct {

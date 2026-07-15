@@ -2,7 +2,7 @@ package tokenbucket_test
 
 import (
 	"context"
-	"github.com/chris-alexander-pop/system-design-library/pkg/algorithms/ratelimit/tokenbucket"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/algorithms/ratelimit/tokenbucket"
 	"testing"
 	"time"
 )

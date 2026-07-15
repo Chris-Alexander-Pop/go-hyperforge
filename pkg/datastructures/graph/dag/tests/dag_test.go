@@ -4,7 +4,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/datastructures/graph/dag"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/datastructures/graph/dag"
 )
 
 func TestDAG_TopologicalSort(t *testing.T) {

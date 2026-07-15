@@ -13,8 +13,8 @@ Money uses int64 minor units — never float64 for payment amounts.
 Usage:
 
 	import (
-		"github.com/chris-alexander-pop/system-design-library/pkg/commerce"
-		"github.com/chris-alexander-pop/system-design-library/pkg/commerce/payment"
+		"github.com/chris-alexander-pop/go-hyperforge/pkg/commerce"
+		"github.com/chris-alexander-pop/go-hyperforge/pkg/commerce/payment"
 	)
 
 	amount := commerce.NewMoney(1000, "USD") // $10.00

@@ -4,9 +4,9 @@ import (
 	"context"
 	"testing"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/communication"
-	"github.com/chris-alexander-pop/system-design-library/pkg/communication/chat"
-	"github.com/chris-alexander-pop/system-design-library/pkg/communication/chat/adapters/slack"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/communication"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/communication/chat"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/communication/chat/adapters/slack"
 	"github.com/stretchr/testify/require"
 )
 

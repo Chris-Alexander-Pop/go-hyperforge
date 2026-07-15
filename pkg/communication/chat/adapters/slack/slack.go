@@ -3,9 +3,9 @@ package slack
 import (
 	"context"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/communication/chat"
-	"github.com/chris-alexander-pop/system-design-library/pkg/errors"
-	"github.com/chris-alexander-pop/system-design-library/pkg/validator"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/communication/chat"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/validator"
 	"github.com/slack-go/slack"
 )
 

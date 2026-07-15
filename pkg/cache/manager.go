@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/errors"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 )
 
 // DriverFactory constructs a Cache from root Config.
@@ -26,8 +26,8 @@ func RegisterDriver(name string, fn DriverFactory) {
 //
 // Import adapters to register drivers:
 //
-//	_ "github.com/chris-alexander-pop/system-design-library/pkg/cache/adapters/memory"
-//	_ "github.com/chris-alexander-pop/system-design-library/pkg/cache/adapters/redis"
+//	_ "github.com/chris-alexander-pop/go-hyperforge/pkg/cache/adapters/memory"
+//	_ "github.com/chris-alexander-pop/go-hyperforge/pkg/cache/adapters/redis"
 //
 // Or construct adapters directly via memory.New / redis.New / redis.NewWithClient.
 func NewFromConfig(cfg Config) (Cache, error) {

@@ -4,9 +4,9 @@ import (
 	"context"
 	"sync/atomic"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/analytics"
-	"github.com/chris-alexander-pop/system-design-library/pkg/concurrency"
-	"github.com/chris-alexander-pop/system-design-library/pkg/datastructures/hyperloglog"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/analytics"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/concurrency"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/datastructures/hyperloglog"
 )
 
 // Ensure Tracker implements analytics.Tracker.

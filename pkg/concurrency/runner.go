@@ -6,8 +6,8 @@ import (
 	"runtime/debug"
 	"sync"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/errors"
-	"github.com/chris-alexander-pop/system-design-library/pkg/logger"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/logger"
 )
 
 // SafeGo runs the function in a goroutine and recovers from panics

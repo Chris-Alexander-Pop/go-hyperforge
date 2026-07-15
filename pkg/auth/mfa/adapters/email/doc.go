@@ -6,9 +6,9 @@
 // Production path (SendGrid / SES / SMTP):
 //
 //	import (
-//	    sendgrid "github.com/chris-alexander-pop/system-design-library/pkg/communication/email/adapters/sendgrid"
-//	    "github.com/chris-alexander-pop/system-design-library/pkg/communication/email"
-//	    mfaemail "github.com/chris-alexander-pop/system-design-library/pkg/auth/mfa/adapters/email"
+//	    sendgrid "github.com/chris-alexander-pop/go-hyperforge/pkg/communication/email/adapters/sendgrid"
+//	    "github.com/chris-alexander-pop/go-hyperforge/pkg/communication/email"
+//	    mfaemail "github.com/chris-alexander-pop/go-hyperforge/pkg/auth/mfa/adapters/email"
 //	)
 //
 //	sender, err := sendgrid.New(email.Config{SendGridAPIKey: "...", DefaultFrom: "noreply@example.com"})

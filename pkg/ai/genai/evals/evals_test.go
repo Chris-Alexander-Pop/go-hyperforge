@@ -5,9 +5,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/ai/genai/evals"
-	"github.com/chris-alexander-pop/system-design-library/pkg/ai/genai/llm"
-	"github.com/chris-alexander-pop/system-design-library/pkg/ai/genai/llm/adapters/memory"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/ai/genai/evals"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/ai/genai/llm"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/ai/genai/llm/adapters/memory"
 )
 
 func TestExactMatchRunner_GoldenSet(t *testing.T) {

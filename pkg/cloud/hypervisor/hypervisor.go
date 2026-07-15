@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/cloud"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/cloud"
 )
 
 // Hypervisor defines the interface for managing Virtual Machines on a host.

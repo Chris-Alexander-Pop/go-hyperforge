@@ -7,10 +7,10 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/ai/nlp/embedding"
-	"github.com/chris-alexander-pop/system-design-library/pkg/database/rerank"
-	"github.com/chris-alexander-pop/system-design-library/pkg/database/vector"
-	"github.com/chris-alexander-pop/system-design-library/pkg/errors"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/ai/nlp/embedding"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/database/rerank"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/database/vector"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 )
 
 // Orchestrator manages the RAG pipeline: embed → vector search → optional rerank.

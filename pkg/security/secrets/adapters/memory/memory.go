@@ -5,8 +5,8 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/concurrency"
-	"github.com/chris-alexander-pop/system-design-library/pkg/security/secrets"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/concurrency"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/security/secrets"
 )
 
 // SecretManager implements secrets.SecretManager using in-memory storage.

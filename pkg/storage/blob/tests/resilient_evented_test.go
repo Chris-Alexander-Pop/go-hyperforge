@@ -9,10 +9,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/events"
-	eventsmemory "github.com/chris-alexander-pop/system-design-library/pkg/events/adapters/memory"
-	"github.com/chris-alexander-pop/system-design-library/pkg/storage/blob"
-	"github.com/chris-alexander-pop/system-design-library/pkg/storage/blob/adapters/memory"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/events"
+	eventsmemory "github.com/chris-alexander-pop/go-hyperforge/pkg/events/adapters/memory"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/storage/blob"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/storage/blob/adapters/memory"
 )
 
 func TestResilientStore_DownloadMissNotRetried(t *testing.T) {

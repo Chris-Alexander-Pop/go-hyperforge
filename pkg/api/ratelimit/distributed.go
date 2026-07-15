@@ -1,13 +1,13 @@
 package ratelimit
 
 // Backward compatibility re-exports from adapters/redis.
-// New code should import "github.com/chris-alexander-pop/system-design-library/pkg/api/ratelimit/adapters/redis"
+// New code should import "github.com/chris-alexander-pop/go-hyperforge/pkg/api/ratelimit/adapters/redis"
 
 import (
 	"context"
 	"time"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/api/ratelimit/adapters/redis"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/api/ratelimit/adapters/redis"
 	goredis "github.com/redis/go-redis/v9"
 )
 

@@ -1,6 +1,6 @@
 package currency
 
-import "github.com/chris-alexander-pop/system-design-library/pkg/errors"
+import "github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 
 var (
 	// ErrUnsupportedCurrency indicates a currency code is not in the rate table.

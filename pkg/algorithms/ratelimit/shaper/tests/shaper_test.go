@@ -1,7 +1,7 @@
 package shaper_test
 
 import (
-	"github.com/chris-alexander-pop/system-design-library/pkg/algorithms/ratelimit/shaper"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/algorithms/ratelimit/shaper"
 	"sync"
 	"testing"
 	"time"

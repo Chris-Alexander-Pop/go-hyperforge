@@ -23,7 +23,7 @@ Observability belongs on InstrumentedCircuitBreaker; NewCircuitBreaker stays qui
 
 Usage:
 
-	import "github.com/chris-alexander-pop/system-design-library/pkg/resilience"
+	import "github.com/chris-alexander-pop/go-hyperforge/pkg/resilience"
 
 	// Circuit Breaker
 	cb := resilience.NewCircuitBreaker(resilience.DefaultCircuitBreakerConfig("my-service"))

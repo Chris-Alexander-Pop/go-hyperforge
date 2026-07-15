@@ -7,7 +7,7 @@ and using adapters/memory for Ethereum/IPFS/SIWE until a Solana root interface l
 
 Usage:
 
-	import "github.com/chris-alexander-pop/system-design-library/pkg/web3/blockchain/solana"
+	import "github.com/chris-alexander-pop/go-hyperforge/pkg/web3/blockchain/solana"
 
 	client, err := solana.New(solana.Config{RPCURL: "https://api.mainnet-beta.solana.com"})
 	balance, err := client.GetBalance(ctx, "...")

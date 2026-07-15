@@ -5,11 +5,11 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/audit"
-	"github.com/chris-alexander-pop/system-design-library/pkg/audit/adapters/logger"
-	"github.com/chris-alexander-pop/system-design-library/pkg/audit/adapters/memory"
-	pkgerrors "github.com/chris-alexander-pop/system-design-library/pkg/errors"
-	"github.com/chris-alexander-pop/system-design-library/pkg/test"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/audit"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/audit/adapters/logger"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/audit/adapters/memory"
+	pkgerrors "github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/test"
 )
 
 type AuditSuite struct {

@@ -8,7 +8,7 @@
 //
 // Usage:
 //
-//	import "github.com/chris-alexander-pop/system-design-library/pkg/storage/block/adapters/memory"
+//	import "github.com/chris-alexander-pop/go-hyperforge/pkg/storage/block/adapters/memory"
 //
 //	store := memory.New()
 //	vol, err := store.CreateVolume(ctx, block.CreateVolumeOptions{Name: "my-vol", SizeGB: 100})

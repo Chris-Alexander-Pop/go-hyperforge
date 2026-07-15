@@ -5,10 +5,10 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/errors"
-	"github.com/chris-alexander-pop/system-design-library/pkg/streaming"
-	"github.com/chris-alexander-pop/system-design-library/pkg/streaming/adapters/memory"
-	"github.com/chris-alexander-pop/system-design-library/pkg/test"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/streaming"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/streaming/adapters/memory"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/test"
 
 	"github.com/stretchr/testify/suite"
 )

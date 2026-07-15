@@ -3,7 +3,7 @@ package provisioning
 import (
 	"context"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/cloud"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/cloud"
 )
 
 // Provisioner defines the interface for managing bare metal host lifecycles.

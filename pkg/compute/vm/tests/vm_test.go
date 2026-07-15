@@ -4,8 +4,8 @@ import (
 	"context"
 	"testing"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/compute/vm"
-	"github.com/chris-alexander-pop/system-design-library/pkg/compute/vm/adapters/memory"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/compute/vm"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/compute/vm/adapters/memory"
 	"github.com/stretchr/testify/suite"
 )
 

@@ -5,7 +5,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/concurrency/distlock"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/concurrency/distlock"
 )
 
 // Adapter implements distlock.Locker using in-memory storage.

@@ -2,7 +2,7 @@
 //
 // Usage:
 //
-//	import "github.com/chris-alexander-pop/system-design-library/pkg/compute/serverless/adapters/gcf"
+//	import "github.com/chris-alexander-pop/go-hyperforge/pkg/compute/serverless/adapters/gcf"
 //
 //	runtime, err := gcf.New(gcf.Config{ProjectID: "my-project", Region: "us-central1"})
 //	result, err := runtime.InvokeSimple(ctx, "my-function", payload)
@@ -20,8 +20,8 @@ import (
 
 	functions "cloud.google.com/go/functions/apiv2"
 	"cloud.google.com/go/functions/apiv2/functionspb"
-	"github.com/chris-alexander-pop/system-design-library/pkg/compute/serverless"
-	pkgerrors "github.com/chris-alexander-pop/system-design-library/pkg/errors"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/compute/serverless"
+	pkgerrors "github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/option"
 )

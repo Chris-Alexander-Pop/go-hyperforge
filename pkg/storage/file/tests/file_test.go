@@ -6,8 +6,8 @@ import (
 	"io"
 	"testing"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/storage/file"
-	"github.com/chris-alexander-pop/system-design-library/pkg/storage/file/adapters/memory"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/storage/file"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/storage/file/adapters/memory"
 	"github.com/stretchr/testify/suite"
 )
 

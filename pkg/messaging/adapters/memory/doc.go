@@ -12,7 +12,7 @@
 package memory
 
 import (
-	"github.com/chris-alexander-pop/system-design-library/pkg/messaging"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/messaging"
 )
 
 func init() {

@@ -4,7 +4,7 @@
 //
 // Usage:
 //
-//	import lbaws "github.com/chris-alexander-pop/system-design-library/pkg/network/loadbalancer/adapters/aws"
+//	import lbaws "github.com/chris-alexander-pop/go-hyperforge/pkg/network/loadbalancer/adapters/aws"
 //
 //	manager, err := lbaws.New(lbaws.Config{Region: "us-east-1"})
 //	lb, err := manager.CreateLoadBalancer(ctx, loadbalancer.CreateLoadBalancerOptions{Name: "my-alb"})
@@ -19,8 +19,8 @@ import (
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/elasticloadbalancingv2"
 	"github.com/aws/aws-sdk-go-v2/service/elasticloadbalancingv2/types"
-	pkgerrors "github.com/chris-alexander-pop/system-design-library/pkg/errors"
-	"github.com/chris-alexander-pop/system-design-library/pkg/network/loadbalancer"
+	pkgerrors "github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/network/loadbalancer"
 )
 
 // Config holds AWS ELB configuration.

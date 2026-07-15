@@ -4,8 +4,8 @@ import (
 	"os"
 	"testing"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/storage/blob"
-	"github.com/chris-alexander-pop/system-design-library/pkg/storage/blob/adapters/azureblob"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/storage/blob"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/storage/blob/adapters/azureblob"
 )
 
 func TestAzureAdapter_Init(t *testing.T) {

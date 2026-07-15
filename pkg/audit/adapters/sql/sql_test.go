@@ -6,9 +6,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/audit"
-	auditsql "github.com/chris-alexander-pop/system-design-library/pkg/audit/adapters/sql"
-	"github.com/chris-alexander-pop/system-design-library/pkg/test"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/audit"
+	auditsql "github.com/chris-alexander-pop/go-hyperforge/pkg/audit/adapters/sql"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/test"
 	_ "modernc.org/sqlite"
 )
 

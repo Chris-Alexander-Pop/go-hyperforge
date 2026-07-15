@@ -1,6 +1,6 @@
 package saml
 
-import "github.com/chris-alexander-pop/system-design-library/pkg/errors"
+import "github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 
 // Domain helpers for the SAML client skeleton.
 var (

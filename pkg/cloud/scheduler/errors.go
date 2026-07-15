@@ -1,6 +1,6 @@
 package scheduler
 
-import "github.com/chris-alexander-pop/system-design-library/pkg/errors"
+import "github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 
 var (
 	// ErrNoHostFound depends on why no host was found (resource exhaustion or constraint satisfaction).

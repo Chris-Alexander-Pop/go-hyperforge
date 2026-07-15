@@ -5,8 +5,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/ai/genai/image"
-	"github.com/chris-alexander-pop/system-design-library/pkg/errors"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/ai/genai/image"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 )
 
 // Service implements image.Service with mock URLs.

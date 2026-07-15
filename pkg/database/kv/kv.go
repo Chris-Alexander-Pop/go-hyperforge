@@ -7,7 +7,7 @@
 //
 // Usage:
 //
-//	import "github.com/chris-alexander-pop/system-design-library/pkg/database/kv/adapters/redis"
+//	import "github.com/chris-alexander-pop/go-hyperforge/pkg/database/kv/adapters/redis"
 //
 //	client, err := redis.New(cfg)
 //	err = client.Set(ctx, "key", []byte("value"), time.Hour)

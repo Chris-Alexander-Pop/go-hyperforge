@@ -5,8 +5,8 @@ import (
 	"context"
 	"strings"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/ai/genai/prompt"
-	"github.com/chris-alexander-pop/system-design-library/pkg/concurrency"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/ai/genai/prompt"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/concurrency"
 )
 
 type versionSet struct {

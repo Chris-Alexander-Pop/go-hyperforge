@@ -7,7 +7,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/cognitoidentityprovider"
 	"github.com/aws/aws-sdk-go-v2/service/cognitoidentityprovider/types"
-	"github.com/chris-alexander-pop/system-design-library/pkg/auth/cloud"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/auth/cloud"
 )
 
 type Adapter struct {

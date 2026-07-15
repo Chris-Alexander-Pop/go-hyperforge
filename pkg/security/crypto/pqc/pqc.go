@@ -7,7 +7,7 @@ import (
 	"crypto/sha256"
 	"io"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/errors"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 	"golang.org/x/crypto/hkdf"
 )
 

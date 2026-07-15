@@ -4,7 +4,7 @@
 //
 // Usage:
 //
-//	import "github.com/chris-alexander-pop/system-design-library/pkg/workflow/adapters/logicapps"
+//	import "github.com/chris-alexander-pop/go-hyperforge/pkg/workflow/adapters/logicapps"
 //
 //	engine, err := logicapps.New(logicapps.Config{SubscriptionID: "...", ResourceGroup: "..."})
 //	exec, err := engine.Start(ctx, workflow.StartOptions{WorkflowID: "my-logic-app", Input: data})
@@ -19,8 +19,8 @@ import (
 	"net/http"
 	"time"
 
-	pkgerrors "github.com/chris-alexander-pop/system-design-library/pkg/errors"
-	"github.com/chris-alexander-pop/system-design-library/pkg/workflow"
+	pkgerrors "github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/workflow"
 	"github.com/google/uuid"
 )
 

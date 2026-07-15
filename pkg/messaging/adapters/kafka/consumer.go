@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"github.com/IBM/sarama"
-	"github.com/chris-alexander-pop/system-design-library/pkg/concurrency"
-	"github.com/chris-alexander-pop/system-design-library/pkg/messaging"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/concurrency"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/messaging"
 )
 
 // consumer is a Kafka consumer group implementation.

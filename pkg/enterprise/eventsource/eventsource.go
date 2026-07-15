@@ -5,8 +5,8 @@
 // Usage:
 //
 //	import (
-//	    "github.com/chris-alexander-pop/system-design-library/pkg/enterprise/eventsource"
-//	    "github.com/chris-alexander-pop/system-design-library/pkg/enterprise/eventsource/adapters/memory"
+//	    "github.com/chris-alexander-pop/go-hyperforge/pkg/enterprise/eventsource"
+//	    "github.com/chris-alexander-pop/go-hyperforge/pkg/enterprise/eventsource/adapters/memory"
 //	)
 //
 //	store := memory.NewEventStore()
@@ -19,7 +19,7 @@ import (
 	"encoding/json"
 	"time"
 
-	pkgerrors "github.com/chris-alexander-pop/system-design-library/pkg/errors"
+	pkgerrors "github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 )
 
 // Event represents a stored event.

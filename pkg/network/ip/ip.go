@@ -11,7 +11,7 @@
 //
 // Usage:
 //
-//	import "github.com/chris-alexander-pop/system-design-library/pkg/network/ip/adapters/memory"
+//	import "github.com/chris-alexander-pop/go-hyperforge/pkg/network/ip/adapters/memory"
 //
 //	geo := memory.New()
 //	loc, err := geo.Lookup(ctx, "8.8.8.8")

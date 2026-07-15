@@ -2,7 +2,7 @@
 Package algorithms provides implementations of common algorithms for distributed
 systems, graph processing, search, sorting, and rate limiting.
 
-Inventory (import paths under github.com/chris-alexander-pop/system-design-library):
+Inventory (import paths under github.com/chris-alexander-pop/go-hyperforge):
 
 	Search
 	  - algorithms/search/binarysearch — generic binary search (Search, LowerBound, UpperBound)

@@ -9,11 +9,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/enterprise/eventsource"
-	"github.com/chris-alexander-pop/system-design-library/pkg/enterprise/eventsource/adapters/memory"
-	pkgerrors "github.com/chris-alexander-pop/system-design-library/pkg/errors"
-	"github.com/chris-alexander-pop/system-design-library/pkg/events"
-	eventsmemory "github.com/chris-alexander-pop/system-design-library/pkg/events/adapters/memory"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/enterprise/eventsource"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/enterprise/eventsource/adapters/memory"
+	pkgerrors "github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/events"
+	eventsmemory "github.com/chris-alexander-pop/go-hyperforge/pkg/events/adapters/memory"
 )
 
 func TestAppendAndLoad(t *testing.T) {

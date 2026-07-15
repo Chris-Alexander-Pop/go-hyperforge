@@ -6,10 +6,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/audit"
-	"github.com/chris-alexander-pop/system-design-library/pkg/audit/adapters/memory"
-	pkgerrors "github.com/chris-alexander-pop/system-design-library/pkg/errors"
-	"github.com/chris-alexander-pop/system-design-library/pkg/test"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/audit"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/audit/adapters/memory"
+	pkgerrors "github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/test"
 )
 
 type MemoryStoreSuite struct {

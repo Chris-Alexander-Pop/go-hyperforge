@@ -7,8 +7,8 @@ import (
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/kms"
-	pkgerrors "github.com/chris-alexander-pop/system-design-library/pkg/errors"
-	pkgkms "github.com/chris-alexander-pop/system-design-library/pkg/security/crypto/kms"
+	pkgerrors "github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
+	pkgkms "github.com/chris-alexander-pop/go-hyperforge/pkg/security/crypto/kms"
 )
 
 // EncryptDecryptAPI is the subset of the AWS KMS client used by this adapter.

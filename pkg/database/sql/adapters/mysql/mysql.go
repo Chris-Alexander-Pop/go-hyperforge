@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/database"
-	"github.com/chris-alexander-pop/system-design-library/pkg/database/sql"
-	"github.com/chris-alexander-pop/system-design-library/pkg/errors"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/database"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/database/sql"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 	mysqldriver "github.com/go-sql-driver/mysql"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"

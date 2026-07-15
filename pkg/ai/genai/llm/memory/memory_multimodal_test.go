@@ -5,9 +5,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/ai/genai/llm"
-	llmmemory "github.com/chris-alexander-pop/system-design-library/pkg/ai/genai/llm/memory"
-	adapter "github.com/chris-alexander-pop/system-design-library/pkg/ai/genai/llm/adapters/memory"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/ai/genai/llm"
+	llmmemory "github.com/chris-alexander-pop/go-hyperforge/pkg/ai/genai/llm/memory"
+	adapter "github.com/chris-alexander-pop/go-hyperforge/pkg/ai/genai/llm/adapters/memory"
 )
 
 func TestSimpleMemory_MultimodalParts(t *testing.T) {

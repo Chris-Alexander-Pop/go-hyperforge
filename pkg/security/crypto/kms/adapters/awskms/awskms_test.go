@@ -7,10 +7,10 @@ import (
 	"testing"
 
 	"github.com/aws/aws-sdk-go-v2/service/kms"
-	pkgerrors "github.com/chris-alexander-pop/system-design-library/pkg/errors"
-	pkgkms "github.com/chris-alexander-pop/system-design-library/pkg/security/crypto/kms"
-	"github.com/chris-alexander-pop/system-design-library/pkg/security/crypto/kms/adapters/awskms"
-	"github.com/chris-alexander-pop/system-design-library/pkg/test"
+	pkgerrors "github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
+	pkgkms "github.com/chris-alexander-pop/go-hyperforge/pkg/security/crypto/kms"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/security/crypto/kms/adapters/awskms"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/test"
 )
 
 // fakeKMS is an in-process EncryptDecryptAPI for unit tests.

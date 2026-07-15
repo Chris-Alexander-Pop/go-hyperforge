@@ -3,10 +3,10 @@ package tests
 import (
 	"testing"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/commerce"
-	"github.com/chris-alexander-pop/system-design-library/pkg/commerce/currency"
-	"github.com/chris-alexander-pop/system-design-library/pkg/commerce/currency/adapters/memory"
-	"github.com/chris-alexander-pop/system-design-library/pkg/test"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/commerce"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/commerce/currency"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/commerce/currency/adapters/memory"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/test"
 )
 
 type CurrencyTestSuite struct {

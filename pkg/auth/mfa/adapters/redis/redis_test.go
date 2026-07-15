@@ -6,9 +6,9 @@ import (
 	"time"
 
 	"github.com/alicebob/miniredis/v2"
-	"github.com/chris-alexander-pop/system-design-library/pkg/auth/mfa"
-	redisAdapter "github.com/chris-alexander-pop/system-design-library/pkg/auth/mfa/adapters/redis"
-	"github.com/chris-alexander-pop/system-design-library/pkg/auth/mfa/otp"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/auth/mfa"
+	redisAdapter "github.com/chris-alexander-pop/go-hyperforge/pkg/auth/mfa/adapters/redis"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/auth/mfa/otp"
 	"github.com/redis/go-redis/v9"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

@@ -12,8 +12,8 @@
 // Basic usage:
 //
 //	import (
-//	    "github.com/chris-alexander-pop/system-design-library/pkg/metering"
-//	    "github.com/chris-alexander-pop/system-design-library/pkg/metering/adapters/memory"
+//	    "github.com/chris-alexander-pop/go-hyperforge/pkg/metering"
+//	    "github.com/chris-alexander-pop/go-hyperforge/pkg/metering/adapters/memory"
 //	)
 //
 //	m := memory.New()

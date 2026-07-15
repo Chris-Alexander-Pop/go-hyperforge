@@ -14,8 +14,8 @@ is implemented by the memory adapter for local drain/testing.
 
 Usage:
 
-	import "github.com/chris-alexander-pop/system-design-library/pkg/streaming"
-	import "github.com/chris-alexander-pop/system-design-library/pkg/streaming/adapters/memory"
+	import "github.com/chris-alexander-pop/go-hyperforge/pkg/streaming"
+	import "github.com/chris-alexander-pop/go-hyperforge/pkg/streaming/adapters/memory"
 
 	client := memory.New(streaming.Config{BufferSize: 100})
 	defer client.Close()

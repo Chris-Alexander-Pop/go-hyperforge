@@ -7,8 +7,8 @@ import (
 
 	"github.com/algolia/algoliasearch-client-go/v3/algolia/opt"
 	algoliasearch "github.com/algolia/algoliasearch-client-go/v3/algolia/search"
-	"github.com/chris-alexander-pop/system-design-library/pkg/data/search"
-	"github.com/chris-alexander-pop/system-design-library/pkg/errors"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/data/search"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 )
 
 // Engine implements search.SearchEngine using Algolia.

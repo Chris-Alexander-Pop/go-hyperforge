@@ -4,9 +4,9 @@ import (
 	"context"
 	"testing"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/cloud"
-	"github.com/chris-alexander-pop/system-design-library/pkg/cloud/scheduler"
-	"github.com/chris-alexander-pop/system-design-library/pkg/cloud/scheduler/adapters/memory"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/cloud"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/cloud/scheduler"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/cloud/scheduler/adapters/memory"
 )
 
 func largeHost(id, zone string, vcpus, mem int) cloud.Host {

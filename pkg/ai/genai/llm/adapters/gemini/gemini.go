@@ -5,8 +5,8 @@ import (
 	"context"
 	"strings"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/ai/genai/llm"
-	pkgerrors "github.com/chris-alexander-pop/system-design-library/pkg/errors"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/ai/genai/llm"
+	pkgerrors "github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 	"github.com/google/generative-ai-go/genai"
 	"google.golang.org/api/option"
 )

@@ -4,8 +4,8 @@ import (
 	"context"
 	"testing"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/database/vector"
-	"github.com/chris-alexander-pop/system-design-library/pkg/database/vector/adapters/memory"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/database/vector"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/database/vector/adapters/memory"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

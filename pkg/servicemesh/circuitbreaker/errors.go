@@ -1,6 +1,6 @@
 package circuitbreaker
 
-import "github.com/chris-alexander-pop/system-design-library/pkg/errors"
+import "github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 
 // Sentinel errors for the mesh-facing circuit breaker facade.
 // Prefer comparing with errors.Is. Codes align with pkg/resilience /

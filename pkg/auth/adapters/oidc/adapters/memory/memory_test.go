@@ -4,10 +4,10 @@ import (
 	"context"
 	"testing"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/auth"
-	"github.com/chris-alexander-pop/system-design-library/pkg/auth/adapters/oidc"
-	"github.com/chris-alexander-pop/system-design-library/pkg/auth/adapters/oidc/adapters/memory"
-	"github.com/chris-alexander-pop/system-design-library/pkg/errors"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/auth"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/auth/adapters/oidc"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/auth/adapters/oidc/adapters/memory"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 )
 
 func TestMemoryExchanger(t *testing.T) {

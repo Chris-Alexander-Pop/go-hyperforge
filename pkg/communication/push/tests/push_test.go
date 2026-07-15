@@ -3,9 +3,9 @@ package tests
 import (
 	"testing"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/communication/push"
-	"github.com/chris-alexander-pop/system-design-library/pkg/communication/push/adapters/memory"
-	"github.com/chris-alexander-pop/system-design-library/pkg/test"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/communication/push"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/communication/push/adapters/memory"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/test"
 )
 
 type PushTestSuite struct {

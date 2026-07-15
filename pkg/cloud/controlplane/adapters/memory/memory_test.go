@@ -4,9 +4,9 @@ import (
 	"context"
 	"testing"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/cloud"
-	"github.com/chris-alexander-pop/system-design-library/pkg/cloud/controlplane"
-	"github.com/chris-alexander-pop/system-design-library/pkg/cloud/controlplane/adapters/memory"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/cloud"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/cloud/controlplane"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/cloud/controlplane/adapters/memory"
 )
 
 func TestControlPlaneRegisterGetList(t *testing.T) {

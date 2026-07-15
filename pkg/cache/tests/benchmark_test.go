@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/cache/adapters/memory"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/cache/adapters/memory"
 )
 
 func BenchmarkMemoryCache_Set(b *testing.B) {

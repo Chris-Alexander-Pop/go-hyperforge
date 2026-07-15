@@ -1,6 +1,6 @@
 package api
 
-import "github.com/chris-alexander-pop/system-design-library/pkg/errors"
+import "github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 
 // Domain sentinel errors for the API package.
 // HTTP/gRPC status mapping is handled by pkg/errors.HTTPStatus / GRPCStatus.

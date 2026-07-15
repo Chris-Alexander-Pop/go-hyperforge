@@ -13,7 +13,7 @@ delegating core behavior to those shared packages.
 
 Usage:
 
-	import "github.com/chris-alexander-pop/system-design-library/pkg/servicemesh/discovery"
+	import "github.com/chris-alexander-pop/go-hyperforge/pkg/servicemesh/discovery"
 
 	registry := consul.New(cfg)
 	err := registry.Register(ctx, discovery.RegisterOptions{Name: "api", Port: 8080})

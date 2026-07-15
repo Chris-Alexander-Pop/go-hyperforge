@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/database/ops"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/database/ops"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

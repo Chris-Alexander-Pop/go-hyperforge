@@ -1,7 +1,7 @@
 package bfs
 
 import (
-	"github.com/chris-alexander-pop/system-design-library/pkg/algorithms/graph"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/algorithms/graph"
 )
 
 // Visit reports whether traversal should continue. Return false to stop early.

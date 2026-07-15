@@ -2,7 +2,7 @@
 //
 // Usage:
 //
-//	import "github.com/chris-alexander-pop/system-design-library/pkg/compute/vm/adapters/ec2"
+//	import "github.com/chris-alexander-pop/go-hyperforge/pkg/compute/vm/adapters/ec2"
 //
 //	mgr, err := ec2.New(ec2.Config{Region: "us-east-1"})
 //	inst, err := mgr.Create(ctx, vm.CreateOptions{ImageID: "ami-...", InstanceType: "t3.medium"})

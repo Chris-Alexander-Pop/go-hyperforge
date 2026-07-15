@@ -16,10 +16,10 @@ Elasticsearch adapter in many deployments but has no dedicated adapter yet.
 
 For search operations:
 
-	import "github.com/chris-alexander-pop/system-design-library/pkg/data/search"
+	import "github.com/chris-alexander-pop/go-hyperforge/pkg/data/search"
 
 For big data processing:
 
-	import "github.com/chris-alexander-pop/system-design-library/pkg/data/bigdata"
+	import "github.com/chris-alexander-pop/go-hyperforge/pkg/data/bigdata"
 */
 package data

@@ -1,6 +1,6 @@
 package metering
 
-import "github.com/chris-alexander-pop/system-design-library/pkg/errors"
+import "github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 
 const (
 	// CodeClosed indicates the meter or rater was used after Close.

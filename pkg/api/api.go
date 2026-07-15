@@ -5,10 +5,10 @@ import (
 	"fmt"
 
 	"github.com/99designs/gqlgen/graphql"
-	apigraphql "github.com/chris-alexander-pop/system-design-library/pkg/api/graphql"
-	"github.com/chris-alexander-pop/system-design-library/pkg/api/grpc"
-	"github.com/chris-alexander-pop/system-design-library/pkg/api/rest"
-	"github.com/chris-alexander-pop/system-design-library/pkg/errors"
+	apigraphql "github.com/chris-alexander-pop/go-hyperforge/pkg/api/graphql"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/api/grpc"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/api/rest"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 	"github.com/labstack/echo/v4"
 )
 

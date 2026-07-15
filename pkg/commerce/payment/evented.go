@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/events"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/events"
 	"github.com/google/uuid"
 )
 

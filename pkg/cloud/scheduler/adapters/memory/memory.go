@@ -5,9 +5,9 @@ import (
 	"math/rand"
 	"time"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/cloud"
-	"github.com/chris-alexander-pop/system-design-library/pkg/cloud/scheduler"
-	"github.com/chris-alexander-pop/system-design-library/pkg/concurrency"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/cloud"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/cloud/scheduler"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/concurrency"
 )
 
 // hostRecord tracks capacity used for placement decisions.

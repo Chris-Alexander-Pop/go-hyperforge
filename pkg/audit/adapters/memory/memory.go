@@ -14,8 +14,8 @@ import (
 	"context"
 	"time"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/audit"
-	"github.com/chris-alexander-pop/system-design-library/pkg/concurrency"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/audit"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/concurrency"
 	"github.com/google/uuid"
 )
 

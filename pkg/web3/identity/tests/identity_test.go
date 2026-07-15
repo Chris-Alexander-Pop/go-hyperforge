@@ -8,9 +8,9 @@ import (
 	"testing"
 	"time"
 
-	pkgerrors "github.com/chris-alexander-pop/system-design-library/pkg/errors"
-	"github.com/chris-alexander-pop/system-design-library/pkg/web3"
-	"github.com/chris-alexander-pop/system-design-library/pkg/web3/identity"
+	pkgerrors "github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/web3"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/web3/identity"
 	"github.com/ethereum/go-ethereum/crypto"
 )
 

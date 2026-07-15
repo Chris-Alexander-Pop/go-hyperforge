@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/messaging"
-	"github.com/chris-alexander-pop/system-design-library/pkg/messaging/adapters/memory"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/messaging"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/messaging/adapters/memory"
 )
 
 func Example() {

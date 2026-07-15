@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/audit"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/audit"
 )
 
 // AuditMiddleware logs HTTP requests to the audit log.

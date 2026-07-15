@@ -4,7 +4,7 @@
 //
 // Usage:
 //
-//	import "github.com/chris-alexander-pop/system-design-library/pkg/ai/ml/training/adapters/tensorflow"
+//	import "github.com/chris-alexander-pop/go-hyperforge/pkg/ai/ml/training/adapters/tensorflow"
 //
 //	trainer := tensorflow.New(tensorflow.Config{PythonPath: "/usr/bin/python3"})
 //	job, err := trainer.StartJob(ctx, training.JobConfig{EntryPoint: "train.py"})
@@ -21,9 +21,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/ai/ml/training"
-	pkgerrors "github.com/chris-alexander-pop/system-design-library/pkg/errors"
-	"github.com/chris-alexander-pop/system-design-library/pkg/validator"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/ai/ml/training"
+	pkgerrors "github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/validator"
 	"github.com/google/uuid"
 )
 

@@ -10,10 +10,10 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/auth/mfa"
-	"github.com/chris-alexander-pop/system-design-library/pkg/auth/mfa/otp"
-	"github.com/chris-alexander-pop/system-design-library/pkg/concurrency"
-	pkgerrors "github.com/chris-alexander-pop/system-design-library/pkg/errors"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/auth/mfa"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/auth/mfa/otp"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/concurrency"
+	pkgerrors "github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 )
 
 // Deliverer sends a one-time code to a destination (phone or email).

@@ -11,8 +11,8 @@ import (
 
 	firebase "firebase.google.com/go/v4"
 	"firebase.google.com/go/v4/auth"
-	"github.com/chris-alexander-pop/system-design-library/pkg/auth/cloud"
-	"github.com/chris-alexander-pop/system-design-library/pkg/errors"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/auth/cloud"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 )
 
 const identityToolkitSignInURL = "https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword"

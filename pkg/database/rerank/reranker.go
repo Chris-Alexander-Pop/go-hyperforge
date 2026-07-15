@@ -3,7 +3,7 @@ package rerank
 import (
 	"context"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/database/vector"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/database/vector"
 )
 
 // Reranker defines the interface for reranking search results

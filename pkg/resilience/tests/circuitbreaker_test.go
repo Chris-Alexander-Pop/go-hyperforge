@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/resilience"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/resilience"
 )
 
 func TestCircuitBreaker_StateTransitions(t *testing.T) {

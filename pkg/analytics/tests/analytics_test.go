@@ -6,11 +6,11 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/analytics"
-	"github.com/chris-alexander-pop/system-design-library/pkg/analytics/adapters/memory"
-	analyticsredis "github.com/chris-alexander-pop/system-design-library/pkg/analytics/adapters/redis"
-	"github.com/chris-alexander-pop/system-design-library/pkg/errors"
-	"github.com/chris-alexander-pop/system-design-library/pkg/test"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/analytics"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/analytics/adapters/memory"
+	analyticsredis "github.com/chris-alexander-pop/go-hyperforge/pkg/analytics/adapters/redis"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/test"
 
 	"github.com/alicebob/miniredis/v2"
 	goredis "github.com/redis/go-redis/v9"

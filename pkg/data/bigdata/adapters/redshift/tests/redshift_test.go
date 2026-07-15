@@ -5,7 +5,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/data/bigdata/adapters/redshift"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/data/bigdata/adapters/redshift"
 )
 
 func TestRedshift_Init(t *testing.T) {

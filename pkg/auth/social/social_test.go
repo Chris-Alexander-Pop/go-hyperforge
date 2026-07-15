@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/auth/social"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/auth/social"
 )
 
 func TestNewAppleProvider(t *testing.T) {

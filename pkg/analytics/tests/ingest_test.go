@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/analytics"
-	"github.com/chris-alexander-pop/system-design-library/pkg/analytics/adapters/memory"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/analytics"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/analytics/adapters/memory"
 )
 
 func TestMemorySinkIngest(t *testing.T) {

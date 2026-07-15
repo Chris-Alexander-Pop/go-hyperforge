@@ -8,7 +8,7 @@ import (
 	"context"
 	"strings"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/errors"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 )
 
 // Template is a versioned prompt body.

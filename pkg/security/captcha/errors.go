@@ -1,6 +1,6 @@
 package captcha
 
-import "github.com/chris-alexander-pop/system-design-library/pkg/errors"
+import "github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 
 const (
 	CodeInvalidToken = "CAPTCHA_INVALID_TOKEN"

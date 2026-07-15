@@ -7,9 +7,9 @@ import (
 	"net/smtp"
 	"time"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/communication/email"
-	"github.com/chris-alexander-pop/system-design-library/pkg/errors"
-	"github.com/chris-alexander-pop/system-design-library/pkg/validator"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/communication/email"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/validator"
 )
 
 // Sender implements email.Sender for SMTP.

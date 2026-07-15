@@ -1,7 +1,7 @@
 package histogram_test
 
 import (
-	"github.com/chris-alexander-pop/system-design-library/pkg/datastructures/sketch/histogram"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/datastructures/sketch/histogram"
 )
 
 import "testing"

@@ -6,8 +6,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/api/ratelimit"
-	"github.com/chris-alexander-pop/system-design-library/pkg/logger"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/api/ratelimit"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/logger"
 )
 
 // KeyFunc extracts a rate-limit bucket key from the request.

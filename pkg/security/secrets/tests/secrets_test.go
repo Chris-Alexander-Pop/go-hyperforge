@@ -4,13 +4,13 @@ import (
 	"context"
 	"testing"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/errors"
-	"github.com/chris-alexander-pop/system-design-library/pkg/events"
-	eventsmem "github.com/chris-alexander-pop/system-design-library/pkg/events/adapters/memory"
-	"github.com/chris-alexander-pop/system-design-library/pkg/security"
-	"github.com/chris-alexander-pop/system-design-library/pkg/security/secrets"
-	secretsmem "github.com/chris-alexander-pop/system-design-library/pkg/security/secrets/adapters/memory"
-	"github.com/chris-alexander-pop/system-design-library/pkg/test"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/events"
+	eventsmem "github.com/chris-alexander-pop/go-hyperforge/pkg/events/adapters/memory"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/security"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/security/secrets"
+	secretsmem "github.com/chris-alexander-pop/go-hyperforge/pkg/security/secrets/adapters/memory"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/test"
 )
 
 type SecretsTestSuite struct {

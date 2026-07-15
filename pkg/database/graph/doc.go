@@ -8,7 +8,7 @@
 //
 // Usage:
 //
-//	import "github.com/chris-alexander-pop/system-design-library/pkg/database/graph/adapters/neo4j"
+//	import "github.com/chris-alexander-pop/go-hyperforge/pkg/database/graph/adapters/neo4j"
 //
 //	g, err := neo4j.New(cfg)
 //	if err != nil {

@@ -4,7 +4,7 @@
 //
 // Usage:
 //
-//	import "github.com/chris-alexander-pop/system-design-library/pkg/workflow/adapters/stepfunctions"
+//	import "github.com/chris-alexander-pop/go-hyperforge/pkg/workflow/adapters/stepfunctions"
 //
 //	engine, err := stepfunctions.New(stepfunctions.Config{Region: "us-east-1"})
 //	exec, err := engine.Start(ctx, workflow.StartOptions{WorkflowID: "arn:aws:states:...", Input: data})
@@ -20,8 +20,8 @@ import (
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/sfn"
 	"github.com/aws/aws-sdk-go-v2/service/sfn/types"
-	pkgerrors "github.com/chris-alexander-pop/system-design-library/pkg/errors"
-	"github.com/chris-alexander-pop/system-design-library/pkg/workflow"
+	pkgerrors "github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/workflow"
 )
 
 // Config holds AWS Step Functions configuration.

@@ -9,9 +9,9 @@ import (
 	"net/http"
 	"time"
 
-	pkgerrors "github.com/chris-alexander-pop/system-design-library/pkg/errors"
-	"github.com/chris-alexander-pop/system-design-library/pkg/iot"
-	"github.com/chris-alexander-pop/system-design-library/pkg/resilience"
+	pkgerrors "github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/iot"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/resilience"
 )
 
 // Re-export shared OTA types from the root iot package.

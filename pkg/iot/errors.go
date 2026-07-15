@@ -3,7 +3,7 @@ package iot
 import (
 	"fmt"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/errors"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 )
 
 // Error codes for IoT operations.

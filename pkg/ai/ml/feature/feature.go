@@ -4,7 +4,7 @@
 //
 // Usage:
 //
-//	import "github.com/chris-alexander-pop/system-design-library/pkg/ai/ml/feature"
+//	import "github.com/chris-alexander-pop/go-hyperforge/pkg/ai/ml/feature"
 //
 //	store := feature.New(feature.Config{})
 //	features, err := store.GetOnlineFeatures(ctx, "user-features", entityKeys)
@@ -15,7 +15,7 @@ import (
 	"sync"
 	"time"
 
-	pkgerrors "github.com/chris-alexander-pop/system-design-library/pkg/errors"
+	pkgerrors "github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 )
 
 // Config holds feature store configuration.

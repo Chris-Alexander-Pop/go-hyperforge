@@ -5,9 +5,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/auth"
-	"github.com/chris-alexander-pop/system-design-library/pkg/auth/adapters/oidc"
-	"github.com/chris-alexander-pop/system-design-library/pkg/concurrency"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/auth"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/auth/adapters/oidc"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/concurrency"
 	"golang.org/x/oauth2"
 )
 

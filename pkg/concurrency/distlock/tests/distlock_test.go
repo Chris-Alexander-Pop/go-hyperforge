@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/concurrency/distlock"
-	"github.com/chris-alexander-pop/system-design-library/pkg/concurrency/distlock/adapters/memory"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/concurrency/distlock"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/concurrency/distlock/adapters/memory"
 )
 
 func TestDistLock(t *testing.T) {

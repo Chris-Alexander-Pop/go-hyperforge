@@ -5,9 +5,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/auth/mfa"
-	mfaemail "github.com/chris-alexander-pop/system-design-library/pkg/auth/mfa/adapters/email"
-	emailmemory "github.com/chris-alexander-pop/system-design-library/pkg/communication/email/adapters/memory"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/auth/mfa"
+	mfaemail "github.com/chris-alexander-pop/go-hyperforge/pkg/auth/mfa/adapters/email"
+	emailmemory "github.com/chris-alexander-pop/go-hyperforge/pkg/communication/email/adapters/memory"
 )
 
 func TestEmailChannelWithMemorySender(t *testing.T) {

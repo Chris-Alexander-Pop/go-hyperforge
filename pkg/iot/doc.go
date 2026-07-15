@@ -13,18 +13,20 @@ This root package provides:
 Concrete implementations:
 
   - protocols/mqtt — Eclipse Paho MQTT client (MQTT 3.1.1/5.0 over TCP/TLS)
+  - protocols/coap — CoAP stub client (in-process memory; UDP/DTLS not on the wire yet)
   - device/ota — HTTP manifest/download updater with SHA-256 verification
+  - device/registry — DeviceRegistry interface + adapters/memory
   - adapters/awsiot — AWS IoT Core SDK wrapper (not yet behind the root Client interface)
   - adapters/greengrass — AWS Greengrass V2 SDK wrapper (management API, not MQTT)
 
-CoAP, device registry, and certificate provisioning are not implemented.
+Certificate provisioning and real CoAP UDP transport are not implemented.
 AWS adapters remain SDK-coupled; prefer root interfaces + memory for new code.
 
 # Usage
 
 	import (
-		"github.com/chris-alexander-pop/system-design-library/pkg/iot"
-		"github.com/chris-alexander-pop/system-design-library/pkg/iot/adapters/memory"
+		"github.com/chris-alexander-pop/go-hyperforge/pkg/iot"
+		"github.com/chris-alexander-pop/go-hyperforge/pkg/iot/adapters/memory"
 	)
 
 	client := memory.NewClient()

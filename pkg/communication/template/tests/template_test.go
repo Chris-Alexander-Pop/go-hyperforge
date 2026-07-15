@@ -6,11 +6,11 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/communication/template"
-	"github.com/chris-alexander-pop/system-design-library/pkg/communication/template/adapters/html"
-	"github.com/chris-alexander-pop/system-design-library/pkg/communication/template/adapters/memory"
-	"github.com/chris-alexander-pop/system-design-library/pkg/communication/template/adapters/text"
-	"github.com/chris-alexander-pop/system-design-library/pkg/test"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/communication/template"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/communication/template/adapters/html"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/communication/template/adapters/memory"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/communication/template/adapters/text"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/test"
 )
 
 type TemplateTestSuite struct {

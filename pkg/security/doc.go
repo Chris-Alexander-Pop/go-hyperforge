@@ -28,7 +28,7 @@ Bridge with pkg/auth:
 
 Usage:
 
-	import "github.com/chris-alexander-pop/system-design-library/pkg/security/secrets/adapters/memory"
+	import "github.com/chris-alexander-pop/go-hyperforge/pkg/security/secrets/adapters/memory"
 
 	mgr := memory.New()
 	_ = mgr.Set(ctx, "database/password", "s3cr3t")

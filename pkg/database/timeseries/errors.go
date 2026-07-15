@@ -1,6 +1,6 @@
 package timeseries
 
-import "github.com/chris-alexander-pop/system-design-library/pkg/errors"
+import "github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 
 var (
 	// ErrNotFound indicates that the requested data was not found.

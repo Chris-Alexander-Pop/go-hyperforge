@@ -11,8 +11,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/database/graph"
-	"github.com/chris-alexander-pop/system-design-library/pkg/errors"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/database/graph"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 )
 
 // Store implements graph.Interface using Neo4j's HTTP Cypher API.

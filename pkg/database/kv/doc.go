@@ -9,8 +9,8 @@ This package supports multiple KV backends through a common interface:
 Basic usage:
 
 	import (
-		"github.com/chris-alexander-pop/system-design-library/pkg/database/kv"
-		"github.com/chris-alexander-pop/system-design-library/pkg/database/kv/adapters/redis"
+		"github.com/chris-alexander-pop/go-hyperforge/pkg/database/kv"
+		"github.com/chris-alexander-pop/go-hyperforge/pkg/database/kv/adapters/redis"
 	)
 
 	cfg := kv.Config{

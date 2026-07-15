@@ -3,10 +3,10 @@ package sms
 import (
 	"context"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/auth/mfa"
-	"github.com/chris-alexander-pop/system-design-library/pkg/auth/mfa/adapters/channel"
-	"github.com/chris-alexander-pop/system-design-library/pkg/communication/sms"
-	pkgerrors "github.com/chris-alexander-pop/system-design-library/pkg/errors"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/auth/mfa"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/auth/mfa/adapters/channel"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/communication/sms"
+	pkgerrors "github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 )
 
 // deliverer adapts sms.Sender to channel.Deliverer.

@@ -3,9 +3,9 @@ package apns_test
 import (
 	"testing"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/communication"
-	"github.com/chris-alexander-pop/system-design-library/pkg/communication/push"
-	"github.com/chris-alexander-pop/system-design-library/pkg/communication/push/adapters/apns"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/communication"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/communication/push"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/communication/push/adapters/apns"
 	"github.com/stretchr/testify/require"
 )
 

@@ -3,7 +3,7 @@ package memory
 import (
 	"context"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/data/bigdata"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/data/bigdata"
 )
 
 type Adapter struct {

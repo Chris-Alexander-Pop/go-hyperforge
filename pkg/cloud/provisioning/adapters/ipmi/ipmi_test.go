@@ -7,7 +7,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/cloud"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/cloud"
 )
 
 func TestIPMIPowerCycle(t *testing.T) {

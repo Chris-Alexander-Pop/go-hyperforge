@@ -3,9 +3,9 @@ package memory
 import (
 	"context"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/concurrency"
-	"github.com/chris-alexander-pop/system-design-library/pkg/database/graph"
-	"github.com/chris-alexander-pop/system-design-library/pkg/errors"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/concurrency"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/database/graph"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 )
 
 // Store implements graph.Interface with an in-memory store.

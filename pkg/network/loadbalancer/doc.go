@@ -13,7 +13,7 @@
 //
 // Usage:
 //
-//	import "github.com/chris-alexander-pop/system-design-library/pkg/network/loadbalancer/adapters/memory"
+//	import "github.com/chris-alexander-pop/go-hyperforge/pkg/network/loadbalancer/adapters/memory"
 //
 //	mgr := memory.New()
 //	pool, _ := mgr.CreateTargetPool(ctx, loadbalancer.CreateTargetPoolOptions{

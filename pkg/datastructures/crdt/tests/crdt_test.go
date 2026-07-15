@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/datastructures/crdt"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/datastructures/crdt"
 )
 
 func TestGCounter_IncAndMerge(t *testing.T) {

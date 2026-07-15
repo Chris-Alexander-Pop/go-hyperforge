@@ -9,9 +9,9 @@ import (
 	"testing"
 	"time"
 
-	cachememory "github.com/chris-alexander-pop/system-design-library/pkg/cache/adapters/memory"
-	"github.com/chris-alexander-pop/system-design-library/pkg/commerce/currency"
-	"github.com/chris-alexander-pop/system-design-library/pkg/commerce/currency/adapters/openexchangerates"
+	cachememory "github.com/chris-alexander-pop/go-hyperforge/pkg/cache/adapters/memory"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/commerce/currency"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/commerce/currency/adapters/openexchangerates"
 )
 
 func TestFetchRatesOpenExchangeShape(t *testing.T) {

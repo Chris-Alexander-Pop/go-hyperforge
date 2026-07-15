@@ -1,6 +1,6 @@
 package tax
 
-import "github.com/chris-alexander-pop/system-design-library/pkg/errors"
+import "github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 
 var (
 	// ErrUnsupportedLocation indicates tax cannot be calculated for the location.
