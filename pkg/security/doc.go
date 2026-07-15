@@ -4,18 +4,17 @@ Package security provides security services and integrations.
 Subpackages (adapters noted):
 
   - captcha: CAPTCHA verification (memory + reCAPTCHA HTTP)
-  - crypto: AES-GCM, hashing, envelope encryption; PQC is experimental
-  - crypto/kms: Key management (memory + AWS KMS Encrypt/Decrypt)
+  - crypto: AES-GCM, hashing, envelope encryption; PQC ML-KEM + ML-DSA via CIRCL
+  - crypto/kms: Key management (memory + AWS/GCP/Azure KMS Encrypt/Decrypt)
   - fraud: Fraud detection / risk scoring (memory)
   - iam: Shared IAM types; provider is a scaffold IdP — prefer pkg/auth for app auth
-  - scanning: Malware / vulnerability scanning (memory)
-  - secrets: Secret management (memory + HashiCorp Vault KV v2 HTTP)
-  - waf: Web Application Firewall control (memory + Cloudflare IP access rules)
+  - scanning: Malware / vulnerability scanning (memory + GuardDuty + ClamAV)
+  - secrets: Secret management (memory + Vault + AWS/GCP/Azure Key Vault)
+  - waf: Web Application Firewall control (memory + Cloudflare + AWS WAFv2)
 
-Honesty note: GCP/Azure KMS, AWS WAF, GuardDuty, Dilithium signatures, and cloud
-secret managers beyond Vault are not wired. Those names remain reserved in
-Provider constants. Prefer memory adapters for unit tests; use Vault / AWS KMS /
-Cloudflare adapters when targeting those control planes.
+Honesty note: Prefer memory adapters for unit tests; use Vault / cloud KMS /
+secret managers / WAF / ClamAV / GuardDuty adapters when targeting those
+control planes. Some Provider constant names remain reserved for future backends.
 
 Bridge with pkg/auth:
 

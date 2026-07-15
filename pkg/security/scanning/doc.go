@@ -1,4 +1,4 @@
 // Package scanning provides vulnerability / malware scanning interfaces.
 //
-// Memory adapter only. ClamAV / GuardDuty adapters are reserved placeholders.
+// Adapters: memory, GuardDuty (adapters/guardduty), ClamAV INSTREAM (adapters/clamav).
 package scanning

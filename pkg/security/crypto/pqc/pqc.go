@@ -11,12 +11,15 @@ import (
 	"golang.org/x/crypto/hkdf"
 )
 
-// Errors (pkg/errors). Dilithium/ML-DSA is not implemented — see package doc.
+// Errors (pkg/errors).
 var (
 	ErrInvalidPublicKey    = errors.InvalidArgument("invalid public key", nil)
 	ErrInvalidPrivateKey   = errors.InvalidArgument("invalid private key", nil)
 	ErrDecapsulationFailed = errors.Internal("decapsulation failed", nil)
 	ErrInvalidCiphertext   = errors.InvalidArgument("invalid ciphertext", nil)
+	ErrInvalidSignature    = errors.InvalidArgument("invalid signature", nil)
+	ErrSignFailed          = errors.Internal("signature generation failed", nil)
+	ErrVerifyFailed        = errors.InvalidArgument("signature verification failed", nil)
 )
 
 // =========================================================================

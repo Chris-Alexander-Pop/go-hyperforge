@@ -26,7 +26,7 @@ const (
 // KyberKEM implements ML-KEM via Cloudflare CIRCL (FIPS 203).
 //
 // Despite the historical Kyber naming, KeyGen/Encapsulate/Decapsulate use
-// github.com/cloudflare/circl/kem/mlkem. Dilithium/ML-DSA is not provided.
+// github.com/cloudflare/circl/kem/mlkem. For signatures see DilithiumSigner.
 type KyberKEM struct {
 	level  KyberLevel
 	scheme kem.Scheme

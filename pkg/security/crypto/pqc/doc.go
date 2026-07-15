@@ -4,9 +4,11 @@ Package pqc provides post-quantum cryptography helpers backed by Cloudflare CIRC
 Status:
   - Hybrid KEM combines X25519 with ML-KEM (FIPS 203) via
     github.com/cloudflare/circl/kem/mlkem (levels 512/768/1024).
-  - Dilithium / ML-DSA digital signatures are NOT implemented.
+  - Dilithium / ML-DSA digital signatures via
+    github.com/cloudflare/circl/sign/mldsa (ML-DSA-44/65/87) through
+    Signer / Verifier (DilithiumSigner).
 
-Suitable for hybrid key exchange prototyping and production ML-KEM use through
-the KyberKEM / HybridKEM APIs. Signature algorithms remain out of scope.
+Suitable for hybrid key exchange and ML-DSA signing through KyberKEM /
+HybridKEM and DilithiumSigner APIs.
 */
 package pqc

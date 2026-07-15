@@ -14,21 +14,21 @@ const (
 
 	// Secrets providers
 	ProviderVault             = "vault"               // adapters/vault (KV v2)
-	ProviderAWSSecretsManager = "aws-secrets-manager" // reserved
-	ProviderGCPSecretManager  = "gcp-secret-manager"  // reserved
-	ProviderAzureKeyVault     = "azure-key-vault"     // reserved
+	ProviderAWSSecretsManager = "aws-secrets-manager" // adapters/awssecrets
+	ProviderGCPSecretManager  = "gcp-secret-manager"  // adapters/gcpsecretmanager
+	ProviderAzureKeyVault     = "azure-key-vault"     // adapters/azurekv
 
 	// KMS providers
 	ProviderAWSKMS   = "aws-kms"   // adapters/awskms
-	ProviderGCPKMS   = "gcp-kms"   // reserved
-	ProviderAzureKMS = "azure-kms" // reserved
+	ProviderGCPKMS   = "gcp-kms"   // adapters/gcpkms
+	ProviderAzureKMS = "azure-kms" // adapters/azurekms
 
 	// Fraud / WAF / scanning
 	ProviderMaxMind    = "maxmind"    // reserved
-	ProviderAWSWAF     = "aws-waf"    // reserved
+	ProviderAWSWAF     = "aws-waf"    // waf/adapters/aws
 	ProviderCloudflare = "cloudflare" // waf/adapters/cloudflare
-	ProviderClamAV     = "clamav"     // reserved
-	ProviderGuardDuty  = "guardduty"  // reserved
+	ProviderClamAV     = "clamav"     // scanning/adapters/clamav
+	ProviderGuardDuty  = "guardduty"  // scanning/adapters/guardduty
 )
 
 // Domain names for documentation and driver registries.

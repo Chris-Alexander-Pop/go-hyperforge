@@ -99,3 +99,66 @@ func TestHybridEncryptor(t *testing.T) {
 		t.Fatalf("got %q want %q", out, plain)
 	}
 }
+
+func TestMLDSARoundTrip(t *testing.T) {
+	levels := []pqc.DilithiumLevel{pqc.DilithiumLevel2, pqc.DilithiumLevel3, pqc.DilithiumLevel5}
+	msg := []byte("post-quantum signed message")
+	for _, level := range levels {
+		t.Run(fmt.Sprintf("ML-DSA-level-%d", level), func(t *testing.T) {
+			s := pqc.NewDilithiumSigner(level)
+			pub, priv, err := s.KeyGen()
+			if err != nil {
+				t.Fatalf("KeyGen: %v", err)
+			}
+			if len(pub) != s.PublicKeySize() || len(priv) != s.PrivateKeySize() {
+				t.Fatalf("unexpected key sizes pub=%d priv=%d", len(pub), len(priv))
+			}
+
+			sig, err := s.Sign(priv, msg)
+			if err != nil {
+				t.Fatalf("Sign: %v", err)
+			}
+			if len(sig) != s.SignatureSize() {
+				t.Fatalf("unexpected signature size %d", len(sig))
+			}
+
+			ok, err := s.Verify(pub, msg, sig)
+			if err != nil {
+				t.Fatalf("Verify: %v", err)
+			}
+			if !ok {
+				t.Fatal("expected valid signature")
+			}
+
+			ok, err = s.Verify(pub, []byte("tampered"), sig)
+			if err != nil {
+				t.Fatalf("Verify tampered: %v", err)
+			}
+			if ok {
+				t.Fatal("expected invalid signature for tampered message")
+			}
+		})
+	}
+}
+
+func TestMLDSAInvalidKeys(t *testing.T) {
+	s := pqc.NewDilithiumSigner(pqc.DilithiumLevel3)
+	if _, err := s.Sign([]byte("short"), []byte("msg")); err == nil {
+		t.Fatal("expected invalid private key")
+	}
+	pub, priv, err := s.KeyGen()
+	if err != nil {
+		t.Fatal(err)
+	}
+	sig, err := s.Sign(priv, []byte("msg"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := s.Verify([]byte("short"), []byte("msg"), sig); err == nil {
+		t.Fatal("expected invalid public key")
+	}
+	if _, err := s.Verify(pub, []byte("msg"), []byte("short")); err == nil {
+		t.Fatal("expected invalid signature")
+	}
+	_ = pub
+}
