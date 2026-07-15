@@ -223,15 +223,15 @@
 | `pkg/auth/webauthn` | ✅ | auth-service | Passkeys / Biometrics |
 
 ### Protection
-> 🔄 Foundation raised (root/errors, crypto, secrets Rotate, reCAPTCHA). Still no Vault/cloud KMS/WAF/scanner production backends. See [`MISSING_CAPABILITIES.md`](../MISSING_CAPABILITIES.md#pkgsecurity-30--improved).
+> 🔄 Vault KV v2, AWS KMS, Cloudflare WAF adapters landed; scanners/GuardDuty/GCP-Azure KMS still open. See [`MISSING_CAPABILITIES.md`](../MISSING_CAPABILITIES.md#pkgsecurity-30--improved).
 
 | Package | Status | Enables Services | Description |
 |---------|--------|------------------|-------------|
 | `pkg/security/fraud` | 🔄 | checkout | Fraud Detection/Risk Scoring (memory) |
-| `pkg/security/captcha` | 🔄 | registration | Bot Protection (memory) |
-| `pkg/security/waf` | 🔄 | edge-security | Web Application Firewall Control (memory) |
-| `pkg/security/crypto/kms` | 🔄 | key-management | Key Management Service (memory) |
-| `pkg/security/secrets` | 🔄 | vault | Secret Management Interface (memory) |
+| `pkg/security/captcha` | 🔄 | registration | Bot Protection (memory + reCAPTCHA) |
+| `pkg/security/waf` | 🔄 | edge-security | WAF control (memory + Cloudflare IP access rules) |
+| `pkg/security/crypto/kms` | 🔄 | key-management | KMS (memory + AWS KMS Encrypt/Decrypt) |
+| `pkg/security/secrets` | 🔄 | vault | Secrets (memory + Vault KV v2 HTTP) |
 | `pkg/security/scanning` | 🔄 | compliance | Vulnerability Scanning (memory; GuardDuty not wired) |
 
 ---
