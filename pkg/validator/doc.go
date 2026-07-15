@@ -25,14 +25,18 @@ Sanitizer strips or escapes HTML and can recurse through maps/slices via
 SanitizeMap. Prefer detection helpers before accepting untrusted input:
 
   - DetectSQLInjection — common SQL injection patterns
+
   - DetectCommandInjection — shell metacharacters
+
   - DetectPathTraversal — ../ and encoded variants
+
   - ValidatePathInside — ensure a target path stays within a base directory
+
   - SanitizePath / SanitizeForShell — strip dangerous sequences (prefer
     parameterized APIs over string interpolation when possible)
 
-	s := validator.NewSanitizer(validator.DefaultSanitizerConfig())
-	clean := s.Sanitize(userInput)
-	safe := s.SanitizeMap(formData)
+    s := validator.NewSanitizer(validator.DefaultSanitizerConfig())
+    clean := s.Sanitize(userInput)
+    safe := s.SanitizeMap(formData)
 */
 package validator

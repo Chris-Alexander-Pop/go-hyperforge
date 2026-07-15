@@ -14,10 +14,10 @@ type Config struct {
 
 // Receipt is an SDK-free Ethereum transaction receipt summary.
 type Receipt struct {
-	TxHash      string
-	BlockNumber uint64
-	Status      uint64
-	GasUsed     uint64
+	TxHash          string
+	BlockNumber     uint64
+	Status          uint64
+	GasUsed         uint64
 	ContractAddress string
 }
 

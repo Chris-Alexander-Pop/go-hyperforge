@@ -24,7 +24,7 @@ type Manager struct {
 	loadBalancers map[string]*loadbalancer.LoadBalancer
 	listeners     map[string]*loadbalancer.Listener // listenerID -> listener
 	targetPools   map[string]*loadbalancer.TargetPool
-	rules         map[string][]*loadbalancer.Rule // listenerID -> rules
+	rules         map[string][]*loadbalancer.Rule   // listenerID -> rules
 	balancers     map[string]loadbalancing.Balancer // poolID -> algorithm balancer
 	config        loadbalancer.Config
 }

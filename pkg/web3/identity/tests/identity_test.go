@@ -213,7 +213,7 @@ func TestFormatSIWE_OptionalFields(t *testing.T) {
 	msg := &web3.SIWEMessage{
 		Domain: "app.io", Address: "0xABC", Statement: "Hello",
 		URI: "https://app.io", Version: "1", ChainID: 5, Nonce: "abc123",
-		IssuedAt: time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
+		IssuedAt:       time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
 		ExpirationTime: &exp, NotBefore: &nb, RequestID: "req-1",
 		Resources: []string{"ipfs://x", "https://y"},
 	}

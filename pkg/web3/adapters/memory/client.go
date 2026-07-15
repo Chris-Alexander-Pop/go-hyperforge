@@ -30,15 +30,15 @@ type ClientConfig struct {
 
 // Client is an in-memory EVM client for tests and local development.
 type Client struct {
-	mu       *concurrency.SmartRWMutex
-	chainID  *big.Int
-	address  string
-	balances map[string]*big.Int
-	receipts map[string]*web3.Receipt
+	mu        *concurrency.SmartRWMutex
+	chainID   *big.Int
+	address   string
+	balances  map[string]*big.Int
+	receipts  map[string]*web3.Receipt
 	contracts map[string][]byte // contractAddr → last call result stub
-	block    atomic.Uint64
-	txSeq    atomic.Uint64
-	closed   atomic.Bool
+	block     atomic.Uint64
+	txSeq     atomic.Uint64
+	closed    atomic.Bool
 }
 
 // NewClient creates an in-memory Ethereum client.

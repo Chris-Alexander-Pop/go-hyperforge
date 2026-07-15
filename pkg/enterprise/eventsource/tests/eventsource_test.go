@@ -9,9 +9,9 @@ import (
 	"testing"
 	"time"
 
-	pkgerrors "github.com/chris-alexander-pop/system-design-library/pkg/errors"
 	"github.com/chris-alexander-pop/system-design-library/pkg/enterprise/eventsource"
 	"github.com/chris-alexander-pop/system-design-library/pkg/enterprise/eventsource/adapters/memory"
+	pkgerrors "github.com/chris-alexander-pop/system-design-library/pkg/errors"
 	"github.com/chris-alexander-pop/system-design-library/pkg/events"
 	eventsmemory "github.com/chris-alexander-pop/system-design-library/pkg/events/adapters/memory"
 )

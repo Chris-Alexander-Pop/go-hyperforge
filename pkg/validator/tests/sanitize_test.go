@@ -134,7 +134,7 @@ func (s *SanitizeSuite) TestSanitizeMap() {
 	sanitizer := validator.NewSanitizer(validator.DefaultSanitizerConfig())
 
 	input := map[string]interface{}{
-		"name":  "<b>Alice</b>",
+		"name": "<b>Alice</b>",
 		"nested": map[string]interface{}{
 			"bio": "<script>alert(1)</script>hi",
 		},

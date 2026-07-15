@@ -7,8 +7,8 @@ import (
 	"sync/atomic"
 	"testing"
 
-	pkgerrors "github.com/chris-alexander-pop/system-design-library/pkg/errors"
 	"github.com/chris-alexander-pop/system-design-library/pkg/enterprise/cqrs"
+	pkgerrors "github.com/chris-alexander-pop/system-design-library/pkg/errors"
 )
 
 type createOrderCmd struct{ Name string }

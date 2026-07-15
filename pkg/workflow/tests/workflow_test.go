@@ -9,8 +9,8 @@ import (
 	"time"
 
 	"github.com/chris-alexander-pop/system-design-library/pkg/concurrency/distlock/adapters/memory"
-	eventsmemory "github.com/chris-alexander-pop/system-design-library/pkg/events/adapters/memory"
 	"github.com/chris-alexander-pop/system-design-library/pkg/events"
+	eventsmemory "github.com/chris-alexander-pop/system-design-library/pkg/events/adapters/memory"
 	"github.com/chris-alexander-pop/system-design-library/pkg/workflow"
 	workflowmemory "github.com/chris-alexander-pop/system-design-library/pkg/workflow/adapters/memory"
 	"github.com/chris-alexander-pop/system-design-library/pkg/workflow/saga"

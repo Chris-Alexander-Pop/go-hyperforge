@@ -13,7 +13,7 @@ type fakeToken struct {
 	err       error
 }
 
-func (t *fakeToken) Wait() bool                  { return t.completed }
+func (t *fakeToken) Wait() bool                     { return t.completed }
 func (t *fakeToken) WaitTimeout(time.Duration) bool { return t.completed }
 func (t *fakeToken) Done() <-chan struct{} {
 	ch := make(chan struct{})
