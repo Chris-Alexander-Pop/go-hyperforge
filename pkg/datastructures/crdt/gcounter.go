@@ -1,7 +1,7 @@
 package crdt
 
 import (
-	"sync"
+	"github.com/chris-alexander-pop/system-design-library/pkg/concurrency"
 )
 
 // GCounter is a Grow-only Counter CRDT.
@@ -9,13 +9,14 @@ import (
 type GCounter struct {
 	id     string
 	counts map[string]uint64
-	mu     sync.RWMutex
+	mu     *concurrency.SmartRWMutex
 }
 
 func NewGCounter(id string) *GCounter {
 	return &GCounter{
 		id:     id,
 		counts: make(map[string]uint64),
+		mu:     concurrency.NewSmartRWMutex(concurrency.MutexConfig{Name: "GCounter"}),
 	}
 }
 
@@ -41,6 +42,9 @@ func (c *GCounter) Count() uint64 {
 // Merge merges another GCounter into this one.
 // Rule: max(local, remote) for each node ID.
 func (c *GCounter) Merge(other *GCounter) {
+	if other == nil {
+		return
+	}
 	c.mu.Lock()
 	defer c.mu.Unlock()
 

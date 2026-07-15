@@ -1,4 +1,5 @@
-// Package tdigest provides functionality for tdigest.
+// Package tdigest provides an experimental t-digest quantile sketch.
 //
-// TODO: Add detailed documentation.
+// Experimental: API and numerical accuracy are not production-hardened.
+// Prefer a maintained t-digest implementation for latency SLOs.
 package tdigest

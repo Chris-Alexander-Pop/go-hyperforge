@@ -1,4 +1,5 @@
-// Package histogram provides functionality for histogram.
+// Package histogram provides an experimental HDR-style histogram.
 //
-// TODO: Add detailed documentation.
+// Experimental: correctness and API stability are not production-hardened.
+// Prefer a maintained HDRHistogram library for production latency metrics.
 package histogram

@@ -354,10 +354,10 @@ Landed foundation/reuse/domain hardening (scores above are the *pre-fix* snapsho
 - [ ] ❌ Finish Raft/Paxos/Chord/SWIM/Louvain beyond educational stubs
 
 ### `pkg/datastructures` (~58)
-- [ ] ❌ Tests for ARC/CRDT/roaring/cuckoo/scalable/DAG
-- [ ] ❌ Honest docs (drop Consistent Hashing/G-Set/Red-Black until real)
+- [x] ✅ Tests for ARC/CRDT/roaring/cuckoo/scalable/graph/DAG; G-Set CRDT implemented
+- [x] ✅ Honest docs (drop Consistent Hashing/Red-Black; G-Set real; root doc softened)
 - [ ] 🔗 Drive reuse into algorithms/cache/workflow (stop local PQs)
-- [ ] ❌ Harden or quarantine placeholders (tdigest, histogram, disruptor, hllpp)
+- [x] ✅ Quarantine placeholders as experimental (tdigest, histogram, disruptor, hllpp, roaring)
 
 ---
 

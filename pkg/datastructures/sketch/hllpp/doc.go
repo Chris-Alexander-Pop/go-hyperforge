@@ -1,4 +1,5 @@
-// Package hllpp provides functionality for hllpp.
+// Package hllpp provides an experimental HyperLogLog++ cardinality sketch.
 //
-// TODO: Add detailed documentation.
+// Experimental: prefer pkg/datastructures/hyperloglog for the primary HLL,
+// or a maintained HLL++ library when production accuracy matters.
 package hllpp

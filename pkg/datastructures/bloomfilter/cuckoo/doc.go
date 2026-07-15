@@ -1,4 +1,2 @@
-// Package cuckoo provides functionality for cuckoo.
-//
-// TODO: Add detailed documentation.
+// Package cuckoo provides a simplified Cuckoo filter (Add/Contains/Delete).
 package cuckoo

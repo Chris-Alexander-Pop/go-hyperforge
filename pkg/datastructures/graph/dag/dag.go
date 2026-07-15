@@ -2,7 +2,8 @@ package dag
 
 import (
 	"errors"
-	"sync"
+
+	"github.com/chris-alexander-pop/system-design-library/pkg/concurrency"
 )
 
 var (
@@ -13,7 +14,7 @@ var (
 // DAG represents a Directed Acyclic Graph.
 type DAG[T any] struct {
 	nodes map[string]*node[T]
-	mu    sync.RWMutex
+	mu    *concurrency.SmartRWMutex
 }
 
 type node[T any] struct {
@@ -26,6 +27,7 @@ type node[T any] struct {
 func New[T any]() *DAG[T] {
 	return &DAG[T]{
 		nodes: make(map[string]*node[T]),
+		mu:    concurrency.NewSmartRWMutex(concurrency.MutexConfig{Name: "DAG"}),
 	}
 }
 

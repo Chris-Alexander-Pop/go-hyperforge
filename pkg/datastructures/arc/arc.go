@@ -2,12 +2,13 @@ package arc
 
 import (
 	"container/list"
-	"sync"
+
+	"github.com/chris-alexander-pop/system-design-library/pkg/concurrency"
 )
 
 // Cache is a thread-safe Adaptive Replacement Cache.
 type Cache[K comparable, V any] struct {
-	mu       sync.RWMutex
+	mu       *concurrency.SmartRWMutex
 	capacity int
 	p        int        // target size for t1
 	t1, t2   *list.List // active lists (MRU positions of L1/L2)
@@ -28,6 +29,7 @@ func New[K comparable, V any](capacity int) *Cache[K, V] {
 		capacity = 1
 	}
 	return &Cache[K, V]{
+		mu:       concurrency.NewSmartRWMutex(concurrency.MutexConfig{Name: "ARC"}),
 		capacity: capacity,
 		p:        0,
 		t1:       list.New(),

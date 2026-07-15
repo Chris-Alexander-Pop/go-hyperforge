@@ -1,4 +1,4 @@
 /*
-Package graph provides directed and undirected graph implementations with traversal algorithms.
+Package graph provides directed adjacency-list graphs with BFS/DFS traversal.
 */
 package graph
