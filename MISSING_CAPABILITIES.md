@@ -28,7 +28,9 @@ Landed foundation/reuse/domain hardening (scores above are the *pre-fix* snapsho
 - ✅ `messaging`: NewFromConfig(memory), Publish/Consume options helpers, ErrQueueFull, ResilientConsumer, dedup TOCTOU, wrapper tests
 - ✅ `compute`: root compute.go, SmartRWMutex memory, package sentinels, k8s Create→Get ID fix, container resilient wrapper, honest EC2/Docker stubs docs
 - ✅ `cloud`: scheduler binpack/spread/random, controlplane/provisioning/scheduler memory tests, docs vs pkg/compute
-- 🔄 Remaining large gaps still listed below (TaxJar/Avalara/live FX, AI gateway, cloud IaaS adapters, security Vault/cloud KMS/WAF, etc.)
+- ✅ `telemetry`: `Init(ctx,cfg)`, SampleRate/Insecure, noop/stdout providers, RecordError/SetStatus, deterministic tests
+- ✅ `ai` (critical): LLM `StreamChat` + memory streaming, `errors.go`/instrumented, context-first conversation memory, embedding/image memory adapters; softened dual `ai/llm` vs `genai/llm` ledger; Chat (not Generate) docs
+- 🔄 Remaining large gaps still listed below (TaxJar/Avalara/live FX, AI gateway/multimodal/evals, cloud IaaS adapters, security Vault/cloud KMS/WAF, etc.)
 
 ---
 
@@ -55,8 +57,8 @@ Landed foundation/reuse/domain hardening (scores above are the *pre-fix* snapsho
 | workflow | 38 | Scaffold; no events/messaging/distlock |
 | algorithms | 38 | Many educational stubs |
 | cloud | 38→improved | Memory + real scheduler strategies; no Libvirt/IPMI |
-| telemetry | 36 | OTLP init stub only |
-| ai | 36 | Broad stubs; gateway/streaming missing |
+| telemetry | 36 | OTLP + noop/stdout; SampleRate/Insecure; metrics still open |
+| ai | 36 | StreamChat + memory adapters landed; gateway/multimodal/evals open |
 | analytics | 32 | HLL uniqueness only |
 | validator | 32 | Thin; config bypasses it |
 | audit | 34 | Stdout + redact; no store/query |
@@ -121,11 +123,12 @@ Landed foundation/reuse/domain hardening (scores above are the *pre-fix* snapsho
 - [ ] ❌ Context-first APIs; implement or remove dead `AllowedTags`
 - [ ] ❌ Tests for slug/phone/SQL/command/SanitizeMap
 
-### `pkg/telemetry` (~36)
-- [ ] ❌ Adapter-isolated exporters; noop/stdout for tests
-- [ ] ❌ Configurable sampler + TLS (not AlwaysSample + Insecure)
-- [ ] ❌ Metrics pipeline; `Init(ctx, cfg)`; shared span helpers
-- [ ] ❌ Deterministic tests (no hang on collector)
+### `pkg/telemetry` (~36 → improved)
+- [x] ✅ Adapter-isolated exporters; noop/stdout for tests (`Provider` + `adapters/noop`, `adapters/stdout`)
+- [x] ✅ Configurable sampler (`SampleRate`) + TLS (`Insecure` opt-in; not hard-coded AlwaysSample + Insecure)
+- [x] ✅ `Init(ctx, cfg)`; shared `RecordError` / `SetStatus` helpers
+- [ ] ❌ Metrics pipeline (traces-only for now)
+- [x] ✅ Deterministic tests (noop/stdout; no hang on collector)
 
 ### `pkg/test` (~45)
 - [ ] ❌ Self-tests + examples; split/remove unused testcontainers helpers
@@ -142,9 +145,9 @@ Landed foundation/reuse/domain hardening (scores above are the *pre-fix* snapsho
 
 ### `pkg/concurrency` (~52)
 - [ ] 🔗 Wrap/re-export `x/sync/semaphore` + `errgroup` instead of competing copies
-- [ ] ❌ Distlock: use `LockConfig`, retry, Redlock-or-honest-docs, `pkg/errors`
+- [x] ✅ Distlock: `AcquireWithRetry` uses `LockConfig`; Redis adapter uses `pkg/errors`; docs honest (single-instance SET NX, not Redlock)
 - [ ] 🔗 Wire `algorithms/concurrency/adaptive` into pools
-- [ ] ❌ Tests for semaphore/pool/pipeline/runner/redis lock
+- [x] ✅ Tests for semaphore cancel paths + distlock retry/cancel (pool/pipeline/runner/redis lock still thin)
 - [ ] ❌ `singleflight`-style coalesce helper
 
 ### `pkg/events` (~42)
@@ -180,10 +183,11 @@ Landed foundation/reuse/domain hardening (scores above are the *pre-fix* snapsho
 - [ ] ❌ Production adapters for file/block/archive/controller (still future work)
 
 ### `pkg/data` (~56)
-- [ ] ⚠️ Remove or implement claimed `etl` / `processing` top-level packages
-- [ ] ❌ Typesense/OpenSearch; search autocomplete; Snowflake
-- [ ] 🔗 Reuse `pkg/concurrency`, `pkg/database/sql`, `pkg/storage` in bigdata paths
-- [ ] ❌ Bigdata `errors.go` + full instrumented logging; Spark Connect honesty
+- [x] ✅ Docs: top-level `etl` / `processing` marked planned-only (`data/doc.go`, `pkg/README`)
+- [x] ✅ Search `Suggest` autocomplete on interface + memory; Typesense/OpenSearch documented as planned
+- [x] ✅ Reuse `pkg/concurrency` (SmartRWMutex/SmartMutex) in search memory, mapreduce, DAG
+- [x] ✅ Bigdata `errors.go` + instrumented logging; Spark docs honest (local spark-submit, not Connect)
+- [ ] ❌ Typesense/OpenSearch/Snowflake adapters (still future work)
 
 ### `pkg/streaming` (~25)
 - [x] ✅ Remove Pub/Sub duplication with `pkg/messaging` (Kinesis/EventHubs + memory only)
@@ -331,12 +335,15 @@ Landed foundation/reuse/domain hardening (scores above are the *pre-fix* snapsho
 
 ## 7. AI / algorithms / datastructures
 
-### `pkg/ai` (~36)
-- [ ] ❌ LLM streaming, multimodal, gateway, prompt engine, evals
-- [ ] ❌ instrumented/errors/memory for all capabilities; Context on memory APIs
+### `pkg/ai` (~36 → improved)
+- [x] ✅ LLM `StreamChat` on `genai/llm.Client` + memory adapter streaming (`StreamFromChat` fallback for cloud adapters)
+- [x] ✅ `instrumented.go` + `errors.go` for genai/llm; context-first conversation `memory` APIs
+- [x] ✅ Memory adapters for embedding + image generation
+- [x] ✅ Softened dual `ai/llm` vs `genai/llm` ledger in `pkg/TODO.md`; fixed Generate vs Chat docs
+- [ ] ❌ Multimodal, gateway, prompt engine, evals
 - [ ] 🔗 RAG ↔ `pkg/database/vector` + `pkg/database/rerank`
 - [ ] ❌ OCR/vision/speech cloud adapters beyond stubs
-- [ ] ⚠️ Fix TODO dual `ai/llm` vs `genai/llm` ledger
+- [ ] ❌ instrumented/errors/memory for *all* remaining AI capabilities (ml/perception depth)
 
 ### `pkg/algorithms` (~38 → improved)
 - [x] ✅ Implement standards-cited `search/binarysearch`, `graph/bfs`, `graph/dfs` (+ tests)
