@@ -2,15 +2,15 @@ package coap
 
 import (
 	"context"
-	"sync"
 
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/concurrency"
 	"github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 	"github.com/chris-alexander-pop/go-hyperforge/pkg/iot"
 )
 
 // Memory is an in-process CoAP Client stub for tests (no UDP).
 type Memory struct {
-	mu        sync.RWMutex
+	mu        *concurrency.SmartRWMutex
 	handlers  map[string]Handler
 	connected bool
 	cfg       Config
@@ -24,6 +24,7 @@ func NewMemory(cfg Config) *Memory {
 	return &Memory{
 		handlers: make(map[string]Handler),
 		cfg:      cfg,
+		mu:       concurrency.NewSmartRWMutex(concurrency.MutexConfig{Name: "coap-memory"}),
 	}
 }
 

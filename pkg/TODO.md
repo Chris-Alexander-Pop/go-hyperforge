@@ -51,24 +51,26 @@
 | `pkg/ai/nlp/embedding` | ✅ | embedding-service | Embedding Generation |
 
 ### Machine Learning (`pkg/ai/ml`)
+> 🔄 Training/inference/feature are memory or local-subprocess depth; cloud trainers exist but are not production-hardened. See [`MISSING_CAPABILITIES.md`](../MISSING_CAPABILITIES.md#pkgai-36--improved).
+
 | Package | Status | Enables Services | Description |
 |---------|--------|------------------|-------------|
 | `pkg/ai/ml/training` | ✅ | training-job | Training Protocol Abstractions |
-| `pkg/ai/ml/training/adapters/tensorflow`| ✅ | training-job | TensorFlow Training |
-| `pkg/ai/ml/training/adapters/pytorch` | ✅ | training-job | PyTorch Training |
-| `pkg/ai/ml/inference` | ✅ | inference-service | Model Serving Interface |
-| `pkg/ai/ml/feature` | ✅ | feature-store | Feature Store Client |
-| `pkg/ai/ml/sagemaker` | ✅ | training-job | AWS SageMaker Adapter |
-| `pkg/ai/ml/vertexai` | ✅ | training-job | GCP Vertex AI Adapter |
-| `pkg/ai/ml/azureml` | ✅ | training-job | Azure ML Adapter |
-| `pkg/ai/ml/mlflow` | ✅ | model-registry | MLflow Adapter |
+| `pkg/ai/ml/training/adapters/tensorflow`| 🔄 | training-job | Local subprocess TensorFlow trainer (not TF Serving) |
+| `pkg/ai/ml/training/adapters/pytorch` | 🔄 | training-job | Local subprocess PyTorch trainer |
+| `pkg/ai/ml/inference` | 🔄 | inference-service | Interface + memory simulate (no real model runtime) |
+| `pkg/ai/ml/feature` | 🔄 | feature-store | Interface + memory store (Feast/Redis backends reserved) |
+| `pkg/ai/ml/sagemaker` | 🔄 | training-job | AWS SageMaker StartJob/Describe (depth varies) |
+| `pkg/ai/ml/vertexai` | 🔄 | training-job | GCP Vertex AI adapter (depth varies) |
+| `pkg/ai/ml/azureml` | 🔄 | training-job | Azure ML adapter (depth varies) |
+| `pkg/ai/ml/mlflow` | 🔄 | model-registry | MLflow tracking HTTP client (partial registry surface) |
 
 ### Perception (`pkg/ai/perception`)
 | Package | Status | Enables Services | Description |
 |---------|--------|------------------|-------------|
-| `pkg/ai/perception/vision` | ✅ | media-analysis | Image Classification/OCR |
-| `pkg/ai/perception/speech` | ✅ | transcription | STT / TTS |
-| `pkg/ai/perception/ocr` | ✅ | document-parser | Document Intelligence |
+| `pkg/ai/perception/vision` | 🔄 | media-analysis | Interface + memory; cloud depth varies |
+| `pkg/ai/perception/speech` | 🔄 | transcription | STT/TTS + OpenAI/AWS/Google (polish varies) |
+| `pkg/ai/perception/ocr` | 🔄 | document-parser | Interface + memory + Textract |
 | `pkg/ai/perception/vision/adapters/rekognition` | ✅ | media-analysis | AWS Rekognition Adapter |
 | `pkg/ai/perception/speech/adapters/openai` | ✅ | transcription | OpenAI Whisper Adapter |
 
@@ -201,12 +203,14 @@
 
 ## 5. Workflows & Orchestration (`pkg/workflow`)
 
+> 🔄 Memory engine + durable saga/scheduler are solid; cloud adapters are thin SDK wrappers (depth varies). See [`MISSING_CAPABILITIES.md`](../MISSING_CAPABILITIES.md#pkgworkflow-38--improved).
+
 | Package | Status | Enables Services | Description |
 |---------|--------|------------------|-------------|
 | `pkg/workflow` | ✅ | state-machine | Workflow Engine Interface + Memory Adapter |
-| `pkg/workflow/adapters/stepfunctions` | ✅ | state-machine | AWS Step Functions |
-| `pkg/workflow/adapters/temporal` | ✅ | durable-execution| Temporal Client |
-| `pkg/workflow/adapters/logicapps` | ✅ | integration | Azure Logic Apps |
+| `pkg/workflow/adapters/stepfunctions` | 🔄 | state-machine | AWS Step Functions (thin; completeness varies) |
+| `pkg/workflow/adapters/temporal` | 🔄 | durable-execution| Temporal Client (thin; completeness varies) |
+| `pkg/workflow/adapters/logicapps` | 🔄 | integration | Azure Logic Apps (thin; completeness varies) |
 | `pkg/workflow/saga` | ✅ | order-manager | Saga Pattern Orchestrator |
 | `pkg/workflow/scheduler` | ✅ | cron-service | Distributed Job Scheduler |
 

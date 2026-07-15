@@ -7,14 +7,14 @@ package p2c
 import (
 	"context"
 	"math/rand"
-	"sync"
 
 	"github.com/chris-alexander-pop/go-hyperforge/pkg/algorithms/loadbalancing"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/concurrency"
 )
 
 // Balancer implements power-of-two-choices selection.
 type Balancer struct {
-	mu    sync.RWMutex
+	mu    *concurrency.SmartRWMutex
 	nodes map[string]int64
 	list  []string
 	rng   *rand.Rand
@@ -35,6 +35,7 @@ func New(nodes ...string) *Balancer {
 		nodes: m,
 		list:  list,
 		rng:   rand.New(rand.NewSource(1)), // deterministic default; tests may replace via seed
+		mu:    concurrency.NewSmartRWMutex(concurrency.MutexConfig{Name: "lb-p2c"}),
 	}
 }
 

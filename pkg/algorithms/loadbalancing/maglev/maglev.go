@@ -8,9 +8,9 @@ package maglev
 import (
 	"context"
 	"hash/fnv"
-	"sync"
 
 	"github.com/chris-alexander-pop/go-hyperforge/pkg/algorithms/loadbalancing"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/concurrency"
 )
 
 // DefaultTableSize is a prime table size commonly used for Maglev (65537).
@@ -18,7 +18,7 @@ const DefaultTableSize = 65537
 
 // Balancer implements Maglev consistent hashing.
 type Balancer struct {
-	mu        sync.RWMutex
+	mu        *concurrency.SmartRWMutex
 	nodes     []string
 	table     []int // index into nodes; -1 empty during build
 	tableSize int
@@ -32,6 +32,7 @@ func New(tableSize int, nodes ...string) *Balancer {
 	b := &Balancer{
 		nodes:     append([]string(nil), nodes...),
 		tableSize: tableSize,
+		mu:        concurrency.NewSmartRWMutex(concurrency.MutexConfig{Name: "lb-maglev"}),
 	}
 	b.rebuild()
 	return b

@@ -10,8 +10,9 @@ package inference
 
 import (
 	"context"
-	"sync"
 	"time"
+
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/concurrency"
 )
 
 // ModelType identifies the model framework.
@@ -184,7 +185,7 @@ type HealthStatus struct {
 // MemoryServer is an in-memory inference server for testing.
 type MemoryServer struct {
 	models map[string]*Model
-	mu     sync.RWMutex
+	mu     *concurrency.SmartRWMutex
 	stats  ServerStats
 }
 
@@ -198,6 +199,7 @@ type ServerStats struct {
 func NewMemoryServer() *MemoryServer {
 	return &MemoryServer{
 		models: make(map[string]*Model),
+		mu:     concurrency.NewSmartRWMutex(concurrency.MutexConfig{Name: "ml-inference"}),
 	}
 }
 

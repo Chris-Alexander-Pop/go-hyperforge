@@ -75,7 +75,7 @@ Landed foundation/reuse/domain hardening (scores above are the *pre-fix* snapsho
 - ✅ Deep remaining: etcd + Kubernetes discovery; Raft Propose/AppendEntries log replicate; Meter PeriodAggregate/SummarizeUsage; EBS file stub + Glacier thin adapter; logger bootstrap template; cache+events Suite migration; concurrency errgroup/semaphore re-exports
 - ✅ `security`: CIRCL ML-DSA (Dilithium) Signer/Verifier; Azure Key Vault secrets Get/Set/Delete; ClamAV INSTREAM scanner
 - ✅ Sibling domain wave (assumed landed): iot/web3/ai depth; workflow/metering/storage cloud depth; consensus sketches polish + GraphQL DX + datastructures reuse into algorithms/cache/workflow
-- ✅ Cross-cutting cleanup: TODO scaffolding demotions; messaging+resilience `pkg/test.Suite`; SmartRWMutex batch (LB/discovery/logger/auth/sql shard/ai ml/coap); logger Init bootstrap examples marked shipped
+- ✅ Cross-cutting cleanup: TODO scaffolding demotions; messaging+resilience `pkg/test.Suite`; SmartRWMutex batch (LB/discovery/auth/sql shard/ai ml/coap/ratelimit; logger kept `sync.RWMutex` to avoid concurrency↔logger import cycle); logger Init bootstrap examples marked shipped
 
 ---
 

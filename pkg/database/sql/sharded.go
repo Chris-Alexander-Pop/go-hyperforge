@@ -2,11 +2,11 @@ package sql
 
 import (
 	"context"
-	"sync"
 
 	"github.com/chris-alexander-pop/go-hyperforge/pkg/database/sharding"
 	"github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 	"gorm.io/gorm"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/concurrency"
 )
 
 // Sharded routes GetShard calls across multiple SQL backends using a
@@ -16,7 +16,7 @@ type Sharded struct {
 	strategy sharding.Strategy
 	shards   map[string]SQL
 	primary  string
-	mu       sync.RWMutex
+	mu       *concurrency.SmartRWMutex
 }
 
 // Ensure Sharded implements SQL.
@@ -56,6 +56,7 @@ func NewSharded(strategy sharding.Strategy, shards map[string]SQL, primary strin
 		strategy: strategy,
 		shards:   copied,
 		primary:  primary,
+		mu:       concurrency.NewSmartRWMutex(concurrency.MutexConfig{Name: "sql-sharded"}),
 	}, nil
 }
 

@@ -3,21 +3,22 @@ package random
 import (
 	"context"
 	"math/rand"
-	"sync"
 
 	"github.com/chris-alexander-pop/go-hyperforge/pkg/algorithms/loadbalancing"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/concurrency"
 )
 
 // Balancer implementation for Random selection.
 type Balancer struct {
 	nodes []string
-	mu    sync.RWMutex
+	mu    *concurrency.SmartRWMutex
 }
 
 // New creates a new Random balancer.
 func New(nodes ...string) *Balancer {
 	return &Balancer{
 		nodes: nodes,
+		mu:    concurrency.NewSmartRWMutex(concurrency.MutexConfig{Name: "lb-random"}),
 	}
 }
 

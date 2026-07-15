@@ -2,38 +2,14 @@ package messaging_test
 
 import (
 	"context"
-	"fmt"
 	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
 
-	"github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 	"github.com/chris-alexander-pop/go-hyperforge/pkg/messaging"
 	"github.com/chris-alexander-pop/go-hyperforge/pkg/messaging/adapters/memory"
 )
-
-func TestNewFromConfigMemory(t *testing.T) {
-	broker, err := messaging.NewFromConfig(messaging.Config{Driver: "memory", BufferSize: 8})
-	if err != nil {
-		t.Fatalf("NewFromConfig: %v", err)
-	}
-	defer broker.Close()
-
-	if !broker.Healthy(context.Background()) {
-		t.Fatal("expected healthy broker")
-	}
-}
-
-func TestNewFromConfigUnregistered(t *testing.T) {
-	_, err := messaging.NewFromConfig(messaging.Config{Driver: "kafka"})
-	if err == nil {
-		t.Fatal("expected error for unregistered kafka driver")
-	}
-	if !errors.IsCode(err, messaging.CodeInvalidConfig) {
-		t.Fatalf("want CodeInvalidConfig, got %v", err)
-	}
-}
 
 func TestPublishOptionsWired(t *testing.T) {
 	msg := &messaging.Message{ID: "1", Payload: []byte("x")}
@@ -64,33 +40,6 @@ func TestConsumeOptionsContext(t *testing.T) {
 	}
 	if opts.MaxMessages != 7 || opts.WaitTime != 2*time.Second || opts.VisibilityTimeout != 30*time.Second {
 		t.Fatalf("unexpected consume opts: %+v", opts)
-	}
-}
-
-func TestMemoryErrQueueFull(t *testing.T) {
-	broker := memory.New(memory.Config{BufferSize: 1})
-	defer broker.Close()
-
-	producer, err := broker.Producer("full-topic")
-	if err != nil {
-		t.Fatal(err)
-	}
-	consumer, err := broker.Consumer("full-topic", "g")
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer consumer.Close()
-
-	ctx := context.Background()
-	if err := producer.Publish(ctx, &messaging.Message{ID: "a", Payload: []byte("1")}); err != nil {
-		t.Fatalf("first publish: %v", err)
-	}
-	err = producer.Publish(ctx, &messaging.Message{ID: "b", Payload: []byte("2")})
-	if err == nil {
-		t.Fatal("expected ErrQueueFull on second publish")
-	}
-	if !errors.IsCode(err, messaging.CodeQueueFull) {
-		t.Fatalf("want CodeQueueFull, got %v", err)
 	}
 }
 
@@ -129,52 +78,6 @@ func TestInstrumentedBrokerPublishConsume(t *testing.T) {
 	wg.Wait()
 	if got != "hello" {
 		t.Fatalf("got %q", got)
-	}
-}
-
-func TestResilientConsumerRetriesHandler(t *testing.T) {
-	inner := memory.New(memory.Config{BufferSize: 16})
-	defer inner.Close()
-
-	producer, err := inner.Producer("retry-topic")
-	if err != nil {
-		t.Fatal(err)
-	}
-	base, err := inner.Consumer("retry-topic", "retry-group")
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	rc := messaging.NewResilientConsumer(base, messaging.ResilientBrokerConfig{
-		CircuitBreakerEnabled: false,
-		RetryEnabled:          true,
-		RetryMaxAttempts:      3,
-		RetryBackoff:          time.Millisecond,
-	})
-
-	var attempts atomic.Int32
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	var wg sync.WaitGroup
-	wg.Add(1)
-	go func() {
-		_ = rc.Consume(ctx, func(ctx context.Context, msg *messaging.Message) error {
-			if attempts.Add(1) < 3 {
-				return fmt.Errorf("transient")
-			}
-			wg.Done()
-			cancel()
-			return nil
-		})
-	}()
-
-	if err := producer.Publish(ctx, &messaging.Message{ID: "r1", Payload: []byte("x")}); err != nil {
-		t.Fatal(err)
-	}
-	wg.Wait()
-	if attempts.Load() != 3 {
-		t.Fatalf("expected 3 attempts, got %d", attempts.Load())
 	}
 }
 

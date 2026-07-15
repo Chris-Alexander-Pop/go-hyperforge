@@ -12,9 +12,9 @@ package feature
 
 import (
 	"context"
-	"sync"
 	"time"
 
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/concurrency"
 	pkgerrors "github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 )
 
@@ -127,7 +127,7 @@ type FeatureStore interface {
 type MemoryStore struct {
 	groups   map[string]*FeatureGroup
 	features map[string]map[string]*FeatureVector // group -> entityKey -> vector
-	mu       sync.RWMutex
+	mu       *concurrency.SmartRWMutex
 }
 
 // New creates a new memory feature store.
@@ -135,6 +135,7 @@ func New(cfg Config) *MemoryStore {
 	return &MemoryStore{
 		groups:   make(map[string]*FeatureGroup),
 		features: make(map[string]map[string]*FeatureVector),
+		mu:       concurrency.NewSmartRWMutex(concurrency.MutexConfig{Name: "ml-feature"}),
 	}
 }
 

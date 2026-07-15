@@ -7,9 +7,9 @@ package sticky
 
 import (
 	"context"
-	"sync"
 
 	"github.com/chris-alexander-pop/go-hyperforge/pkg/algorithms/loadbalancing"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/concurrency"
 )
 
 // contextKey is the type for session keys stored in context.
@@ -37,7 +37,7 @@ func SessionFromContext(ctx context.Context) (string, bool) {
 
 // Balancer implements session-affinity load balancing.
 type Balancer struct {
-	mu       sync.RWMutex
+	mu       *concurrency.SmartRWMutex
 	nodes    []string
 	affinity map[string]string // session -> node
 	rr       int               // round-robin cursor for new sessions
@@ -50,6 +50,7 @@ func New(fallback loadbalancing.Balancer, nodes ...string) *Balancer {
 		nodes:    append([]string(nil), nodes...),
 		affinity: make(map[string]string),
 		fallback: fallback,
+		mu:       concurrency.NewSmartRWMutex(concurrency.MutexConfig{Name: "lb-sticky"}),
 	}
 	return b
 }

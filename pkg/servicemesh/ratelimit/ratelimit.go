@@ -14,11 +14,11 @@ package ratelimit
 
 import (
 	"context"
-	"sync"
 	"time"
 
 	"github.com/chris-alexander-pop/go-hyperforge/pkg/algorithms/ratelimit/slidingwindow"
 	"github.com/chris-alexander-pop/go-hyperforge/pkg/algorithms/ratelimit/tokenbucket"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/concurrency"
 )
 
 // Algorithm represents the rate limiting algorithm.
@@ -98,7 +98,7 @@ func (sw *SlidingWindow) Tokens() float64                { return sw.inner.Token
 
 // KeyedLimiter provides per-key rate limiting.
 type KeyedLimiter struct {
-	mu       sync.RWMutex
+	mu       *concurrency.SmartRWMutex
 	limiters map[string]Limiter
 	factory  func() Limiter
 }
@@ -108,6 +108,7 @@ func NewKeyedLimiter(factory func() Limiter) *KeyedLimiter {
 	return &KeyedLimiter{
 		limiters: make(map[string]Limiter),
 		factory:  factory,
+		mu:       concurrency.NewSmartRWMutex(concurrency.MutexConfig{Name: "mesh-keyed-limiter"}),
 	}
 }
 

@@ -3,6 +3,12 @@
 // Prefer templates/service/starter for a full config.Load + logger bootstrap.
 // This package exists so services can mirror a minimal logger lifecycle without
 // inventing their own Init/Shutdown order.
+//
+// Minimal main():
+//
+//	stop := loggerbootstrap.Bootstrap(loggerbootstrap.Config{Level: "INFO", Async: true})
+//	defer stop()
+//	logger.L().Info("ready")
 package loggerbootstrap
 
 import (

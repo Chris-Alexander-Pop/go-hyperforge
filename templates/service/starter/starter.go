@@ -28,15 +28,24 @@ func Load() (Config, error) {
 	return cfg, nil
 }
 
-// Bootstrap loads config and initializes the process logger.
-// Callers should defer logger.Shutdown when Async logging is enabled.
-// See also templates/logger for a minimal Init/Shutdown bootstrap helper.
+// Bootstrap loads config and initializes the process logger via logger.Init.
+//
+// Example (service main):
+//
+//	cfg, err := starter.Bootstrap(ctx)
+//	if err != nil { log.Fatal(err) }
+//	defer func() { _ = logger.Shutdown(context.Background()) }()
+//	logger.L().Info("started", "service", cfg.ServiceName)
+//
+// See also templates/logger for a minimal Init/Shutdown-only helper
+// (loggerbootstrap.Bootstrap) when config.Load is not needed yet.
 func Bootstrap(ctx context.Context) (Config, error) {
 	cfg, err := Load()
 	if err != nil {
 		return cfg, err
 	}
 	_ = ctx
+	// Required: process-wide slog handler stack (Sampling→Redact→Trace→Async).
 	logger.Init(logger.Config{
 		Level: cfg.LogLevel,
 	})

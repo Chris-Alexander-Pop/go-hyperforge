@@ -2,10 +2,10 @@ package roundrobin
 
 import (
 	"context"
-	"sync"
 	"sync/atomic"
 
 	"github.com/chris-alexander-pop/go-hyperforge/pkg/algorithms/loadbalancing"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/concurrency"
 )
 
 // Balancer implementation for Round Robin.
@@ -13,13 +13,14 @@ import (
 type Balancer struct {
 	nodes []string
 	count uint64
-	mu    sync.RWMutex
+	mu    *concurrency.SmartRWMutex
 }
 
 // New creates a new RoundRobin balancer.
 func New(nodes ...string) *Balancer {
 	return &Balancer{
 		nodes: nodes,
+		mu:    concurrency.NewSmartRWMutex(concurrency.MutexConfig{Name: "lb-roundrobin"}),
 	}
 }
 

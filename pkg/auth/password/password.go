@@ -7,15 +7,15 @@ package password
 
 import (
 	"context"
-	"sync"
 
 	"github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 	"github.com/chris-alexander-pop/go-hyperforge/pkg/security/crypto"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/concurrency"
 )
 
 // Store holds username → password-hash mappings.
 type Store struct {
-	mu     sync.RWMutex
+	mu     *concurrency.SmartRWMutex
 	hasher *crypto.Hasher
 	hashes map[string]string
 }
@@ -26,6 +26,7 @@ func New(cfg crypto.HashConfig) *Store {
 	return &Store{
 		hasher: crypto.NewHasher(cfg),
 		hashes: make(map[string]string),
+		mu:     concurrency.NewSmartRWMutex(concurrency.MutexConfig{Name: "auth-password"}),
 	}
 }
 
