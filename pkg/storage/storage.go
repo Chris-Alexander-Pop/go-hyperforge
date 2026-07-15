@@ -41,6 +41,12 @@ const (
 	DriverOpenStackCinder = "cinder"
 )
 
+// Controller volume drivers (memory/lvm/ceph/csi adapters ship under controller/).
+const (
+	DriverLVM = "lvm"
+	DriverCSI = "csi"
+)
+
 // Archive (cold storage) drivers (memory is the only shipping adapter today).
 const (
 	DriverGlacier      = "glacier"

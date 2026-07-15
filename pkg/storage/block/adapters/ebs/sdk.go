@@ -3,6 +3,7 @@ package ebs
 import (
 	"context"
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -13,6 +14,8 @@ import (
 	"github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 	"github.com/chris-alexander-pop/go-hyperforge/pkg/storage/block"
 )
+
+const defaultPollInterval = 2 * time.Second
 
 // EC2API is the AWS EC2 surface used by the real EBS SDK store.
 type EC2API interface {
@@ -35,12 +38,15 @@ type SDKConfig struct {
 	AWSAccessKeyID     string
 	AWSSecretAccessKey string
 	Endpoint           string
+	// PollInterval for WaitUntil* helpers (default 2s; use a short value in tests).
+	PollInterval time.Duration
 }
 
 // SDKStore implements block.VolumeStore via AWS EC2 volume APIs.
 type SDKStore struct {
-	client EC2API
-	cfg    SDKConfig
+	client       EC2API
+	cfg          SDKConfig
+	pollInterval time.Duration
 }
 
 var _ block.VolumeStore = (*SDKStore)(nil)
@@ -56,7 +62,11 @@ func NewSDKFromAPI(api EC2API, cfg SDKConfig) (*SDKStore, error) {
 	if cfg.AvailabilityZone == "" {
 		cfg.AvailabilityZone = cfg.Region + "a"
 	}
-	return &SDKStore{client: api, cfg: cfg}, nil
+	interval := cfg.PollInterval
+	if interval <= 0 {
+		interval = defaultPollInterval
+	}
+	return &SDKStore{client: api, cfg: cfg, pollInterval: interval}, nil
 }
 
 // NewSDK builds an SDKStore from AWS SDK config.
@@ -239,6 +249,9 @@ func (s *SDKStore) GetVolume(ctx context.Context, volumeID string) (*block.Volum
 		VolumeIds: []string{volumeID},
 	})
 	if err != nil {
+		if isNotFoundErr(err) {
+			return nil, block.ErrVolumeNotFound
+		}
 		return nil, errors.Unavailable("ec2 DescribeVolumes failed", err)
 	}
 	if len(out.Volumes) == 0 {
@@ -377,6 +390,9 @@ func (s *SDKStore) GetSnapshot(ctx context.Context, snapshotID string) (*block.S
 		SnapshotIds: []string{snapshotID},
 	})
 	if err != nil {
+		if isNotFoundErr(err) {
+			return nil, block.ErrSnapshotNotFound
+		}
 		return nil, errors.Unavailable("ec2 DescribeSnapshots failed", err)
 	}
 	if len(out.Snapshots) == 0 {
@@ -408,8 +424,132 @@ func (s *SDKStore) DeleteSnapshot(ctx context.Context, snapshotID string) error 
 	return nil
 }
 
+// WaitUntilVolumeAvailable polls DescribeVolumes until the volume is available or ctx is done.
+func (s *SDKStore) WaitUntilVolumeAvailable(ctx context.Context, volumeID string) error {
+	return s.waitVolume(ctx, volumeID, func(v *types.Volume, missing bool) (bool, error) {
+		if missing {
+			return false, block.ErrVolumeNotFound
+		}
+		return v.State == types.VolumeStateAvailable, nil
+	})
+}
+
+// WaitUntilVolumeInUse polls DescribeVolumes until the volume is in-use or ctx is done.
+func (s *SDKStore) WaitUntilVolumeInUse(ctx context.Context, volumeID string) error {
+	return s.waitVolume(ctx, volumeID, func(v *types.Volume, missing bool) (bool, error) {
+		if missing {
+			return false, block.ErrVolumeNotFound
+		}
+		return v.State == types.VolumeStateInUse, nil
+	})
+}
+
+// WaitUntilVolumeDeleted polls until the volume is gone. NotFound / empty Describe is success.
+func (s *SDKStore) WaitUntilVolumeDeleted(ctx context.Context, volumeID string) error {
+	return s.waitVolume(ctx, volumeID, func(v *types.Volume, missing bool) (bool, error) {
+		if missing {
+			return true, nil
+		}
+		if v.State == types.VolumeStateDeleted {
+			return true, nil
+		}
+		return false, nil
+	})
+}
+
+// WaitUntilSnapshotCompleted polls DescribeSnapshots until the snapshot is completed or ctx is done.
+func (s *SDKStore) WaitUntilSnapshotCompleted(ctx context.Context, snapshotID string) error {
+	interval := s.pollInterval
+	if interval <= 0 {
+		interval = defaultPollInterval
+	}
+	for {
+		if err := ctx.Err(); err != nil {
+			return err
+		}
+		out, err := s.client.DescribeSnapshots(ctx, &ec2.DescribeSnapshotsInput{
+			SnapshotIds: []string{snapshotID},
+		})
+		if err != nil {
+			if isNotFoundErr(err) {
+				return block.ErrSnapshotNotFound
+			}
+			return errors.Unavailable("ec2 DescribeSnapshots failed", err)
+		}
+		if len(out.Snapshots) == 0 {
+			return block.ErrSnapshotNotFound
+		}
+		if out.Snapshots[0].State == types.SnapshotStateCompleted {
+			return nil
+		}
+		if out.Snapshots[0].State == types.SnapshotStateError {
+			return errors.Internal("snapshot entered error state", nil)
+		}
+		timer := time.NewTimer(interval)
+		select {
+		case <-ctx.Done():
+			timer.Stop()
+			return ctx.Err()
+		case <-timer.C:
+		}
+	}
+}
+
+func (s *SDKStore) waitVolume(ctx context.Context, volumeID string, done func(v *types.Volume, missing bool) (bool, error)) error {
+	interval := s.pollInterval
+	if interval <= 0 {
+		interval = defaultPollInterval
+	}
+	for {
+		if err := ctx.Err(); err != nil {
+			return err
+		}
+		out, err := s.client.DescribeVolumes(ctx, &ec2.DescribeVolumesInput{
+			VolumeIds: []string{volumeID},
+		})
+		missing := false
+		var vol *types.Volume
+		if err != nil {
+			if isNotFoundErr(err) {
+				missing = true
+			} else {
+				return errors.Unavailable("ec2 DescribeVolumes failed", err)
+			}
+		} else if len(out.Volumes) == 0 {
+			missing = true
+		} else {
+			vol = &out.Volumes[0]
+		}
+		ok, err := done(vol, missing)
+		if err != nil {
+			return err
+		}
+		if ok {
+			return nil
+		}
+		timer := time.NewTimer(interval)
+		select {
+		case <-ctx.Done():
+			timer.Stop()
+			return ctx.Err()
+		case <-timer.C:
+		}
+	}
+}
+
+func isNotFoundErr(err error) bool {
+	if err == nil {
+		return false
+	}
+	if errors.Is(err, block.ErrVolumeNotFound) || errors.Is(err, block.ErrSnapshotNotFound) {
+		return true
+	}
+	return errors.IsCode(err, errors.CodeNotFound)
+}
+
 // MemoryEC2API is an in-process EC2API for unit tests.
 type MemoryEC2API struct {
+	mu    sync.Mutex
 	vols  map[string]types.Volume
 	snaps map[string]types.Snapshot
 	seq   int
@@ -428,7 +568,35 @@ func (m *MemoryEC2API) nextID(prefix string) string {
 	return fmt.Sprintf("%s-%04d", prefix, m.seq)
 }
 
+// SetVolumeState updates a volume's state (for waiter tests).
+func (m *MemoryEC2API) SetVolumeState(volumeID string, state types.VolumeState) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	v, ok := m.vols[volumeID]
+	if !ok {
+		return errors.NotFound("volume not found", nil)
+	}
+	v.State = state
+	m.vols[volumeID] = v
+	return nil
+}
+
+// SetSnapshotState updates a snapshot's state (for waiter tests).
+func (m *MemoryEC2API) SetSnapshotState(snapshotID string, state types.SnapshotState) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	sn, ok := m.snaps[snapshotID]
+	if !ok {
+		return errors.NotFound("snapshot not found", nil)
+	}
+	sn.State = state
+	m.snaps[snapshotID] = sn
+	return nil
+}
+
 func (m *MemoryEC2API) CreateVolume(_ context.Context, params *ec2.CreateVolumeInput, _ ...func(*ec2.Options)) (*ec2.CreateVolumeOutput, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	id := m.nextID("vol")
 	now := time.Now().UTC()
 	size := params.Size
@@ -465,12 +633,16 @@ func (m *MemoryEC2API) CreateVolume(_ context.Context, params *ec2.CreateVolumeI
 }
 
 func (m *MemoryEC2API) DescribeVolumes(_ context.Context, params *ec2.DescribeVolumesInput, _ ...func(*ec2.Options)) (*ec2.DescribeVolumesOutput, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	var vols []types.Volume
 	if len(params.VolumeIds) > 0 {
 		for _, id := range params.VolumeIds {
-			if v, ok := m.vols[id]; ok {
-				vols = append(vols, v)
+			v, ok := m.vols[id]
+			if !ok {
+				return nil, errors.NotFound("volume not found", nil)
 			}
+			vols = append(vols, v)
 		}
 	} else {
 		for _, v := range m.vols {
@@ -481,15 +653,19 @@ func (m *MemoryEC2API) DescribeVolumes(_ context.Context, params *ec2.DescribeVo
 }
 
 func (m *MemoryEC2API) DeleteVolume(_ context.Context, params *ec2.DeleteVolumeInput, _ ...func(*ec2.Options)) (*ec2.DeleteVolumeOutput, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	delete(m.vols, aws.ToString(params.VolumeId))
 	return &ec2.DeleteVolumeOutput{}, nil
 }
 
 func (m *MemoryEC2API) ModifyVolume(_ context.Context, params *ec2.ModifyVolumeInput, _ ...func(*ec2.Options)) (*ec2.ModifyVolumeOutput, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	id := aws.ToString(params.VolumeId)
 	v, ok := m.vols[id]
 	if !ok {
-		return nil, fmt.Errorf("volume not found")
+		return nil, errors.NotFound("volume not found", nil)
 	}
 	if params.Size != nil {
 		v.Size = params.Size
@@ -508,10 +684,12 @@ func (m *MemoryEC2API) ModifyVolume(_ context.Context, params *ec2.ModifyVolumeI
 }
 
 func (m *MemoryEC2API) AttachVolume(_ context.Context, params *ec2.AttachVolumeInput, _ ...func(*ec2.Options)) (*ec2.AttachVolumeOutput, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	id := aws.ToString(params.VolumeId)
 	v, ok := m.vols[id]
 	if !ok {
-		return nil, fmt.Errorf("volume not found")
+		return nil, errors.NotFound("volume not found", nil)
 	}
 	now := time.Now().UTC()
 	v.Attachments = append(v.Attachments, types.VolumeAttachment{
@@ -529,10 +707,12 @@ func (m *MemoryEC2API) AttachVolume(_ context.Context, params *ec2.AttachVolumeI
 }
 
 func (m *MemoryEC2API) DetachVolume(_ context.Context, params *ec2.DetachVolumeInput, _ ...func(*ec2.Options)) (*ec2.DetachVolumeOutput, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	id := aws.ToString(params.VolumeId)
 	v, ok := m.vols[id]
 	if !ok {
-		return nil, fmt.Errorf("volume not found")
+		return nil, errors.NotFound("volume not found", nil)
 	}
 	inst := aws.ToString(params.InstanceId)
 	kept := v.Attachments[:0]
@@ -554,10 +734,12 @@ func (m *MemoryEC2API) DetachVolume(_ context.Context, params *ec2.DetachVolumeI
 }
 
 func (m *MemoryEC2API) CreateSnapshot(_ context.Context, params *ec2.CreateSnapshotInput, _ ...func(*ec2.Options)) (*ec2.CreateSnapshotOutput, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	volID := aws.ToString(params.VolumeId)
 	v, ok := m.vols[volID]
 	if !ok {
-		return nil, fmt.Errorf("volume not found")
+		return nil, errors.NotFound("volume not found", nil)
 	}
 	id := m.nextID("snap")
 	now := time.Now().UTC()
@@ -581,12 +763,16 @@ func (m *MemoryEC2API) CreateSnapshot(_ context.Context, params *ec2.CreateSnaps
 }
 
 func (m *MemoryEC2API) DescribeSnapshots(_ context.Context, params *ec2.DescribeSnapshotsInput, _ ...func(*ec2.Options)) (*ec2.DescribeSnapshotsOutput, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	var snaps []types.Snapshot
 	if len(params.SnapshotIds) > 0 {
 		for _, id := range params.SnapshotIds {
-			if sn, ok := m.snaps[id]; ok {
-				snaps = append(snaps, sn)
+			sn, ok := m.snaps[id]
+			if !ok {
+				return nil, errors.NotFound("snapshot not found", nil)
 			}
+			snaps = append(snaps, sn)
 		}
 	} else {
 		for _, sn := range m.snaps {
@@ -597,11 +783,15 @@ func (m *MemoryEC2API) DescribeSnapshots(_ context.Context, params *ec2.Describe
 }
 
 func (m *MemoryEC2API) DeleteSnapshot(_ context.Context, params *ec2.DeleteSnapshotInput, _ ...func(*ec2.Options)) (*ec2.DeleteSnapshotOutput, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	delete(m.snaps, aws.ToString(params.SnapshotId))
 	return &ec2.DeleteSnapshotOutput{}, nil
 }
 
 func (m *MemoryEC2API) CreateTags(_ context.Context, params *ec2.CreateTagsInput, _ ...func(*ec2.Options)) (*ec2.CreateTagsOutput, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	for _, id := range params.Resources {
 		if v, ok := m.vols[id]; ok {
 			v.Tags = append(v.Tags, params.Tags...)
