@@ -2,6 +2,7 @@ package tests
 
 import (
 	"testing"
+	"time"
 
 	"github.com/chris-alexander-pop/go-hyperforge/pkg/security/waf"
 	"github.com/chris-alexander-pop/go-hyperforge/pkg/security/waf/adapters/memory"
@@ -35,6 +36,20 @@ func (s *WAFTestSuite) TestBlockAndAllow() {
 	rules, err = s.manager.GetRules(s.Ctx)
 	s.NoError(err)
 	s.Empty(rules)
+}
+
+func (s *WAFTestSuite) TestResilientBlockAndAllow() {
+	mgr := waf.NewResilientManager(memory.New(), waf.ResilientConfig{
+		CircuitBreakerEnabled: true,
+		RetryEnabled:          true,
+		RetryMaxAttempts:      2,
+		RetryBackoff:          time.Millisecond,
+	})
+	s.NoError(mgr.BlockIP(s.Ctx, "10.0.0.1", "test"))
+	rules, err := mgr.GetRules(s.Ctx)
+	s.NoError(err)
+	s.Len(rules, 1)
+	s.NoError(mgr.AllowIP(s.Ctx, "10.0.0.1"))
 }
 
 func TestWAFSuite(t *testing.T) {

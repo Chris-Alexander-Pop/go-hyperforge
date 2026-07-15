@@ -3,6 +3,7 @@ package tests
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 	"github.com/chris-alexander-pop/go-hyperforge/pkg/events"
@@ -96,6 +97,17 @@ func (s *SecretsTestSuite) TestEventedRotate() {
 	s.NoError(err)
 	s.Equal(secrets.EventTypeSecretRotated, gotType)
 	s.Equal("api-key", gotName)
+}
+
+func (s *SecretsTestSuite) TestResilientGetNotFound() {
+	mgr := secrets.NewResilientSecretManager(secretsmem.New(), secrets.ResilientConfig{
+		CircuitBreakerEnabled: true,
+		RetryEnabled:          true,
+		RetryMaxAttempts:      3,
+		RetryBackoff:          time.Millisecond,
+	})
+	_, err := mgr.Get(s.Ctx, "missing")
+	s.True(errors.Is(err, secrets.ErrNotFound))
 }
 
 func TestSecretsSuite(t *testing.T) {
