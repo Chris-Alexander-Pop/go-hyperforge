@@ -2,9 +2,8 @@
 //
 // Supported backends:
 //   - Redis: Production-grade in-memory key-value store
+//   - Cassandra: gocql adapter (adapters/cassandra)
 //   - Memory: In-memory store for testing
-//
-// Planned: Cassandra (Driver reserved; no adapter yet).
 //
 // Usage:
 //

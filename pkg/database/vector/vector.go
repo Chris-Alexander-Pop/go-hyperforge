@@ -7,7 +7,7 @@ import (
 
 // Config holds configuration for a vector database.
 type Config struct {
-	// Driver specifies the vector backend: "pinecone", "weaviate", "memory".
+	// Driver specifies the vector backend: "pinecone", "weaviate", "milvus", "memory".
 	Driver string `env:"VECTOR_DRIVER" env-default:"pinecone"`
 
 	// Host is the vector service endpoint.

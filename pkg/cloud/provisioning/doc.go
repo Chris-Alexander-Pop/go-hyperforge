@@ -4,6 +4,5 @@
 //   - memory adapter
 //   - Redfish BMC PowerCycle / GetHostStatus (adapters/redfish)
 //   - IPMI-over-LAN HTTP gateway (adapters/ipmi)
-//
-// PXE/iPXE imaging remains reserved.
+//   - PXE/boot orchestration HTTP control plane (adapters/pxe)
 package provisioning

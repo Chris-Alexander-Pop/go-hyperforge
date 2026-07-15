@@ -7,7 +7,7 @@ import (
 // Config configures the WAF.
 type Config struct {
 	// Provider selects the WAF backend.
-	// Implemented: "memory", "cloudflare". Reserved: "aws-waf".
+	// Implemented: "memory", "cloudflare", "aws-waf".
 	Provider string `env:"SECURITY_WAF_PROVIDER" env-default:"memory"`
 }
 

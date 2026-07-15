@@ -9,6 +9,7 @@ require (
 	cloud.google.com/go/compute v1.54.0
 	cloud.google.com/go/firestore v1.20.0
 	cloud.google.com/go/functions v1.19.7
+	cloud.google.com/go/kms v1.25.0
 	cloud.google.com/go/pubsub/v2 v2.0.0
 	cloud.google.com/go/storage v1.59.1
 	firebase.google.com/go/v4 v4.18.0
@@ -18,6 +19,7 @@ require (
 	github.com/Azure/azure-sdk-for-go/sdk/data/azcosmos v1.4.2
 	github.com/Azure/azure-sdk-for-go/sdk/messaging/azeventhubs v1.4.0
 	github.com/Azure/azure-sdk-for-go/sdk/messaging/azservicebus v1.10.0
+	github.com/Azure/azure-sdk-for-go/sdk/security/keyvault/azkeys v1.3.1
 	github.com/Azure/azure-sdk-for-go/sdk/storage/azblob v1.6.4
 	github.com/AzureAD/microsoft-authentication-library-for-go v1.6.0
 	github.com/IBM/sarama v1.46.3
@@ -50,6 +52,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/textract v1.42.1
 	github.com/aws/aws-sdk-go-v2/service/timestreamquery v1.36.10
 	github.com/aws/aws-sdk-go-v2/service/timestreamwrite v1.35.16
+	github.com/aws/aws-sdk-go-v2/service/wafv2 v1.75.1
 	github.com/aws/smithy-go v1.27.3
 	github.com/bwmarrin/discordgo v0.29.0
 	github.com/colinmarc/hdfs/v2 v2.4.0
@@ -66,6 +69,7 @@ require (
 	github.com/golang-jwt/jwt/v5 v5.3.0
 	github.com/google/generative-ai-go v0.20.1
 	github.com/google/uuid v1.6.0
+	github.com/googleapis/gax-go/v2 v2.16.0
 	github.com/gorilla/websocket v1.5.4-0.20250319132907-e064f32e3674
 	github.com/hamba/avro/v2 v2.31.0
 	github.com/hashicorp/go-retryablehttp v0.7.8
@@ -234,7 +238,6 @@ require (
 	github.com/google/go-tpm v0.9.6 // indirect
 	github.com/google/s2a-go v0.1.9 // indirect
 	github.com/googleapis/enterprise-certificate-proxy v0.3.11 // indirect
-	github.com/googleapis/gax-go/v2 v2.16.0 // indirect
 	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.3.2 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.28.0 // indirect
 	github.com/hailocab/go-hostpool v0.0.0-20160125115350-e80d13ce29ed // indirect
