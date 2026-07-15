@@ -5,19 +5,23 @@ import (
 	"context"
 
 	"github.com/chris-alexander-pop/system-design-library/pkg/ai/genai/llm"
+	"github.com/chris-alexander-pop/system-design-library/pkg/errors"
 )
 
 // Memory manages conversation history.
 // All methods accept context for cancellation and future store-backed implementations.
 type Memory interface {
-	// AddMessage adds a message to the history.
+	// AddMessage adds a message to the history (text or multimodal).
 	AddMessage(ctx context.Context, message llm.Message) error
 
-	// AddUserMessage adds a user message.
+	// AddUserMessage adds a plain-text user message.
 	AddUserMessage(ctx context.Context, content string) error
 
 	// AddAssistantMessage adds an assistant message.
 	AddAssistantMessage(ctx context.Context, content string) error
+
+	// AddUserParts adds a multimodal user message from content parts.
+	AddUserParts(ctx context.Context, parts ...llm.ContentPart) error
 
 	// GetMessages returns the current history.
 	GetMessages(ctx context.Context) ([]llm.Message, error)
@@ -44,7 +48,14 @@ func (m *SimpleMemory) AddMessage(ctx context.Context, msg llm.Message) error {
 	if err := ctx.Err(); err != nil {
 		return err
 	}
-	m.messages = append(m.messages, msg)
+	if msg.Content == "" && len(msg.Parts) == 0 && len(msg.ToolCalls) == 0 {
+		return errors.InvalidArgument("message content or parts required", nil)
+	}
+	// Normalize: if only Parts are set, mirror text into Content for text-only consumers.
+	if msg.Content == "" && len(msg.Parts) > 0 {
+		msg.Content = msg.TextContent()
+	}
+	m.messages = append(m.messages, cloneMessage(msg))
 	if m.maxLen > 0 && len(m.messages) > m.maxLen {
 		m.messages = m.messages[len(m.messages)-m.maxLen:]
 	}
@@ -59,12 +70,23 @@ func (m *SimpleMemory) AddAssistantMessage(ctx context.Context, content string) 
 	return m.AddMessage(ctx, llm.Message{Role: llm.RoleAssistant, Content: content})
 }
 
+func (m *SimpleMemory) AddUserParts(ctx context.Context, parts ...llm.ContentPart) error {
+	if len(parts) == 0 {
+		return errors.InvalidArgument("at least one content part is required", nil)
+	}
+	copied := make([]llm.ContentPart, len(parts))
+	copy(copied, parts)
+	return m.AddMessage(ctx, llm.Message{Role: llm.RoleUser, Parts: copied})
+}
+
 func (m *SimpleMemory) GetMessages(ctx context.Context) ([]llm.Message, error) {
 	if err := ctx.Err(); err != nil {
 		return nil, err
 	}
 	msgs := make([]llm.Message, len(m.messages))
-	copy(msgs, m.messages)
+	for i, msg := range m.messages {
+		msgs[i] = cloneMessage(msg)
+	}
 	return msgs, nil
 }
 
@@ -74,6 +96,29 @@ func (m *SimpleMemory) Clear(ctx context.Context) error {
 	}
 	m.messages = make([]llm.Message, 0)
 	return nil
+}
+
+func cloneMessage(msg llm.Message) llm.Message {
+	out := msg
+	if len(msg.Parts) > 0 {
+		out.Parts = make([]llm.ContentPart, len(msg.Parts))
+		copy(out.Parts, msg.Parts)
+		for i, p := range msg.Parts {
+			if len(p.Data) > 0 {
+				out.Parts[i].Data = append([]byte(nil), p.Data...)
+			}
+		}
+	}
+	if msg.Metadata != nil {
+		out.Metadata = make(map[string]interface{}, len(msg.Metadata))
+		for k, v := range msg.Metadata {
+			out.Metadata[k] = v
+		}
+	}
+	if len(msg.ToolCalls) > 0 {
+		out.ToolCalls = append([]llm.ToolCall(nil), msg.ToolCalls...)
+	}
+	return out
 }
 
 var _ Memory = (*SimpleMemory)(nil)

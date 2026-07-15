@@ -11,9 +11,19 @@
 // response into a single chunk when native streaming is unavailable):
 //
 //	chunks, err := client.StreamChat(ctx, messages)
+//
+// Multimodal messages use Parts (text + image) while keeping Content for plain-text turns:
+//
+//	msg := llm.Message{Role: llm.RoleUser, Parts: []llm.ContentPart{
+//		llm.TextPart("What is in this image?"),
+//		llm.ImageURLPart("https://example.com/photo.png"),
+//	}}
 package llm
 
-import "context"
+import (
+	"context"
+	"strings"
+)
 
 // Role defines who sent the message.
 type Role string
@@ -26,14 +36,82 @@ const (
 	RoleTool      Role = "tool"
 )
 
+// PartType identifies a multimodal content part.
+type PartType string
+
+const (
+	PartTypeText        PartType = "text"
+	PartTypeImageURL    PartType = "image_url"
+	PartTypeImageBase64 PartType = "image_base64"
+)
+
+// ContentPart is one piece of a multimodal message (text or image).
+type ContentPart struct {
+	Type     PartType `json:"type"`
+	Text     string   `json:"text,omitempty"`
+	ImageURL string   `json:"image_url,omitempty"` // remote URL or data: URI
+	MIMEType string   `json:"mime_type,omitempty"` // e.g. image/png for base64
+	Data     []byte   `json:"data,omitempty"`      // raw bytes for image_base64
+}
+
+// TextPart builds a text content part.
+func TextPart(text string) ContentPart {
+	return ContentPart{Type: PartTypeText, Text: text}
+}
+
+// ImageURLPart builds an image_url content part.
+func ImageURLPart(url string) ContentPart {
+	return ContentPart{Type: PartTypeImageURL, ImageURL: url}
+}
+
+// ImageBase64Part builds an inline image content part.
+func ImageBase64Part(mime string, data []byte) ContentPart {
+	return ContentPart{Type: PartTypeImageBase64, MIMEType: mime, Data: data}
+}
+
 // Message represents a single turn in a conversation.
+// Prefer Content for plain text; set Parts for multimodal (text + images).
+// When Parts is non-empty, adapters should prefer Parts over Content.
 type Message struct {
 	Role       Role                   `json:"role"`
-	Content    string                 `json:"content"`
+	Content    string                 `json:"content,omitempty"`
+	Parts      []ContentPart          `json:"parts,omitempty"`
 	Name       string                 `json:"name,omitempty"` // For function/tool calls
 	ToolCalls  []ToolCall             `json:"tool_calls,omitempty"`
 	ToolCallID string                 `json:"tool_call_id,omitempty"` // For tool responses
 	Metadata   map[string]interface{} `json:"metadata,omitempty"`
+}
+
+// TextContent returns concatenated text from Content or text Parts.
+func (m Message) TextContent() string {
+	if m.Content != "" {
+		return m.Content
+	}
+	var b strings.Builder
+	for _, p := range m.Parts {
+		if p.Type == PartTypeText && p.Text != "" {
+			if b.Len() > 0 {
+				b.WriteByte(' ')
+			}
+			b.WriteString(p.Text)
+		}
+	}
+	return b.String()
+}
+
+// HasImages reports whether the message includes image parts.
+func (m Message) HasImages() bool {
+	for _, p := range m.Parts {
+		if p.Type == PartTypeImageURL || p.Type == PartTypeImageBase64 {
+			return true
+		}
+	}
+	return false
+}
+
+// IsMultimodal reports whether the message uses content parts.
+func (m Message) IsMultimodal() bool {
+	return len(m.Parts) > 0
 }
 
 // ToolCall represents a request to call a function.

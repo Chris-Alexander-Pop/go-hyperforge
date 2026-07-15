@@ -3,6 +3,7 @@ package memory
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
 	"strings"
 	"unicode/utf8"
@@ -12,6 +13,7 @@ import (
 
 // Client is an in-memory LLM client for testing purposes.
 // It returns predictable responses based on input patterns.
+// Multimodal user messages (Parts with images) are acknowledged in the echo path.
 type Client struct {
 	responses  map[string]string
 	counter    int
@@ -112,22 +114,58 @@ func (c *Client) StreamChat(ctx context.Context, messages []llm.Message, opts ..
 }
 
 func (c *Client) resolveContent(messages []llm.Message) string {
-	var lastContent string
+	var lastUser llm.Message
+	found := false
 	for i := len(messages) - 1; i >= 0; i-- {
 		if messages[i].Role == llm.RoleUser {
-			lastContent = messages[i].Content
+			lastUser = messages[i]
+			found = true
 			break
 		}
 	}
+	if !found {
+		return "Memory LLM: no user message"
+	}
+
+	lastContent := lastUser.TextContent()
+	imageNote := describeImages(lastUser)
 
 	for pattern, response := range c.responses {
 		if strings.Contains(strings.ToLower(lastContent), strings.ToLower(pattern)) {
+			if imageNote != "" {
+				return response + " " + imageNote
+			}
 			return response
 		}
 	}
 
 	c.counter++
-	return fmt.Sprintf("Memory LLM response #%d: Echo of '%s'", c.counter, truncate(lastContent, 50))
+	base := fmt.Sprintf("Memory LLM response #%d: Echo of '%s'", c.counter, truncate(lastContent, 50))
+	if imageNote != "" {
+		return base + " " + imageNote
+	}
+	return base
+}
+
+func describeImages(msg llm.Message) string {
+	if !msg.HasImages() {
+		return ""
+	}
+	var notes []string
+	for _, p := range msg.Parts {
+		switch p.Type {
+		case llm.PartTypeImageURL:
+			notes = append(notes, fmt.Sprintf("[image:%s]", truncate(p.ImageURL, 40)))
+		case llm.PartTypeImageBase64:
+			mime := p.MIMEType
+			if mime == "" {
+				mime = "image"
+			}
+			enc := base64.StdEncoding.EncodeToString(p.Data)
+			notes = append(notes, fmt.Sprintf("[image_b64:%s:%d]", mime, len(enc)))
+		}
+	}
+	return strings.Join(notes, " ")
 }
 
 func (c *Client) generateResponse(content string) *llm.Generation {

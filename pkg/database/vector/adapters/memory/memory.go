@@ -32,11 +32,21 @@ func New() *Store {
 
 // Search finds the nearest neighbors using cosine similarity.
 func (s *Store) Search(ctx context.Context, queryVector []float32, limit int) ([]vector.Result, error) {
+	return s.SearchWithOpts(ctx, queryVector, vector.SearchOpts{Limit: limit})
+}
+
+// SearchWithOpts finds nearest neighbors with optional metadata equality filter.
+func (s *Store) SearchWithOpts(ctx context.Context, queryVector []float32, opts vector.SearchOpts) ([]vector.Result, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
 	if len(s.entries) == 0 {
 		return []vector.Result{}, nil
+	}
+
+	limit := opts.Limit
+	if limit <= 0 {
+		limit = 10
 	}
 
 	type scored struct {
@@ -46,6 +56,9 @@ func (s *Store) Search(ctx context.Context, queryVector []float32, limit int) ([
 
 	results := make([]scored, 0, len(s.entries))
 	for _, e := range s.entries {
+		if !vector.MatchFilter(e.metadata, opts.Filter) {
+			continue
+		}
 		score := cosineSimilarity(queryVector, e.vector)
 		results = append(results, scored{entry: e, score: score})
 	}

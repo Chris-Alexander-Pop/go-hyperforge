@@ -33,7 +33,11 @@ Landed foundation/reuse/domain hardening (scores above are the *pre-fix* snapsho
 - ✅ `test`: Suite self-tests + examples; StartPostgres/StartRedis Short-skip + t.Cleanup
 - ✅ `auth` SAML: SP client interface + memory ACS/AuthnRequest stub (XML crypto Unimplemented)
 - ✅ `ai` gateway + prompt: multi-provider `genai/gateway` fallback router; versioned `genai/prompt` template stub
-- 🔄 Remaining large gaps still listed below (AI multimodal/evals, cloud IaaS adapters, security Vault/cloud KMS/WAF, etc.)
+- ✅ `ai` multimodal + evals + RAG: `llm.ContentPart`/Parts; memory+OpenAI paths; `genai/evals` EvalRunner/golden/LLM-judge; RAG↔vector+rerank; Textract OCR adapter
+- ✅ `database` Neo4j HTTP graph + Weaviate vector adapters; `SearchWithOpts` metadata filter; ClickHouse implements `sql.SQL`
+- 🔄 Remaining large gaps still listed below (cloud IaaS adapters, security scanners/GuardDuty/GCP-Azure KMS, Cassandra KV, etc.)
+- ✅ `security`: Vault KV v2, AWS KMS Encrypt/Decrypt, Cloudflare WAF IP access rules
+- ✅ `audit`: SQL/Postgres durable store, messaging fanout, hash-chain, retention/GDPR
 
 ---
 
@@ -42,7 +46,7 @@ Landed foundation/reuse/domain hardening (scores above are the *pre-fix* snapsho
 | Package | Score | Notes |
 |---------|------:|-------|
 | messaging | 71→82 | Factory/options/ErrQueueFull/ResilientConsumer/tests landed |
-| database | 62 | Broad skeleton; sharding/resilience/tests thin |
+| database | 62→improved | Neo4j+Weaviate adapters; vector filters; ClickHouse sql.SQL; sharding/Cassandra still open |
 | auth | 57→improved | Session/MFA/JWT; OAuth2 AS; SMS/email MFA; Apple social; SAML skeleton |
 | cache | 60 | Core OK; TTL=0 / miss→CB footguns |
 | logger | 58 | Widely used; Init/Async/trace bugs |
@@ -61,17 +65,11 @@ Landed foundation/reuse/domain hardening (scores above are the *pre-fix* snapsho
 | algorithms | 38 | Many educational stubs |
 | cloud | 38→improved | Memory + real scheduler strategies; no Libvirt/IPMI |
 | telemetry | 36 | OTLP + noop/stdout; SampleRate/Insecure; metrics still open |
-| ai | 36→improved | StreamChat + memory; gateway fallback + prompt versioning; multimodal/evals open |
+| ai | 36→improved | StreamChat/gateway/prompt; multimodal Parts; evals; RAG↔vector/rerank; Textract |
 | analytics | 32 | HLL uniqueness only |
 | validator | 32 | Thin; config bypasses it |
-| audit | 34 | Stdout + redact; no store/query |
-| config | 28 | Unused env loader; reinvented validation |
-| iot | 28 | Concrete SDKs; 0 tests |
-| enterprise | 24 | Design stub; 0 tests |
-| web3 | 22 | Client scaffolds; no interfaces/tests |
-| metering | 20* | Memory only; 0 tests; no consumers |
-| streaming | — | PutRecord + memory/Kinesis/EventHubs; Pub/Sub → messaging |
-| security | 30* → improved | Root/errors, crypto harden, secrets Rotate, reCAPTCHA; Vault/cloud KMS still open |
+| audit | 34→improved | SQL/Postgres + messaging fanout; hash-chain; GDPR/retention |
+| security | 30* → improved | Vault KV v2, AWS KMS, Cloudflare WAF; scanners still open |
 | servicemesh | 25* | Discovery OK; CB/RL reinvent resilience/algorithms |
 | storage | 45* | Blob Store parity + resilience landed; file/block/archive still memory-only |
 | resilience | 75* | CB+retry+timeout+bulkhead; typed Execute / Hedge / Fallback still open |
@@ -170,12 +168,13 @@ Landed foundation/reuse/domain hardening (scores above are the *pre-fix* snapsho
 - [ ] ❌ Exists/MGet/MSet/Expire/invalidation/warming; Redis Cluster
 - [ ] ❌ Redis conformance tests (miniredis already in go.mod)
 
-### `pkg/database` (~62)
+### `pkg/database` (~62 → improved)
 - [ ] ❌ Multi-shard manager wiring `pkg/algorithms/consistenthash` into `GetShard`
 - [ ] 🔗 Replace `ops.WithRetry` with `pkg/resilience`
-- [ ] ❌ Adapters: Cassandra KV, Neo4j/Neptune graph, Weaviate/Milvus vector
-- [ ] ❌ ClickHouse must implement `sql.SQL`; vector filters/hybrid search
-- [ ] ❌ Interface conformance tests across stores
+- [x] ✅ Adapters: Neo4j HTTP graph (`graph/adapters/neo4j`); Weaviate vector (`vector/adapters/weaviate`)
+- [ ] ❌ Adapters still open: Cassandra KV, Neptune graph, Milvus vector
+- [x] ✅ ClickHouse implements `sql.SQL`; vector `SearchWithOpts` metadata filter (memory/pinecone/weaviate)
+- [ ] ❌ Hybrid search; broader interface conformance tests across stores
 
 ### `pkg/storage` (~45)
 - [x] ✅ GCS/Azure implement `blob.Store`; map S3 miss → NotFound
@@ -256,15 +255,21 @@ Landed foundation/reuse/domain hardening (scores above are the *pre-fix* snapsho
 - [x] ✅ Crypto: `pkg/errors`, `crypto/subtle` compare, `InstrumentedEncryptor`, MemoryKeyProvider → `crypto/adapters/memory`
 - [x] ✅ Secrets: `Rotate` + Config `Validate` (`pkg/validator`) + optional `EventedSecretManager` audit events
 - [x] ✅ Captcha: `adapters/recaptcha` siteverify HTTP adapter + honest memory/docs
-- [x] ✅ Softened Vault/cloud KMS/Dilithium/reCAPTCHA overclaims; bridge note vs `pkg/auth` IdP
-- [ ] ❌ Remaining production adapters (Vault, cloud KMS/WAF, scanners, GuardDuty)
+- [x] ✅ Softened docs vs reality; bridge note vs `pkg/auth` IdP
+- [x] ✅ Vault KV v2 HTTP adapter (`secrets/adapters/vault`) + httptest tests
+- [x] ✅ AWS KMS Encrypt/Decrypt (`crypto/kms/adapters/awskms`) + injectable API tests
+- [x] ✅ Cloudflare WAF IP access rules (`waf/adapters/cloudflare`) + httptest tests
+- [ ] ❌ Remaining: AWS WAF, GCP/Azure KMS, cloud secret managers, scanners, GuardDuty
 - [ ] ❌ Real/vetted PQC (CIRCL/liboqs); Dilithium/ML-DSA still absent
 - [ ] 🔗 Broader hash/password reuse via crypto across auth (partial)
 
-### `pkg/audit` (~34)
-- [ ] ❌ Durable adapters (kafka/postgres); query/export/retention/GDPR APIs
-- [ ] ❌ Tamper-evident store; `Auditor` returns error; field-name redaction wired
-- [ ] ❌ Real asserting tests
+### `pkg/audit` (~34 → improved)
+- [x] ✅ Durable `adapters/sql` + `adapters/postgres` (database/sql Append/Query)
+- [x] ✅ Messaging fanout bridge (`adapters/messaging` via `pkg/messaging`)
+- [x] ✅ Tamper-evident hash-chain (`Hash`/`PrevHash`, memory + SQL option, `VerifyChain`)
+- [x] ✅ Retention `Purge` + GDPR `ExportByActor` / `EraseByActor` (`LifecycleStore`)
+- [x] ✅ Asserting tests (memory lifecycle/chain, SQL sqlite, messaging fanout)
+- [x] ✅ Field-name redaction + Auditor error returns (prior wave)
 
 ---
 
@@ -349,10 +354,12 @@ Landed foundation/reuse/domain hardening (scores above are the *pre-fix* snapsho
 - [x] ✅ Softened dual `ai/llm` vs `genai/llm` ledger in `pkg/TODO.md`; fixed Generate vs Chat docs
 - [x] ✅ `genai/gateway` multi-provider `llm.Client` router with ordered fallback + memory tests
 - [x] ✅ `genai/prompt` versioned template store stub (`{{key}}` render) + memory adapter
-- [ ] ❌ Multimodal, fuller prompt engine, evals
-- [ ] 🔗 RAG ↔ `pkg/database/vector` + `pkg/database/rerank`
-- [ ] ❌ OCR/vision/speech cloud adapters beyond stubs
-- [ ] ❌ instrumented/errors/memory for *all* remaining AI capabilities (ml/perception depth)
+- [x] ✅ Multimodal `Message.Parts` / `ContentPart`; conversation memory `AddUserParts`; OpenAI + memory adapter paths; tests
+- [x] ✅ `genai/evals`: `EvalRunner`, golden set, exact-match + LLM-as-judge (memory-backed tests)
+- [x] ✅ RAG ↔ `pkg/database/vector` + `pkg/database/rerank` (`WithReranker`, `RetrieveResults` + metadata filter)
+- [x] ✅ OCR Textract cloud adapter (+ `ocr/errors.go`); vision Rekognition already present
+- [ ] ❌ Fuller prompt engine; speech cloud adapters beyond stubs
+- [ ] ❌ instrumented/errors/memory for *all* remaining AI capabilities (ml depth)
 
 ### `pkg/algorithms` (~38 → improved)
 - [x] ✅ Implement standards-cited `search/binarysearch`, `graph/bfs`, `graph/dfs` (+ tests)
