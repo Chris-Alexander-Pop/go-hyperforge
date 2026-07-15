@@ -5,6 +5,10 @@ This package defines the core interfaces for producing and consuming messages
 across different messaging systems (Kafka, RabbitMQ, NATS, AWS SQS/SNS, GCP Pub/Sub,
 Azure Service Bus).
 
+For append-only cloud stream producers (AWS Kinesis, Azure Event Hubs), use
+pkg/streaming instead. GCP Pub/Sub belongs here (adapters/gcppubsub), not under
+pkg/streaming.
+
 # Architecture
 
 The package follows the adapter pattern with decoupled dependencies:

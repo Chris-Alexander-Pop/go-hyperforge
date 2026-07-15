@@ -2,10 +2,14 @@ package memory
 
 import (
 	"context"
-	"sync"
+	"sync/atomic"
 
+	"github.com/chris-alexander-pop/system-design-library/pkg/concurrency"
 	"github.com/chris-alexander-pop/system-design-library/pkg/streaming"
 )
+
+// Ensure Client implements streaming.Client.
+var _ streaming.Client = (*Client)(nil)
 
 // Record represents a stored streaming record.
 type Record struct {
@@ -15,21 +19,44 @@ type Record struct {
 }
 
 // Client implements streaming.Client in memory.
+// Config.BufferSize caps retained records; <= 0 means unlimited.
 type Client struct {
-	mu      sync.Mutex
-	records []Record
+	mu         *concurrency.SmartMutex
+	records    []Record
+	bufferSize int
+	closed     atomic.Bool
 }
 
 // New creates a new in-memory streaming client.
-func New(_ streaming.Config) *Client {
+func New(cfg streaming.Config) *Client {
 	return &Client{
-		records: make([]Record, 0),
+		mu:         concurrency.NewSmartMutex(concurrency.MutexConfig{Name: "StreamingMemory"}),
+		records:    make([]Record, 0),
+		bufferSize: cfg.BufferSize,
 	}
 }
 
+func (c *Client) guard() error {
+	if c.closed.Load() {
+		return streaming.ErrClosed
+	}
+	return nil
+}
+
 func (c *Client) PutRecord(ctx context.Context, streamName string, partitionKey string, data []byte) error {
+	if err := c.guard(); err != nil {
+		return err
+	}
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+
 	c.mu.Lock()
 	defer c.mu.Unlock()
+
+	if c.bufferSize > 0 && len(c.records) >= c.bufferSize {
+		return streaming.ErrBufferFull
+	}
 
 	// Clone data to avoid race conditions if caller modifies it
 	dataCopy := make([]byte, len(data))
@@ -44,6 +71,12 @@ func (c *Client) PutRecord(ctx context.Context, streamName string, partitionKey 
 }
 
 func (c *Client) Close() error {
+	if !c.closed.CompareAndSwap(false, true) {
+		return nil
+	}
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.records = nil
 	return nil
 }
 
@@ -52,7 +85,9 @@ func (c *Client) GetRecords() []Record {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	// Return copy
+	if c.records == nil {
+		return nil
+	}
 	out := make([]Record, len(c.records))
 	copy(out, c.records)
 	return out

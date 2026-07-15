@@ -48,7 +48,7 @@ See the root backlog: [`/MISSING_CAPABILITIES.md`](../MISSING_CAPABILITIES.md). 
 | `database` | sql, document, vector, kv, graph, timeseries |
 | `storage` | blob, file, block, archive, controller |
 | `data` | search, etl, processing, bigdata |
-| `streaming` | Kinesis, EventHubs, Pub/Sub (Kafka lives under `messaging`) |
+| `streaming` | Kinesis, EventHubs (Pub/Sub and Kafka live under `messaging`) |
 
 ### Security
 

@@ -1,4 +1,2 @@
-// Package kinesis provides functionality for kinesis.
-//
-// TODO: Add detailed documentation.
+// Package kinesis provides a streaming.Client backed by AWS Kinesis.
 package kinesis

@@ -46,7 +46,7 @@
 | enterprise | 24 | Design stub; 0 tests |
 | web3 | 22 | Client scaffolds; no interfaces/tests |
 | metering | 20* | Memory only; 0 tests; no consumers |
-| streaming | 25* | PutRecord stub; duplicates Pub/Sub |
+| streaming | — | PutRecord + memory/Kinesis/EventHubs; Pub/Sub → messaging |
 | security | 30* | Memory-only domain |
 | servicemesh | 25* | Discovery OK; CB/RL reinvent resilience/algorithms |
 | storage | 45* | Blob partial; file/block/archive memory-only |
@@ -166,9 +166,10 @@
 - [ ] ❌ Bigdata `errors.go` + full instrumented logging; Spark Connect honesty
 
 ### `pkg/streaming` (~25)
-- [ ] 🔗 Remove Pub/Sub duplication with `pkg/messaging` (keep Kinesis/EventHubs only or fold)
-- [ ] ❌ Consume/batch APIs; `errors.go`; `pkg/resilience`; real tests
-- [ ] ⚠️ Fix README Kafka claim (Kafka is messaging, not streaming)
+- [x] ✅ Remove Pub/Sub duplication with `pkg/messaging` (Kinesis/EventHubs + memory only)
+- [x] ✅ `errors.go`; `resilient.go` via `pkg/resilience`; root memory tests; BufferSize honored
+- [x] ✅ Fix README: Kafka and Pub/Sub live under `messaging`, not `streaming`
+- [ ] ❌ Consume/batch APIs (out of current PutRecord-only scope)
 
 ### `pkg/analytics` (~32)
 - [ ] ❌ Event ingest model + streaming/warehouse sinks (catalog analytics)
@@ -189,7 +190,7 @@
 - [ ] ❌ `manager.go` factory; wire Publish/Consume options or remove them
 - [ ] ❌ Honor TLS/claim/prefetch config fields; memory `ErrQueueFull`
 - [ ] ❌ ResilientConsumer; adapter unit/integration tests
-- [ ] 🔗 Clarify vs streaming for GCP Pub/Sub
+- [x] ✅ Clarify vs streaming for GCP Pub/Sub (streaming docs point to messaging)
 
 ### `pkg/communication` (~58)
 - [ ] ❌ Root `communication.go`; `errors.go`; `resilient.go` using `pkg/resilience`
