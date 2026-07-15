@@ -3,10 +3,11 @@ package bounded
 import (
 	"crypto/sha256"
 	"encoding/binary"
-	"errors"
 	"fmt"
-	"github.com/chris-alexander-pop/go-hyperforge/pkg/concurrency"
 	"sort"
+
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/concurrency"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 )
 
 // Hasher implements Consistent Hashing with Bounded Loads.
@@ -56,7 +57,7 @@ func (h *Hasher) Get(key string) (string, error) {
 	defer h.mu.Unlock()
 
 	if len(h.ring) == 0 {
-		return "", errors.New("no hosts")
+		return "", errors.FailedPrecondition("no hosts", nil)
 	}
 
 	hash := h.hash(key)

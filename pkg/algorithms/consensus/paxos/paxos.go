@@ -1,8 +1,9 @@
 package paxos
 
 import (
-	"errors"
 	"sync"
+
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 )
 
 // Educational sketch only — see package doc. Not a production consensus library.
@@ -167,7 +168,7 @@ func (p *Proposer) propose(slot int, value interface{}) (bool, int, error) {
 	}
 
 	if promises <= p.numPeers/2 {
-		return false, propID, errors.New("majority promises not received")
+		return false, propID, errors.FailedPrecondition("majority promises not received", nil)
 	}
 
 	valToPropose := value
@@ -187,7 +188,7 @@ func (p *Proposer) propose(slot int, value interface{}) (bool, int, error) {
 	}
 
 	if accepts <= p.numPeers/2 {
-		return false, propID, errors.New("majority accepts not received")
+		return false, propID, errors.FailedPrecondition("majority accepts not received", nil)
 	}
 
 	return true, propID, nil

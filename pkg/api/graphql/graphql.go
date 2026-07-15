@@ -14,6 +14,7 @@ import (
 	"github.com/99designs/gqlgen/graphql/handler/transport"
 	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/chris-alexander-pop/go-hyperforge/pkg/concurrency"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 	"github.com/chris-alexander-pop/go-hyperforge/pkg/logger"
 	"github.com/vektah/gqlparser/v2"
 	"github.com/vektah/gqlparser/v2/ast"
@@ -100,7 +101,7 @@ func NewHandlerWithConfig(schema graphql.ExecutableSchema, cfg HandlerConfig) ht
 			if fc != nil {
 				depth := fieldDepth(fc)
 				if depth > limit {
-					return nil, fmt.Errorf("query depth %d exceeds limit of %d", depth, limit)
+					return nil, errors.InvalidArgument(fmt.Sprintf("query depth %d exceeds limit of %d", depth, limit), nil)
 				}
 			}
 			return next(ctx)
@@ -224,7 +225,7 @@ func (r *SchemaRegistry) Register(name, sdl string) {
 func (r *SchemaRegistry) RegisterFile(name, path string) error {
 	b, err := os.ReadFile(path)
 	if err != nil {
-		return fmt.Errorf("graphql: read schema %q: %w", path, err)
+		return errors.Internal(fmt.Sprintf("graphql: read schema %q", path), err)
 	}
 	r.Register(name, string(b))
 	return nil
@@ -258,7 +259,7 @@ func LoadSDL(sdl string) (*ast.Schema, error) {
 func LoadSDLFile(path string) (*ast.Schema, error) {
 	b, err := os.ReadFile(path)
 	if err != nil {
-		return nil, fmt.Errorf("graphql: load SDL file %q: %w", path, err)
+		return nil, errors.Internal(fmt.Sprintf("graphql: load SDL file %q", path), err)
 	}
 	return LoadSDL(string(b))
 }

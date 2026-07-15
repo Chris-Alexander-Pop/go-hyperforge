@@ -217,7 +217,7 @@ func (a *Adapter) queryHTTP(ctx context.Context, query string) (*bigdata.Result,
 		return nil, bigdata.ErrQueryFailed(query, err)
 	}
 	if resp.StatusCode >= 400 {
-		return nil, bigdata.ErrQueryFailed(query, fmt.Errorf("http %d: %s", resp.StatusCode, string(respBody)))
+		return nil, bigdata.ErrQueryFailed(query, errors.New(errors.CodeInternal, fmt.Sprintf("http %d: %s", resp.StatusCode, string(respBody)), nil))
 	}
 
 	var parsed httpStatementResponse

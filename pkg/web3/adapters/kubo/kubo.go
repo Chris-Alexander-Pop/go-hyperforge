@@ -14,6 +14,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 	"github.com/chris-alexander-pop/go-hyperforge/pkg/web3"
 )
 
@@ -92,7 +93,7 @@ func (s *Store) Add(ctx context.Context, data []byte) (string, error) {
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
 		b, _ := io.ReadAll(resp.Body)
-		return "", web3.ErrStorageFailed("Add", fmt.Errorf("%s", string(b)))
+		return "", web3.ErrStorageFailed("Add", errors.New(web3.CodeStorageFailed, string(b), nil))
 	}
 	var result struct {
 		Hash string `json:"Hash"`
@@ -163,7 +164,7 @@ func (s *Store) Pin(ctx context.Context, cid string) error {
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
 		b, _ := io.ReadAll(resp.Body)
-		return web3.ErrStorageFailed("Pin", fmt.Errorf("%s", string(b)))
+		return web3.ErrStorageFailed("Pin", errors.New(web3.CodeStorageFailed, string(b), nil))
 	}
 	return nil
 }

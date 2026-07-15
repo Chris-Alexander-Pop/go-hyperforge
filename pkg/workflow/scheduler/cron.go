@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 	"github.com/robfig/cron"
 )
 
@@ -21,7 +22,7 @@ var standardParser = cron.NewParser(
 // "once" is reserved for ScheduleOnce and returns the zero time.
 func nextRunTime(schedule string, from time.Time) (time.Time, error) {
 	if schedule == "" {
-		return time.Time{}, fmt.Errorf("empty schedule")
+		return time.Time{}, errors.InvalidArgument("empty schedule", nil)
 	}
 	if schedule == "once" {
 		return time.Time{}, nil
@@ -29,11 +30,11 @@ func nextRunTime(schedule string, from time.Time) (time.Time, error) {
 
 	sched, err := standardParser.Parse(schedule)
 	if err != nil {
-		return time.Time{}, fmt.Errorf("invalid cron schedule %q: %w", schedule, err)
+		return time.Time{}, errors.InvalidArgument(fmt.Sprintf("invalid cron schedule %q", schedule), err)
 	}
 	next := sched.Next(from)
 	if next.IsZero() {
-		return time.Time{}, fmt.Errorf("cron schedule %q produced no next run", schedule)
+		return time.Time{}, errors.FailedPrecondition(fmt.Sprintf("cron schedule %q produced no next run", schedule), nil)
 	}
 	return next, nil
 }

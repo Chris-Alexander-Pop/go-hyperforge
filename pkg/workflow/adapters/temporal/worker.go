@@ -1,12 +1,11 @@
 package temporal
 
 import (
-	"fmt"
-
 	"go.temporal.io/sdk/client"
 	"go.temporal.io/sdk/worker"
 	sdkworkflow "go.temporal.io/sdk/workflow"
 
+	pkgerrors "github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 	pkgworkflow "github.com/chris-alexander-pop/go-hyperforge/pkg/workflow"
 )
 
@@ -32,10 +31,10 @@ type WorkerConfig struct {
 // WorkflowDefinition values in the map are skipped (engine metadata only).
 func NewWorker(c client.Client, cfg WorkerConfig, namedWorkflows map[string]interface{}) (worker.Worker, error) {
 	if c == nil {
-		return nil, fmt.Errorf("temporal client is required")
+		return nil, pkgerrors.InvalidArgument("temporal client is required", nil)
 	}
 	if cfg.TaskQueue == "" {
-		return nil, fmt.Errorf("task queue is required")
+		return nil, pkgerrors.InvalidArgument("task queue is required", nil)
 	}
 	w := worker.New(c, cfg.TaskQueue, cfg.Options)
 	RegisterWorkflows(w, namedWorkflows)
@@ -80,7 +79,7 @@ func RegisterActivities(reg WorkflowRegistry, activities ...interface{}) {
 // The live Temporal client must be passed separately (Engine may hold a test double).
 func (e *Engine) NewWorkerFromEngine(c client.Client, opts worker.Options) (worker.Worker, error) {
 	if e == nil {
-		return nil, fmt.Errorf("engine is required")
+		return nil, pkgerrors.InvalidArgument("engine is required", nil)
 	}
 	tq := e.config.TaskQueue
 	if tq == "" {

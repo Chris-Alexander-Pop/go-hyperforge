@@ -3,7 +3,6 @@ package servicemesh
 import (
 	"crypto/tls"
 	"crypto/x509"
-	"fmt"
 	"net"
 	"net/http"
 	"os"
@@ -53,18 +52,18 @@ func (c MTLSConfig) TLSConfig() (*tls.Config, error) {
 	if c.CertFile != "" && c.KeyFile != "" {
 		cert, err := tls.LoadX509KeyPair(c.CertFile, c.KeyFile)
 		if err != nil {
-			return nil, fmt.Errorf("servicemesh: load key pair: %w", err)
+			return nil, ErrInternal("servicemesh: load key pair", err)
 		}
 		cfg.Certificates = []tls.Certificate{cert}
 	}
 	if c.CAFile != "" {
 		pem, err := os.ReadFile(c.CAFile)
 		if err != nil {
-			return nil, fmt.Errorf("servicemesh: read CA file: %w", err)
+			return nil, ErrInternal("servicemesh: read CA file", err)
 		}
 		pool := x509.NewCertPool()
 		if !pool.AppendCertsFromPEM(pem) {
-			return nil, fmt.Errorf("servicemesh: no certificates found in CA file")
+			return nil, ErrInvalid("servicemesh: no certificates found in CA file", nil)
 		}
 		cfg.RootCAs = pool
 	}

@@ -2,9 +2,10 @@ package chord
 
 import (
 	"crypto/sha1"
-	"errors"
 	"math/big"
 	"sync"
+
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 )
 
 // Educational sketch only — see package doc. Not a production DHT.
@@ -60,7 +61,7 @@ func (t *InProcessTransport) node(addr string) (*Node, error) {
 	defer t.mu.RUnlock()
 	n, ok := t.nodes[addr]
 	if !ok {
-		return nil, errors.New("chord: unknown peer " + addr)
+		return nil, errors.NotFound("chord: unknown peer "+addr, nil)
 	}
 	return n, nil
 }
@@ -151,7 +152,7 @@ func (n *Node) Create() {
 // Join joins an existing ring via bootstrapAddr using Transport RPCs.
 func (n *Node) Join(bootstrapAddr string) error {
 	if n.transport == nil {
-		return errors.New("chord: transport required for Join")
+		return errors.FailedPrecondition("chord: transport required for Join", nil)
 	}
 	succ, err := n.transport.FindSuccessor(bootstrapAddr, n.id)
 	if err != nil {
@@ -171,7 +172,7 @@ func (n *Node) FindSuccessor(id *big.Int) (*RemoteNode, error) {
 	succ := n.successor
 	if succ == nil {
 		n.mu.RUnlock()
-		return nil, errors.New("chord: no successor")
+		return nil, errors.FailedPrecondition("chord: no successor", nil)
 	}
 	if between(n.id, succ.ID, id) || id.Cmp(succ.ID) == 0 {
 		out := copyRemote(succ)
@@ -186,7 +187,7 @@ func (n *Node) FindSuccessor(id *big.Int) (*RemoteNode, error) {
 		return copyRemote(succ), nil
 	}
 	if n.transport == nil {
-		return nil, errors.New("chord: transport required for remote FindSuccessor")
+		return nil, errors.FailedPrecondition("chord: transport required for remote FindSuccessor", nil)
 	}
 	return n.transport.FindSuccessor(pred.Addr, id)
 }
@@ -210,10 +211,10 @@ func (n *Node) Stabilize() error {
 	n.mu.RUnlock()
 
 	if succ == nil {
-		return errors.New("chord: no successor")
+		return errors.FailedPrecondition("chord: no successor", nil)
 	}
 	if transport == nil {
-		return errors.New("chord: transport required for Stabilize")
+		return errors.FailedPrecondition("chord: transport required for Stabilize", nil)
 	}
 
 	x, err := transport.GetPredecessor(succ.Addr)

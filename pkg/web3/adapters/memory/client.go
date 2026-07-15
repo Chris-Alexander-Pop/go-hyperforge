@@ -10,6 +10,7 @@ import (
 	"sync/atomic"
 
 	"github.com/chris-alexander-pop/go-hyperforge/pkg/concurrency"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 	"github.com/chris-alexander-pop/go-hyperforge/pkg/web3"
 )
 
@@ -152,7 +153,7 @@ func (c *Client) Transfer(ctx context.Context, to string, amountWei *big.Int) (s
 		c.balances[from] = fromBal
 	}
 	if fromBal.Cmp(amountWei) < 0 {
-		return "", web3.ErrRPCFailed("transfer", fmt.Errorf("insufficient funds"))
+		return "", web3.ErrRPCFailed("transfer", errors.FailedPrecondition("insufficient funds", nil))
 	}
 	fromBal.Sub(fromBal, amountWei)
 	toBal, ok := c.balances[toNorm]

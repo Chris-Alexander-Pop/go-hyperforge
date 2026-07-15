@@ -9,12 +9,14 @@ import (
 	"mime/quotedprintable"
 	"net/textproto"
 	"strings"
+
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 )
 
 // BuildMIME constructs a simple multipart MIME message suitable for SMTP or SES Raw.
 func BuildMIME(msg *Message) ([]byte, error) {
 	if msg == nil {
-		return nil, fmt.Errorf("message is nil")
+		return nil, errors.InvalidArgument("message is nil", nil)
 	}
 
 	var header bytes.Buffer

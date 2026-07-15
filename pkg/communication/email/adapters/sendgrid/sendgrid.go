@@ -103,7 +103,7 @@ func (s *Sender) Send(ctx context.Context, msg *email.Message) error {
 	}
 
 	if resp.StatusCode >= 400 {
-		return errors.Internal("sendgrid api error", fmt.Errorf("status code: %d, body: %s", resp.StatusCode, resp.Body))
+		return errors.Internal("sendgrid api error", errors.New(errors.CodeInternal, fmt.Sprintf("status code: %d, body: %s", resp.StatusCode, resp.Body), nil))
 	}
 
 	return nil

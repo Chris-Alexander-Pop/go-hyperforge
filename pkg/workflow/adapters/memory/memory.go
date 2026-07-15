@@ -8,6 +8,7 @@ import (
 
 	"github.com/chris-alexander-pop/go-hyperforge/pkg/concurrency"
 	"github.com/chris-alexander-pop/go-hyperforge/pkg/datastructures/lru"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 	"github.com/chris-alexander-pop/go-hyperforge/pkg/workflow"
 	"github.com/google/uuid"
 )
@@ -236,7 +237,7 @@ func (e *Engine) runExecution(
 
 		st, ok := states[current]
 		if !ok {
-			e.finish(exec, workflow.StatusFailed, nil, fmt.Errorf("unknown state %q", current))
+			e.finish(exec, workflow.StatusFailed, nil, errors.NotFound(fmt.Sprintf("unknown state %q", current), nil))
 			return
 		}
 
@@ -254,10 +255,10 @@ func (e *Engine) runExecution(
 		case "succeed", "pass":
 			// no-op; pass data through
 		case "fail":
-			e.finish(exec, workflow.StatusFailed, data, fmt.Errorf("state %q failed", st.Name))
+			e.finish(exec, workflow.StatusFailed, data, errors.Internal(fmt.Sprintf("state %q failed", st.Name), nil))
 			return
 		default:
-			e.finish(exec, workflow.StatusFailed, data, fmt.Errorf("unsupported state type %q", st.Type))
+			e.finish(exec, workflow.StatusFailed, data, errors.InvalidArgument(fmt.Sprintf("unsupported state type %q", st.Type), nil))
 			return
 		}
 		if err != nil {
@@ -323,7 +324,7 @@ func (e *Engine) execChoice(st workflow.State, input interface{}) (string, error
 	for _, rule := range st.Choices {
 		if matchChoice(rule, input) {
 			if rule.Next == "" {
-				return "", fmt.Errorf("choice rule for %q missing Next", st.Name)
+				return "", errors.InvalidArgument(fmt.Sprintf("choice rule for %q missing Next", st.Name), nil)
 			}
 			return rule.Next, nil
 		}
@@ -334,7 +335,7 @@ func (e *Engine) execChoice(st workflow.State, input interface{}) (string, error
 	if st.Next != "" {
 		return st.Next, nil
 	}
-	return "", fmt.Errorf("no choice matched and no Default for state %q", st.Name)
+	return "", errors.FailedPrecondition(fmt.Sprintf("no choice matched and no Default for state %q", st.Name), nil)
 }
 
 func matchChoice(rule workflow.ChoiceRule, input interface{}) bool {
@@ -423,7 +424,7 @@ func (e *Engine) runBranch(
 	}
 	start := br.StartAt
 	if start == "" {
-		return input, fmt.Errorf("parallel branch missing StartAt")
+		return input, errors.InvalidArgument("parallel branch missing StartAt", nil)
 	}
 	data := input
 	current := start
@@ -433,7 +434,7 @@ func (e *Engine) runBranch(
 		}
 		st, ok := states[current]
 		if !ok {
-			return nil, fmt.Errorf("unknown branch state %q", current)
+			return nil, errors.NotFound(fmt.Sprintf("unknown branch state %q", current), nil)
 		}
 		var err error
 		var choiceNext string
@@ -446,11 +447,11 @@ func (e *Engine) runBranch(
 			choiceNext, err = e.execChoice(st, data)
 		case "succeed", "pass":
 		case "fail":
-			return nil, fmt.Errorf("branch state %q failed", st.Name)
+			return nil, errors.Internal(fmt.Sprintf("branch state %q failed", st.Name), nil)
 		case "parallel":
 			data, err = e.execParallel(ctx, st, states, handlers, data)
 		default:
-			return nil, fmt.Errorf("unsupported branch state type %q", st.Type)
+			return nil, errors.InvalidArgument(fmt.Sprintf("unsupported branch state type %q", st.Type), nil)
 		}
 		if err != nil {
 			return nil, err

@@ -4,11 +4,11 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/hex"
-	"fmt"
 	"strings"
 	"time"
 
 	"github.com/chris-alexander-pop/go-hyperforge/pkg/concurrency"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 	"github.com/chris-alexander-pop/go-hyperforge/pkg/web3"
 )
 
@@ -91,7 +91,7 @@ func (v *Verifier) Verify(ctx context.Context, message *web3.SIWEMessage, signat
 	expected := MemorySignature(message)
 	if signature != expected {
 		if signature == "" {
-			return false, web3.ErrInvalidSignature("invalid signature format", fmt.Errorf("empty signature"))
+			return false, web3.ErrInvalidSignature("invalid signature format", errors.InvalidArgument("empty signature", nil))
 		}
 		return false, nil
 	}

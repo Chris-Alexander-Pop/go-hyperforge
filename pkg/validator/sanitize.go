@@ -1,13 +1,14 @@
 package validator
 
 import (
-	"fmt"
 	"html"
 	"net/url"
 	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
+
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 )
 
 // Sanitizer sanitizes user input to prevent XSS and injection attacks.
@@ -221,7 +222,7 @@ func SanitizePath(input string) string {
 func ValidatePathInside(baseDir, targetPath string) (string, error) {
 	absBase, err := filepath.Abs(baseDir)
 	if err != nil {
-		return "", fmt.Errorf("failed to resolve base directory: %w", err)
+		return "", errors.InvalidArgument("failed to resolve base directory", err)
 	}
 
 	// Clean the target path (relative to base)

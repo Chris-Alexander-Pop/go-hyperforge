@@ -234,7 +234,7 @@ func readNullTerminated(r io.Reader) (string, error) {
 			break
 		}
 		if b.Len() >= maxResponseSize {
-			return "", fmt.Errorf("clamav response too large")
+			return "", pkgerrors.New(scanning.CodeScanFailed, "clamav response too large", nil)
 		}
 		b.WriteByte(c)
 	}
@@ -245,7 +245,7 @@ func readNullTerminated(r io.Reader) (string, error) {
 func parseInstreamResponse(resp string) ([]string, error) {
 	resp = strings.TrimSpace(resp)
 	if resp == "" {
-		return nil, fmt.Errorf("empty clamav response")
+		return nil, pkgerrors.New(scanning.CodeScanFailed, "empty clamav response", nil)
 	}
 	// May contain multiple lines for some configurations; take first meaningful line.
 	line := resp
@@ -271,7 +271,7 @@ func parseInstreamResponse(resp string) ([]string, error) {
 		return []string{body}, nil
 	}
 	if strings.HasSuffix(lower, " error") {
-		return nil, fmt.Errorf("clamav error: %s", line)
+		return nil, pkgerrors.New(scanning.CodeScanFailed, "clamav error: "+line, nil)
 	}
-	return nil, fmt.Errorf("unexpected clamav response: %s", line)
+	return nil, pkgerrors.New(scanning.CodeScanFailed, "unexpected clamav response: "+line, nil)
 }

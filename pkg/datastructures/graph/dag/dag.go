@@ -1,14 +1,13 @@
 package dag
 
 import (
-	"errors"
-
 	"github.com/chris-alexander-pop/go-hyperforge/pkg/concurrency"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 )
 
 var (
-	ErrCycleDetected = errors.New("cycle detected")
-	ErrNodeNotFound  = errors.New("node not found")
+	ErrCycleDetected = errors.FailedPrecondition("cycle detected", nil)
+	ErrNodeNotFound  = errors.NotFound("node not found", nil)
 )
 
 // DAG represents a Directed Acyclic Graph.

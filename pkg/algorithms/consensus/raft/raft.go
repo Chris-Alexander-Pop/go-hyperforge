@@ -1,10 +1,11 @@
 package raft
 
 import (
-	"errors"
 	"math/rand"
 	"sync"
 	"time"
+
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 )
 
 // Educational sketch only — see package doc. Not a production Raft library.
@@ -32,7 +33,7 @@ func (s State) String() string {
 }
 
 // ErrNotLeader is returned by Propose when this node is not the leader.
-var ErrNotLeader = errors.New("raft: not leader")
+var ErrNotLeader = errors.FailedPrecondition("raft: not leader", nil)
 
 // LogEntry is a single log entry.
 type LogEntry struct {
