@@ -9,7 +9,6 @@ import (
 	"io"
 	"sort"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
@@ -18,6 +17,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/storage/azblob"
 	"github.com/Azure/azure-sdk-for-go/sdk/storage/azblob/blob"
 	"github.com/Azure/azure-sdk-for-go/sdk/storage/azblob/bloberror"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/concurrency"
 	"github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 	"github.com/chris-alexander-pop/go-hyperforge/pkg/storage/archive"
 	"github.com/google/uuid"
@@ -59,7 +59,7 @@ type Store struct {
 	cfg       Config
 	account   string
 
-	mu   sync.Mutex
+	mu   *concurrency.SmartMutex
 	jobs map[string]*archive.RestoreJob
 	meta map[string]objectMeta
 }
@@ -98,6 +98,7 @@ func NewFromAPI(api BlobAPI, cfg Config) (*Store, error) {
 		account:   cfg.AccountName,
 		jobs:      make(map[string]*archive.RestoreJob),
 		meta:      make(map[string]objectMeta),
+		mu:        concurrency.NewSmartMutex(concurrency.MutexConfig{Name: "archive-azure"}),
 	}, nil
 }
 
@@ -427,7 +428,7 @@ func mapErr(op string, err error) error {
 
 // MemoryBlobAPI is an in-process BlobAPI for unit tests.
 type MemoryBlobAPI struct {
-	mu   sync.Mutex
+	mu   *concurrency.SmartMutex
 	data map[string][]byte
 	meta map[string]map[string]string
 	tier map[string]blob.AccessTier
@@ -439,6 +440,7 @@ func NewMemoryBlobAPI() *MemoryBlobAPI {
 		data: make(map[string][]byte),
 		meta: make(map[string]map[string]string),
 		tier: make(map[string]blob.AccessTier),
+		mu:   concurrency.NewSmartMutex(concurrency.MutexConfig{Name: "archive-azure-memory"}),
 	}
 }
 

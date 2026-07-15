@@ -7,6 +7,7 @@ import (
 
 	"github.com/chris-alexander-pop/go-hyperforge/pkg/algorithms/ratelimit"
 	"github.com/chris-alexander-pop/go-hyperforge/pkg/cache"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/concurrency"
 )
 
 // Limiter implements a generic leaky bucket.
@@ -18,7 +19,7 @@ type Limiter struct {
 type state struct {
 	queue    int64
 	lastLeak time.Time
-	mu       sync.Mutex
+	mu       *concurrency.SmartMutex
 }
 
 // New creates a new LeakyBucket limiter.
@@ -33,6 +34,7 @@ func (l *Limiter) Allow(ctx context.Context, key string, limit int64, period tim
 		val, _ = l.buckets.LoadOrStore(stateKey, &state{
 			queue:    0,
 			lastLeak: time.Now(),
+			mu:       concurrency.NewSmartMutex(concurrency.MutexConfig{Name: "leakybucket-state"}),
 		})
 	}
 	s := val.(*state)

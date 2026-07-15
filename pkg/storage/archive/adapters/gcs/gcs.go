@@ -10,10 +10,10 @@ import (
 	"io"
 	"sort"
 	"strings"
-	"sync"
 	"time"
 
 	"cloud.google.com/go/storage"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/concurrency"
 	pkgerrors "github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 	"github.com/chris-alexander-pop/go-hyperforge/pkg/storage/archive"
 	"github.com/google/uuid"
@@ -59,7 +59,7 @@ type Store struct {
 	bucket string
 	cfg    Config
 
-	mu   sync.Mutex
+	mu   *concurrency.SmartMutex
 	jobs map[string]*archive.RestoreJob
 	meta map[string]objectMeta
 }
@@ -97,6 +97,7 @@ func NewFromAPI(api ObjectAPI, cfg Config) (*Store, error) {
 		cfg:    cfg,
 		jobs:   make(map[string]*archive.RestoreJob),
 		meta:   make(map[string]objectMeta),
+		mu:     concurrency.NewSmartMutex(concurrency.MutexConfig{Name: "archive-gcs"}),
 	}, nil
 }
 
@@ -400,7 +401,7 @@ func mapErr(op string, err error) error {
 
 // MemoryObjectAPI is an in-process ObjectAPI for unit tests.
 type MemoryObjectAPI struct {
-	mu    sync.Mutex
+	mu    *concurrency.SmartMutex
 	data  map[string][]byte
 	meta  map[string]map[string]string
 	class map[string]string
@@ -412,6 +413,7 @@ func NewMemoryObjectAPI() *MemoryObjectAPI {
 		data:  make(map[string][]byte),
 		meta:  make(map[string]map[string]string),
 		class: make(map[string]string),
+		mu:    concurrency.NewSmartMutex(concurrency.MutexConfig{Name: "archive-gcs-memory"}),
 	}
 }
 

@@ -2,14 +2,14 @@ package tokenbucket
 
 import (
 	"context"
-	"sync"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/concurrency"
 	"time"
 )
 
 // Local is a process-local token bucket used by mesh/API facades.
 // It is the single implementation for non-keyed in-memory token buckets.
 type Local struct {
-	mu         sync.Mutex
+	mu         *concurrency.SmartMutex
 	tokens     float64
 	capacity   float64
 	rate       float64
@@ -23,6 +23,7 @@ func NewLocal(capacity int, rate float64) *Local {
 		capacity:   float64(capacity),
 		rate:       rate,
 		lastUpdate: time.Now(),
+		mu:         concurrency.NewSmartMutex(concurrency.MutexConfig{Name: "tokenbucket-local"}),
 	}
 }
 

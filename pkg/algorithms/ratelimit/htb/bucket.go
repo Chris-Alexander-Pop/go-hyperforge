@@ -1,7 +1,7 @@
 package htb
 
 import (
-	"sync"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/concurrency"
 	"time"
 )
 
@@ -14,7 +14,7 @@ type Bucket struct {
 	Tokens     float64
 	LastRefill time.Time
 	Children   []*Bucket
-	mu         sync.Mutex
+	mu         *concurrency.SmartMutex
 }
 
 // New creates a new bucket.
@@ -25,6 +25,7 @@ func New(id string, rate, capacity float64) *Bucket {
 		Capacity:   capacity,
 		Tokens:     capacity, // Full start
 		LastRefill: time.Now(),
+		mu:         concurrency.NewSmartMutex(concurrency.MutexConfig{Name: "htb-bucket"}),
 	}
 }
 

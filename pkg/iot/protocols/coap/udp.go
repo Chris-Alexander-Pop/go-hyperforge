@@ -9,6 +9,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/concurrency"
 	"github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 	"github.com/chris-alexander-pop/go-hyperforge/pkg/iot"
 )
@@ -18,7 +19,7 @@ import (
 // Framing is a minimal RFC 7252 subset: 4-byte header + token + Uri-Path options
 // + 0xFF payload marker. Enough for listen/exchange tests without a full stack.
 type UDP struct {
-	mu        sync.RWMutex
+	mu        *concurrency.SmartRWMutex
 	conn      net.PacketConn
 	remote    *net.UDPAddr
 	handlers  map[string]Handler
@@ -40,6 +41,7 @@ func NewUDP(cfg Config) *UDP {
 		handlers: make(map[string]Handler),
 		cfg:      cfg,
 		stopCh:   make(chan struct{}),
+		mu:       concurrency.NewSmartRWMutex(concurrency.MutexConfig{Name: "coap-udp"}),
 	}
 }
 

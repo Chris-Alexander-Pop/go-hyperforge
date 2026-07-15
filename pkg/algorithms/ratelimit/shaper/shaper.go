@@ -1,7 +1,7 @@
 package shaper
 
 import (
-	"sync"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/concurrency"
 	"time"
 )
 
@@ -13,7 +13,7 @@ type Shaper struct {
 	queue      []func()
 	tokens     float64
 	lastRefill time.Time
-	mu         sync.Mutex
+	mu         *concurrency.SmartMutex
 	stopCh     chan struct{}
 }
 
@@ -24,6 +24,7 @@ func New(rate, capacity float64) *Shaper {
 		tokens:     capacity,
 		lastRefill: time.Now(),
 		stopCh:     make(chan struct{}),
+		mu:         concurrency.NewSmartMutex(concurrency.MutexConfig{Name: "ratelimit-shaper"}),
 	}
 	go s.loop()
 	return s

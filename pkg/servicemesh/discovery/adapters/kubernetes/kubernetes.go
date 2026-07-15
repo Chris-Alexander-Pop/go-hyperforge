@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 	"strconv"
-	"sync"
 	"time"
 
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/concurrency"
 	"github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 	"github.com/chris-alexander-pop/go-hyperforge/pkg/servicemesh/discovery"
 	"github.com/google/uuid"
@@ -41,7 +41,7 @@ type Registry struct {
 	namespace string
 	useSlice  bool
 
-	mu     sync.Mutex
+	mu     *concurrency.SmartMutex
 	closed bool
 }
 
@@ -68,6 +68,7 @@ func New(cfg Config) (*Registry, error) {
 		client:    client,
 		namespace: ns,
 		useSlice:  cfg.PreferEndpointSlice,
+		mu:        concurrency.NewSmartMutex(concurrency.MutexConfig{Name: "discovery-kubernetes"}),
 	}, nil
 }
 

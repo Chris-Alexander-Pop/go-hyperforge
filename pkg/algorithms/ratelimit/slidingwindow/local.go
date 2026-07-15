@@ -2,13 +2,13 @@ package slidingwindow
 
 import (
 	"context"
-	"sync"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/concurrency"
 	"time"
 )
 
 // Local is a process-local sliding-window limiter used by mesh/API facades.
 type Local struct {
-	mu       sync.Mutex
+	mu       *concurrency.SmartMutex
 	requests []time.Time
 	limit    int
 	window   time.Duration
@@ -20,6 +20,7 @@ func NewLocal(limit int, window time.Duration) *Local {
 		requests: make([]time.Time, 0, limit),
 		limit:    limit,
 		window:   window,
+		mu:       concurrency.NewSmartMutex(concurrency.MutexConfig{Name: "slidingwindow-local"}),
 	}
 }
 

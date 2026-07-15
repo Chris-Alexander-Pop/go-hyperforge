@@ -10,9 +10,9 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/concurrency"
 	"github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 	"github.com/chris-alexander-pop/go-hyperforge/pkg/servicemesh/discovery"
 	"github.com/google/uuid"
@@ -49,7 +49,7 @@ type Registry struct {
 	client *http.Client
 	wait   time.Duration
 
-	mu     sync.Mutex
+	mu     *concurrency.SmartMutex
 	closed bool
 }
 
@@ -79,6 +79,7 @@ func New(cfg Config) (*Registry, error) {
 		ns:     cfg.Namespace,
 		client: client,
 		wait:   wait,
+		mu:     concurrency.NewSmartMutex(concurrency.MutexConfig{Name: "discovery-consul"}),
 	}, nil
 }
 

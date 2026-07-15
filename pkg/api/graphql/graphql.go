@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/http"
 	"os"
-	"sync"
 	"time"
 
 	"github.com/99designs/gqlgen/graphql"
@@ -14,6 +13,7 @@ import (
 	"github.com/99designs/gqlgen/graphql/handler/lru"
 	"github.com/99designs/gqlgen/graphql/handler/transport"
 	"github.com/99designs/gqlgen/graphql/playground"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/concurrency"
 	"github.com/chris-alexander-pop/go-hyperforge/pkg/logger"
 	"github.com/vektah/gqlparser/v2"
 	"github.com/vektah/gqlparser/v2/ast"
@@ -201,13 +201,16 @@ func NewPlaygroundHandlerWithConfig(cfg PlaygroundConfig) http.Handler {
 
 // SchemaRegistry stores named SDL documents for multi-schema DX and tests.
 type SchemaRegistry struct {
-	mu      sync.RWMutex
+	mu      *concurrency.SmartRWMutex
 	schemas map[string]string
 }
 
 // NewSchemaRegistry creates an empty registry.
 func NewSchemaRegistry() *SchemaRegistry {
-	return &SchemaRegistry{schemas: make(map[string]string)}
+	return &SchemaRegistry{
+		schemas: make(map[string]string),
+		mu:      concurrency.NewSmartRWMutex(concurrency.MutexConfig{Name: "graphql-schema-registry"}),
+	}
 }
 
 // Register stores SDL text under name.

@@ -7,7 +7,6 @@ import (
 	"encoding/hex"
 	"io"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -15,6 +14,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/aws/aws-sdk-go-v2/service/s3/types"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/concurrency"
 	"github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 	"github.com/chris-alexander-pop/go-hyperforge/pkg/storage/archive"
 	"github.com/google/uuid"
@@ -50,7 +50,7 @@ type Store struct {
 	bucket string
 	cfg    Config
 
-	mu   sync.Mutex
+	mu   *concurrency.SmartMutex
 	jobs map[string]*archive.RestoreJob
 	meta map[string]objectMeta
 }
@@ -88,6 +88,7 @@ func NewFromAPI(api ObjectAPI, cfg Config) (*Store, error) {
 		cfg:    cfg,
 		jobs:   make(map[string]*archive.RestoreJob),
 		meta:   make(map[string]objectMeta),
+		mu:     concurrency.NewSmartMutex(concurrency.MutexConfig{Name: "archive-glacier"}),
 	}, nil
 }
 
@@ -374,7 +375,7 @@ func awsStringPtr(s string) *string {
 
 // MemoryObjectAPI is a test double implementing ObjectAPI in-process.
 type MemoryObjectAPI struct {
-	mu    sync.Mutex
+	mu    *concurrency.SmartMutex
 	data  map[string][]byte
 	meta  map[string]map[string]string
 	class map[string]types.StorageClass
@@ -386,6 +387,7 @@ func NewMemoryObjectAPI() *MemoryObjectAPI {
 		data:  make(map[string][]byte),
 		meta:  make(map[string]map[string]string),
 		class: make(map[string]types.StorageClass),
+		mu:    concurrency.NewSmartMutex(concurrency.MutexConfig{Name: "archive-glacier-memory"}),
 	}
 }
 

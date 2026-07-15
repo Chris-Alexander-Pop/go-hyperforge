@@ -5,8 +5,8 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/concurrency"
 	"sort"
-	"sync"
 )
 
 // Hasher implements Consistent Hashing with Bounded Loads.
@@ -18,7 +18,7 @@ type Hasher struct {
 	ring       []uint64
 	ringMap    map[uint64]string
 	loads      map[string]int64
-	mu         sync.RWMutex
+	mu         *concurrency.SmartRWMutex
 }
 
 func New(vNodes int, loadFactor float64) *Hasher {
@@ -30,6 +30,7 @@ func New(vNodes int, loadFactor float64) *Hasher {
 		loadFactor: loadFactor,
 		ringMap:    make(map[uint64]string),
 		loads:      make(map[string]int64),
+		mu:         concurrency.NewSmartRWMutex(concurrency.MutexConfig{Name: "consistenthash-bounded"}),
 	}
 }
 
