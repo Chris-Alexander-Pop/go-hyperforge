@@ -1,9 +1,10 @@
 package dijkstra
 
 import (
-	"container/heap"
 	"math"
 	"slices"
+
+	"github.com/chris-alexander-pop/system-design-library/pkg/datastructures/heap"
 )
 
 // Graph is a map of node -> neighbors (node -> weight).
@@ -15,22 +16,23 @@ type PathResult struct {
 	Path     []string
 }
 
-// ShortestPath finds the shortest path from start to end.
+// ShortestPath finds the shortest path from start to end using a min-heap
+// from pkg/datastructures/heap.
 func ShortestPath(g Graph, start, end string) *PathResult {
-	// Priority Queue
-	pq := &PriorityQueue{}
-	heap.Init(pq)
-	heap.Push(pq, &Item{value: start, priority: 0})
+	pq := heap.NewMinHeap[string]()
+	pq.PushItem(start, 0)
 
 	distances := make(map[string]float64)
 	distances[start] = 0
 	previous := make(map[string]string)
 
-	for pq.Len() > 0 {
-		u := heap.Pop(pq).(*Item).value
+	for pq.Size() > 0 {
+		u, _, ok := pq.PopItem()
+		if !ok {
+			break
+		}
 
 		if u == end {
-			// Construct path
 			path := []string{}
 			curr := end
 			for curr != "" {
@@ -54,41 +56,10 @@ func ShortestPath(g Graph, start, end string) *PathResult {
 			if dist, ok := distances[v]; !ok || alt < dist {
 				distances[v] = alt
 				previous[v] = u
-				heap.Push(pq, &Item{value: v, priority: alt})
+				pq.PushItem(v, alt)
 			}
 		}
 	}
 
-	return nil // Not reachable
-}
-
-// PQ implementation
-type Item struct {
-	value    string
-	priority float64
-	index    int
-}
-
-type PriorityQueue []*Item
-
-func (pq PriorityQueue) Len() int           { return len(pq) }
-func (pq PriorityQueue) Less(i, j int) bool { return pq[i].priority < pq[j].priority }
-func (pq PriorityQueue) Swap(i, j int) {
-	pq[i], pq[j] = pq[j], pq[i]
-	pq[i].index = i
-	pq[j].index = j
-}
-func (pq *PriorityQueue) Push(x interface{}) {
-	n := len(*pq)
-	item := x.(*Item)
-	item.index = n
-	*pq = append(*pq, item)
-}
-func (pq *PriorityQueue) Pop() interface{} {
-	old := *pq
-	n := len(old)
-	item := old[n-1]
-	item.index = -1
-	*pq = old[0 : n-1]
-	return item
+	return nil
 }

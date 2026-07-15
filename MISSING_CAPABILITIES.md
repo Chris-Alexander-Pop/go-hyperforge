@@ -20,6 +20,7 @@ Landed foundation/reuse/domain hardening (scores above are the *pre-fix* snapsho
 - ✅ `servicemesh` facades → resilience/algorithms; `network/loadbalancer` → algorithms
 - ✅ `enterprise`, `metering`, `analytics`, `audit`, `iot`, `web3`, `communication`, `streaming`
 - ✅ `database` resilience/sharding helpers; `workflow` distlock + events + cron
+- ✅ `algorithms`: binarysearch, bfs/dfs, DistLimiter store-backed, sliding-window counter, educational stub docs, heap reuse in dijkstra/astar
 - 🔄 Remaining large gaps still listed below (auth OAuth2 AS, commerce depth, AI gateway, cloud IaaS adapters, security production drivers, etc.)
 
 ---
@@ -314,11 +315,13 @@ Landed foundation/reuse/domain hardening (scores above are the *pre-fix* snapsho
 - [ ] ❌ OCR/vision/speech cloud adapters beyond stubs
 - [ ] ⚠️ Fix TODO dual `ai/llm` vs `genai/llm` ledger
 
-### `pkg/algorithms` (~38)
-- [ ] ❌ Implement standards-cited `binarysearch`, `bfs`, `dfs`
-- [ ] ❌ Finish Raft/Paxos/Chord/SWIM/Louvain/DistLimiter (or mark educational)
-- [ ] ❌ True sliding window; health-aware / sticky LB; Maglev/P2C
-- [ ] 🔗 Shared graph/heap types with `pkg/datastructures`
+### `pkg/algorithms` (~38 → improved)
+- [x] ✅ Implement standards-cited `search/binarysearch`, `graph/bfs`, `graph/dfs` (+ tests)
+- [x] ✅ Soften Raft/Paxos/Chord/SWIM/Louvain docs as educational stubs; DistLimiter uses cache store
+- [x] ✅ Sliding window counter (weighted prev+curr windows); Local remains exact log
+- [x] 🔗 Dijkstra/A* reuse `pkg/datastructures/heap`; shared `algorithms/graph` types
+- [ ] ❌ Health-aware / sticky LB; Maglev/P2C
+- [ ] ❌ Finish Raft/Paxos/Chord/SWIM/Louvain beyond educational stubs
 
 ### `pkg/datastructures` (~58)
 - [ ] ❌ Tests for ARC/CRDT/roaring/cuckoo/scalable/DAG

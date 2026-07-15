@@ -1,7 +1,7 @@
 package astar
 
 import (
-	"container/heap"
+	"github.com/chris-alexander-pop/system-design-library/pkg/datastructures/heap"
 )
 
 // Graph is a map of node -> neighbors (node -> weight).
@@ -10,30 +10,29 @@ type Graph map[string]map[string]float64
 // Heuristic is a function that estimates distance between two nodes.
 type Heuristic func(a, b string) float64
 
+// PathResult contains the distance and reconstructed path.
 type PathResult struct {
 	Distance float64
 	Path     []string
 }
 
-// FindPath finds the shortest path using A*.
+// FindPath finds the shortest path using A* with pkg/datastructures/heap.
 func FindPath(g Graph, start, end string, h Heuristic) *PathResult {
-	pq := &PriorityQueue{}
-	heap.Init(pq)
-	heap.Push(pq, &Item{value: start, priority: 0}) // f = g + h, g=0 here
+	pq := heap.NewMinHeap[string]()
+	pq.PushItem(start, h(start, end))
 
 	gScore := make(map[string]float64)
 	gScore[start] = 0
 
-	fScore := make(map[string]float64)
-	fScore[start] = h(start, end)
-
 	previous := make(map[string]string)
 
-	for pq.Len() > 0 {
-		current := heap.Pop(pq).(*Item).value
+	for pq.Size() > 0 {
+		current, _, ok := pq.PopItem()
+		if !ok {
+			break
+		}
 
 		if current == end {
-			// Reconstruct path
 			path := []string{end}
 			curr := end
 			for {
@@ -54,40 +53,11 @@ func FindPath(g Graph, start, end string, h Heuristic) *PathResult {
 				previous[neighbor] = current
 				gScore[neighbor] = tentativeG
 				f := tentativeG + h(neighbor, end)
-				fScore[neighbor] = f
-
-				// In a real optimized A*, we update priority if exists.
-				// Here we just push duplicate states, lazy deletion handled by checking processed?
-				// Simple lazy approach: just push.
-				heap.Push(pq, &Item{value: neighbor, priority: f})
+				// Lazy duplicate entries; first time a node is expanded with
+				// its best score wins (standard A* heap relaxation).
+				pq.PushItem(neighbor, f)
 			}
 		}
 	}
 	return nil
-}
-
-// PQ shared logic (duplicated to stay self-contained module)
-type Item struct {
-	value    string
-	priority float64
-	index    int
-}
-type PriorityQueue []*Item
-
-func (pq PriorityQueue) Len() int           { return len(pq) }
-func (pq PriorityQueue) Less(i, j int) bool { return pq[i].priority < pq[j].priority }
-func (pq PriorityQueue) Swap(i, j int)      { pq[i], pq[j] = pq[j], pq[i]; pq[i].index = i; pq[j].index = j }
-func (pq *PriorityQueue) Push(x interface{}) {
-	n := len(*pq)
-	item := x.(*Item)
-	item.index = n
-	*pq = append(*pq, item)
-}
-func (pq *PriorityQueue) Pop() interface{} {
-	old := *pq
-	n := len(old)
-	item := old[n-1]
-	item.index = -1
-	*pq = old[0 : n-1]
-	return item
 }

@@ -926,9 +926,9 @@ Use built-in algorithms:
 
 ```go
 import (
-    "github.com/chris-alexander-pop/system-design-library/pkg/algorithms/binarysearch"
-    "github.com/chris-alexander-pop/system-design-library/pkg/algorithms/dfs"
-    "github.com/chris-alexander-pop/system-design-library/pkg/algorithms/bfs"
+    "github.com/chris-alexander-pop/system-design-library/pkg/algorithms/search/binarysearch"
+    "github.com/chris-alexander-pop/system-design-library/pkg/algorithms/graph/dfs"
+    "github.com/chris-alexander-pop/system-design-library/pkg/algorithms/graph/bfs"
 )
 ```
 
