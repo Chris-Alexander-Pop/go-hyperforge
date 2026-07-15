@@ -30,7 +30,7 @@ Landed foundation/reuse/domain hardening (scores above are the *pre-fix* snapsho
 
 - ✅ `security`: CIRCL ML-DSA (Dilithium), Azure Key Vault secrets, ClamAV INSTREAM scanner
 - ✅ `metering`: rate-card Update/Delete/ListHistory + period aggregation
-- ✅ `workflow`: Temporal/SFN/LogicApps depth; saga/scheduler instrumented
+- ✅ `workflow`: Temporal/SFN/LogicApps depth + NewWorker; memory Choice/Parallel; saga/scheduler instrumented
 - ✅ `storage`: EBS deepen + AWS SDK VolumeStore, Glacier restore, Azure/GCS archive, LVM local controller
 - ✅ `enterprise`: ProjectionRunner backoff/metrics/instrumented + ContinuousProjector (EventStore/outbox)
 - ✅ `algorithms`: Paxos learner/multi, Chord join/stabilize, SWIM events, real Louvain ΔQ
