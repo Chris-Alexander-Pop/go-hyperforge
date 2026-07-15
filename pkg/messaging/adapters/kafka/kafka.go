@@ -1,23 +1,3 @@
-// Package kafka provides a Kafka messaging adapter using Sarama.
-//
-// This adapter implements the messaging.Broker interface for Apache Kafka,
-// supporting producer/consumer groups, partitioning, and SASL/TLS authentication.
-//
-// # Usage
-//
-//	cfg := kafka.Config{
-//	    Brokers: []string{"localhost:9092"},
-//	    Version: "3.6.0",
-//	}
-//	broker, err := kafka.New(cfg)
-//	if err != nil {
-//	    log.Fatal(err)
-//	}
-//	defer broker.Close()
-//
-// # Dependencies
-//
-// This package requires: github.com/IBM/sarama
 package kafka
 
 import (

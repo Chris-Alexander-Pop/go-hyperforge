@@ -9,10 +9,23 @@ For append-only cloud stream producers (AWS Kinesis, Azure Event Hubs), use
 pkg/streaming instead. GCP Pub/Sub belongs here (adapters/gcppubsub), not under
 pkg/streaming.
 
+# Factory
+
+NewFromConfig builds the memory driver when adapters/memory is imported.
+Production brokers are constructed via their adapter packages (see manager.go)
+so dependents do not pull unused SDKs.
+
+# Options
+
+Use messaging.Publish / messaging.Consume helpers (or ApplyPublishOptions /
+ContextWithConsumeOptions) to attach PublishOption / ConsumeOption hints without
+changing the Producer/Consumer interfaces. Adapters may read them from message
+headers or context.
+
 # Architecture
 
 The package follows the adapter pattern with decoupled dependencies:
-  - Core interfaces are defined here (zero external dependencies)
+  - Core interfaces are defined here (zero external broker SDKs)
   - Each adapter lives in its own sub-package (pkg/messaging/adapters/{driver})
   - Users import only the adapter they need, pulling only that SDK
 
@@ -20,21 +33,11 @@ The package follows the adapter pattern with decoupled dependencies:
 
 	import (
 	    "github.com/chris-alexander-pop/system-design-library/pkg/messaging"
-	    "github.com/chris-alexander-pop/system-design-library/pkg/messaging/adapters/kafka"
+	    "github.com/chris-alexander-pop/system-design-library/pkg/messaging/adapters/memory"
 	)
 
-	// Create a Kafka broker
-	broker, err := kafka.New(kafka.Config{Brokers: []string{"localhost:9092"}})
-
-	// Create a producer
+	broker, err := messaging.NewFromConfig(messaging.Config{Driver: "memory", BufferSize: 100})
 	producer, err := broker.Producer("my-topic")
-	defer producer.Close()
-
-	// Publish a message
-	err = producer.Publish(ctx, &messaging.Message{
-	    ID:      uuid.New().String(),
-	    Topic:   "my-topic",
-	    Payload: []byte(`{"event": "user.created"}`),
-	})
+	_ = messaging.Publish(ctx, producer, &messaging.Message{Payload: []byte(`{}`)}, messaging.WithOrderingKey("k"))
 */
 package messaging

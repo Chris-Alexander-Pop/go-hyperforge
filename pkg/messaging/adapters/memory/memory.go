@@ -1,15 +1,3 @@
-// Package memory provides an in-memory messaging implementation for testing.
-//
-// This adapter uses Go channels to simulate a message broker, making it ideal
-// for unit tests and local development without external dependencies.
-//
-// # Usage
-//
-//	broker := memory.New(memory.Config{BufferSize: 100})
-//	defer broker.Close()
-//
-//	producer, _ := broker.Producer("my-topic")
-//	consumer, _ := broker.Consumer("my-topic", "my-group")
 package memory
 
 import (
@@ -162,17 +150,25 @@ func (p *producer) Publish(ctx context.Context, msg *messaging.Message) error {
 		msg.Topic = p.topic.name
 	}
 
+	p.broker.mu.RLock()
+	closed := p.broker.closed
+	p.broker.mu.RUnlock()
+	if closed {
+		return messaging.ErrClosed(nil)
+	}
+
 	p.topic.mu.RLock()
 	defer p.topic.mu.RUnlock()
 
-	// Fan-out to all subscribers
+	// Fan-out to all subscribers. BufferSize is the channel capacity; a full
+	// subscriber returns ErrQueueFull instead of dropping the message.
 	for _, ch := range p.topic.subscribers {
 		select {
 		case ch <- msg:
 		case <-ctx.Done():
 			return messaging.ErrTimeout("publish", ctx.Err())
 		default:
-			// Channel full, skip (or could return error)
+			return messaging.ErrQueueFull(nil)
 		}
 	}
 
