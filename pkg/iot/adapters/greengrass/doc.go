@@ -1,5 +1,6 @@
-// Package greengrass provides an AWS Greengrass V2 management client (SDK wrapper).
+// Package greengrass provides an AWS Greengrass V2 management client and an
+// iot.Client adapter for edge messaging bridges.
 //
-// This covers Greengrass component/deployment management APIs, not local MQTT
-// messaging. Prefer pkg/iot.Client for device messaging abstractions.
+// Management APIs (cores/components/deployments) remain on Client.
+// Prefer NewAdapter for pkg/iot.Client messaging abstractions.
 package greengrass

@@ -1,2 +1,2 @@
-// Package templates acts as a placeholder for templates.
+// Package templates holds service starter scaffolds for Hyperforge.
 package templates

@@ -1,14 +1,6 @@
 /*
-Package ethereum provides a go-ethereum ethclient wrapper for EVM chains.
+Package ethereum is a thin wrapper around pkg/web3/adapters/geth.
 
-This is an SDK-coupled scaffold. Prefer pkg/web3.Client and adapters/memory for
-new code; this package is not yet adapted behind the root Client interface.
-
-Usage:
-
-	import "github.com/chris-alexander-pop/go-hyperforge/pkg/web3/blockchain/ethereum"
-
-	client, err := ethereum.New(ethereum.Config{RPCURL: "https://mainnet.infura.io/v3/..."})
-	balance, err := client.GetBalance(ctx, "0x...")
+Prefer adapters/geth (implements web3.Client) or adapters/memory for new code.
 */
 package ethereum

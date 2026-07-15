@@ -81,7 +81,13 @@ func (s *Store) Render(ctx context.Context, name, version string, vars map[strin
 	if err != nil {
 		return "", err
 	}
-	return prompt.RenderBody(t.Body, vars), nil
+	return prompt.RenderBodyWithIncludes(t.Body, vars, func(incName string) (string, error) {
+		inc, err := s.Get(ctx, incName, "latest")
+		if err != nil {
+			return "", err
+		}
+		return inc.Body, nil
+	})
 }
 
 var _ prompt.Store = (*Store)(nil)

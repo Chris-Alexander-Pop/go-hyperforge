@@ -13,14 +13,14 @@ This root package provides:
 
 Concrete implementations:
 
-  - identity — SIWE cryptographic verification (go-ethereum crypto) and basic DID parsing
-  - blockchain/ethereum — geth ethclient wrapper (SDK-coupled; not yet behind Client)
+  - adapters/geth — go-ethereum ethclient behind web3.Client
+  - adapters/kubo — Kubo/IPFS HTTP API behind web3.Store
+  - identity — SIWE cryptographic verification and basic DID parsing
+  - blockchain/ethereum — thin wrapper re-exporting adapters/geth
   - blockchain/solana — JSON-RPC Solana client scaffold (not behind a root interface yet)
-  - storage/ipfs — IPFS HTTP API client scaffold (not yet behind Store)
+  - storage/ipfs — thin wrapper re-exporting adapters/kubo
 
 WalletConnect session protocol is not implemented. DID support is limited to
-string parse/format helpers (no resolver, no DID document fetch). Prefer root
-interfaces + memory adapters for new code; treat concrete SDK packages as
-scaffolds until adapted.
+string parse/format helpers (no resolver, no DID document fetch).
 */
 package web3

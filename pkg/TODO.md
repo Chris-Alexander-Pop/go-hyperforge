@@ -123,7 +123,7 @@
 
 ## 3. Commerce (`pkg/commerce`)
 
-> 🔄 Improved — Money + payment webhooks/auth-capture/idempotency/events; billing plans; tax multi-jurisdiction memory. TaxJar/Avalara + live FX still open. See [`MISSING_CAPABILITIES.md`](../MISSING_CAPABILITIES.md).
+> 🔄 Improved — Money + payment webhooks/auth-capture/idempotency/events; billing plans/proration/dunning; TaxJar/Avalara + live FX adapters. See [`MISSING_CAPABILITIES.md`](../MISSING_CAPABILITIES.md).
 
 | Package | Status | Enables Services | Description |
 |---------|--------|------------------|-------------|
@@ -131,9 +131,9 @@
 | `pkg/commerce/payment` | ✅ | payment-gateway | Provider + Authorizer + webhooks + Evented/Resilient |
 | `pkg/commerce/payment/adapters/stripe` | ✅ | payment-gateway | Stripe + webhook verify + resilience |
 | `pkg/commerce/payment/adapters/paypal` | ✅ | payment-gateway | PayPal + webhook verify + resilience |
-| `pkg/commerce/billing` | 🔄 | billing-engine | Plans/upgrade/past_due; proration stub |
-| `pkg/commerce/tax` | 🔄 | tax-service | Multi-jurisdiction memory; TaxJar planned |
-| `pkg/commerce/currency` | 🔄 | currency-exchange | Static FX + FormatMoney; live feed interface only |
+| `pkg/commerce/billing` | 🔄 | billing-engine | Plans/upgrade/past_due/proration/dunning (depth varies) |
+| `pkg/commerce/tax` | 🔄 | tax-service | Multi-jurisdiction memory + TaxJar/Avalara HTTP |
+| `pkg/commerce/currency` | 🔄 | currency-exchange | Static FX + live feed adapters (OpenExchangeRates) |
 
 ---
 
@@ -192,8 +192,10 @@
 |---------|--------|------------------|-------------|
 | `pkg/data/search` | ✅ | resource-search | Search Interface |
 | `pkg/data/search/adapters/elasticsearch` | ✅ | resource-search | Elasticsearch Adapter |
+| `pkg/data/search/adapters/opensearch` | ✅ | resource-search | OpenSearch HTTP client |
 | `pkg/data/search/adapters/meilisearch` | ✅ | resource-search | Meilisearch Adapter |
 | `pkg/data/search/adapters/algolia` | ✅ | resource-search | Algolia Adapter |
+| `pkg/data/search/adapters/typesense` | ✅ | resource-search | Typesense HTTP client |
 
 ---
 
@@ -223,15 +225,15 @@
 | `pkg/auth/webauthn` | ✅ | auth-service | Passkeys / Biometrics |
 
 ### Protection
-> 🔄 Vault KV v2, AWS KMS, Cloudflare WAF adapters landed; scanners/GuardDuty/GCP-Azure KMS still open. See [`MISSING_CAPABILITIES.md`](../MISSING_CAPABILITIES.md#pkgsecurity-30--improved).
+> 🔄 Vault KV v2, AWS/GCP/Azure KMS, Cloudflare+AWS WAF adapters landed; scanners/GuardDuty/cloud secret managers still open. See [`MISSING_CAPABILITIES.md`](../MISSING_CAPABILITIES.md#pkgsecurity-30--improved).
 
 | Package | Status | Enables Services | Description |
 |---------|--------|------------------|-------------|
 | `pkg/security/fraud` | 🔄 | checkout | Fraud Detection/Risk Scoring (memory) |
 | `pkg/security/captcha` | 🔄 | registration | Bot Protection (memory + reCAPTCHA) |
-| `pkg/security/waf` | 🔄 | edge-security | WAF control (memory + Cloudflare IP access rules) |
-| `pkg/security/crypto/kms` | 🔄 | key-management | KMS (memory + AWS KMS Encrypt/Decrypt) |
-| `pkg/security/secrets` | 🔄 | vault | Secrets (memory + Vault KV v2 HTTP) |
+| `pkg/security/waf` | 🔄 | edge-security | WAF (memory + Cloudflare + AWS WAFv2 IPSet) |
+| `pkg/security/crypto/kms` | 🔄 | key-management | KMS (memory + AWS/GCP/Azure Encrypt/Decrypt) |
+| `pkg/security/secrets` | 🔄 | vault | Secrets (memory + Vault KV v2 HTTP; cloud SM open) |
 | `pkg/security/scanning` | 🔄 | compliance | Vulnerability Scanning (memory; GuardDuty not wired) |
 
 ---
@@ -252,59 +254,64 @@
 | `pkg/network/ip` | 🔄 | geo-blocking | IP Intelligence + Memory (MaxMind/etc. reserved) |
 
 ### Compute
-> 🔄 VM has interface + memory only (no EC2/GCE/Azure adapters). See [`MISSING_CAPABILITIES.md`](../MISSING_CAPABILITIES.md#pkgcompute-52).
+> 🔄 VM has memory + EC2/GCE/Azure scaffolds; container/serverless have cloud adapters. See [`MISSING_CAPABILITIES.md`](../MISSING_CAPABILITIES.md#pkgcompute-52).
 
 | Package | Status | Enables Services | Description |
 |---------|--------|------------------|-------------|
-| `pkg/compute/vm` | 🔄 | iaas | VM Management Interface + Memory Adapter (EC2/GCE/Azure reserved) |
+| `pkg/compute/vm` | 🔄 | iaas | VM interface + memory + EC2/GCE/Azure adapters (depth varies) |
 | `pkg/compute/container` | ✅ | paas | Container Runtime + memory + resilient wrapper |
 | `pkg/compute/serverless` | ✅ | faas | Serverless Runtime Interface + Memory Adapter |
 | `pkg/compute/serverless/adapters/lambda` | ✅ | faas | AWS Lambda Management |
 | `pkg/compute/serverless/adapters/gcf` | ✅ | faas | Google Cloud Functions |
-| `pkg/compute/container/adapters/k8s` | ✅ | paas | Kubernetes (Create ID = pod name; Exec/Stats stub) |
+| `pkg/compute/container/adapters/k8s` | 🔄 | paas | Kubernetes (Create ID = pod name; Exec SPDY; Stats partial) |
 | `pkg/compute/container/adapters/fargate` | ✅ | paas | AWS Fargate |
 
 ---
 
 ## 8. Web3 (`pkg/web3`)
 
-> ✅ Root Client/Store/Verifier interfaces, memory adapters, instrumentation, race-safe SIWE; ethereum/solana/ipfs scaffolds remain SDK-coupled. See [`MISSING_CAPABILITIES.md`](../MISSING_CAPABILITIES.md#pkgweb3-22).
+> ✅ Root Client/Store/Verifier + memory; geth/kubo adapters implement root interfaces; ethereum/ipfs are thin re-exports; solana remains scaffold. See [`MISSING_CAPABILITIES.md`](../MISSING_CAPABILITIES.md#pkgweb3-22).
 
 | Package | Status | Enables Services | Description |
 |---------|--------|------------------|-------------|
 | `pkg/web3` | ✅ | — | Client/Store/Verifier interfaces, errors, instrumented wrappers |
 | `pkg/web3/adapters/memory` | ✅ | — | In-memory Ethereum, IPFS, SIWE adapters |
+| `pkg/web3/adapters/geth` | ✅ | wallet | go-ethereum ethclient behind web3.Client |
+| `pkg/web3/adapters/kubo` | ✅ | nft-storage | Kubo HTTP API behind web3.Store |
 | `pkg/web3/identity` | ✅ | auth-dapp | SIWE crypto verify (race-safe nonces); DID parse/format only |
-| `pkg/web3/blockchain/ethereum` | 🔄 | wallet | geth ethclient wrapper (not yet behind root Client) |
+| `pkg/web3/blockchain/ethereum` | ✅ | wallet | Thin wrapper → adapters/geth |
 | `pkg/web3/blockchain/solana` | 🔄 | wallet | Solana JSON-RPC scaffold (no root interface yet) |
-| `pkg/web3/storage/ipfs` | 🔄 | nft-storage | IPFS HTTP API scaffold (not yet behind Store) |
+| `pkg/web3/storage/ipfs` | ✅ | nft-storage | Thin wrapper → adapters/kubo |
 
 ---
 
 ## 9. IoT (`pkg/iot`)
 
-> 🔄 Root interfaces + memory adapters + tests for MQTT/OTA; AWS adapters still SDK-coupled (not behind root Client). No CoAP/device registry. See [`MISSING_CAPABILITIES.md`](../MISSING_CAPABILITIES.md#pkgiot-28).
+> 🔄 Root interfaces + memory; awsiot/greengrass behind root Client; CoAP + device registry + device cert helpers. MQTT Paho not wrapped as root Client. See [`MISSING_CAPABILITIES.md`](../MISSING_CAPABILITIES.md#pkgiot-28).
 
 | Package | Status | Enables Services | Description |
 |---------|--------|------------------|-------------|
 | `pkg/iot` | ✅ | — | Client/Updater interfaces, errors, instrumented, semver helpers |
 | `pkg/iot/adapters/memory` | ✅ | — | In-memory MQTT + OTA adapters |
-| `pkg/iot/protocols/mqtt` | 🔄 | vehicle-telemetry| Paho MQTT client (timeout handling fixed; not wrapped as root Client) |
-| `pkg/iot/device/ota` | 🔄 | device-manager | HTTP OTA (semver + resilience retry; ApplyUpdate stub) |
-| `pkg/iot/adapters/awsiot` | 🔄 | iot-cloud | AWS IoT Core SDK wrapper (not behind root Client) |
-| `pkg/iot/adapters/greengrass` | 🔄 | edge-compute | AWS Greengrass V2 management SDK wrapper |
+| `pkg/iot/protocols/mqtt` | 🔄 | vehicle-telemetry| Paho MQTT client (not wrapped as root Client) |
+| `pkg/iot/protocols/coap` | 🔄 | edge | CoAP stub (in-process; no UDP/DTLS yet) |
+| `pkg/iot/device/ota` | 🔄 | device-manager | HTTP OTA + blob-backed updater (ApplyUpdate stub) |
+| `pkg/iot/device/registry` | ✅ | device-manager | DeviceRegistry interface + memory |
+| `pkg/iot/device/cert` | ✅ | device-manager | Device cert types + memory CertificateProvider |
+| `pkg/iot/adapters/awsiot` | ✅ | iot-cloud | AWS IoT + NewAdapter behind root Client |
+| `pkg/iot/adapters/greengrass` | ✅ | edge-compute | Greengrass V2 management + NewAdapter behind root Client |
 
 ---
 
 ## 10. Enterprise Patterns (`pkg/enterprise`)
 
-> 🔄 Design stubs; 0 tests; not standards-complete. See [`MISSING_CAPABILITIES.md`](../MISSING_CAPABILITIES.md#pkgenterprise-24).
+> 🔄 Design stubs + ProjectionRunner/checkpoint/outbox landed; not standards-complete. See [`MISSING_CAPABILITIES.md`](../MISSING_CAPABILITIES.md#pkgenterprise-24).
 
 | Package | Status | Enables Services | Description |
 |---------|--------|------------------|-------------|
 | `pkg/enterprise/ddd` | 🔄 | core-business | Domain-Driven Design Primitives (stub) |
-| `pkg/enterprise/cqrs` | 🔄 | reporting | Command Query Responsibility Segregation (stub) |
-| `pkg/enterprise/eventsource` | 🔄 | audit-log | Event Sourcing Store (in-memory only) |
+| `pkg/enterprise/cqrs` | 🔄 | reporting | CQRS + ProjectionRunner (depth varies) |
+| `pkg/enterprise/eventsource` | 🔄 | audit-log | Event Sourcing (memory + messaging outbox) |
 
 ---
 
@@ -312,18 +319,18 @@
 
 > **MISSING REQUIREMENTS**: To build a "Private Cloud" (AWS equivalent) on bare metal, you need the following **Server-Side** capabilities, not just clients.
 >
-> 🔄 Cloud packages are a **memory-only IaaS scaffold** today (no Libvirt/Firecracker/IPMI/PXE). Metering is memory-only with 0 tests. See [`MISSING_CAPABILITIES.md`](../MISSING_CAPABILITIES.md#pkgcloud-38) and [`metering`](../MISSING_CAPABILITIES.md#pkgmetering-20).
+> 🔄 Cloud packages have memory scaffolds plus Libvirt/Firecracker/Redfish/IPMI/PXE adapters (depth varies). Metering has Prometheus exporter. See [`MISSING_CAPABILITIES.md`](../MISSING_CAPABILITIES.md#pkgcloud-38) and [`metering`](../MISSING_CAPABILITIES.md#pkgmetering-20).
 
 | Domain | Package | Needs Implementation | Description |
 |--------|---------|---------------------|-------------|
-| **Compute** | `pkg/cloud/hypervisor` | 🔄 | VM Management interface + memory (Libvirt/QEMU/Firecracker not wired) |
-| **Compute** | `pkg/cloud/provisioning` | 🔄 | Bare Metal Provisioning interface + memory (PXE/IPMI not wired) |
+| **Compute** | `pkg/cloud/hypervisor` | 🔄 | VM Management + memory + remote libvirt / Firecracker |
+| **Compute** | `pkg/cloud/provisioning` | 🔄 | Bare Metal + memory + PXE HTTP / Redfish/IPMI |
 | **Compute** | `pkg/cloud/scheduler` | ✅ | Placement: binpack / spread / random (memory) |
 | **Network** | `pkg/network/sdn` | 🔄 | Software Defined Networking (VPC/Overlay) — scaffold |
 | **Network** | `pkg/network/dhcp` | 🔄 | IP Address Management System (IPAM) — scaffold |
 | **Network** | `pkg/network/firewall` | 🔄 | Distributed Firewall / Security Groups — scaffold |
 | **Storage** | `pkg/storage/controller` | 🔄 | Volume Controller (Ceph/LVM wrapper) — scaffold |
 | **Identity** | `pkg/security/iam/provider` | 🔄 | Identity Provider Server (OIDC/SAML issuer) — scaffold |
-| **Billing** | `pkg/metering` | 🔄 | Usage Metering & Rating Engine (memory only; 0 tests) |
-| **Control** | `pkg/cloud/controlplane` | 🔄 | API Server & State Manager (memory scaffold) |
+| **Billing** | `pkg/metering` | 🔄 | Usage Metering & Rating + Prometheus exporter |
+| **Control** | `pkg/cloud/controlplane` | 🔄 | API Server & State Manager (memory + etcd HTTP) |
 

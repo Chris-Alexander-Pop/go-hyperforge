@@ -56,3 +56,48 @@ func TestPromptInvalid(t *testing.T) {
 		t.Fatal("expected invalid")
 	}
 }
+
+func TestPromptConditionalsAndInclude(t *testing.T) {
+	ctx := context.Background()
+	s := memory.New()
+
+	if err := s.Put(ctx, prompt.Template{
+		Name: "tone", Version: "v1", Body: "Be brief.",
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.Put(ctx, prompt.Template{
+		Name:    "ask",
+		Version: "v1",
+		Body:    "{{include:tone}}\nHello {{name}}{{#if title}}, {{title}}{{/if}}.",
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	out, err := s.Render(ctx, "ask", "v1", map[string]string{"name": "Ada", "title": "Countess"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if out != "Be brief.\nHello Ada, Countess." {
+		t.Fatalf("render=%q", out)
+	}
+
+	out2, err := s.Render(ctx, "ask", "v1", map[string]string{"name": "Bob"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if out2 != "Be brief.\nHello Bob." {
+		t.Fatalf("render without title=%q", out2)
+	}
+}
+
+func TestRenderBodyConditionals(t *testing.T) {
+	got := prompt.RenderBody("Hi{{#if vip}} VIP{{/if}} {{name}}", map[string]string{"name": "x", "vip": "1"})
+	if got != "Hi VIP x" {
+		t.Fatalf("got %q", got)
+	}
+	got = prompt.RenderBody("Hi{{#if vip}} VIP{{/if}} {{name}}", map[string]string{"name": "x"})
+	if got != "Hi x" {
+		t.Fatalf("got %q", got)
+	}
+}

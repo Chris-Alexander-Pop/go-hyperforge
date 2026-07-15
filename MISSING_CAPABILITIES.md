@@ -15,25 +15,24 @@
 ### Still open (truly remaining)
 
 - Cross-cutting: adopt `pkg/errors` / `SmartMutex` / `resilience` / `validator` / `algorithms` / `events` everywhere; PACKAGE_STANDARDS skeletons & interface tests; demote false ✅ in `pkg/TODO.md`
-- `pkg/logger`: bootstrap examples in templates/services (Init/Shutdown already fixed)
-- `pkg/config`: broader in-repo `Load` adoption
+- `pkg/logger`: bootstrap examples in templates/services (Init/Shutdown already fixed; service starter uses config.Load)
+- `pkg/config`: broader in-repo `Load` adoption beyond search/web3/iot + templates/service/starter
 - `pkg/test`: drive Suite adoption across cache/messaging/events/…
 - `pkg/concurrency`: re-export `x/sync/semaphore` + `errgroup` (optional)
-- `pkg/database`: Neptune graph; broader conformance (Cassandra KV + Milvus vector **shipped**)
+- `pkg/database`: broader conformance (Cassandra KV + Milvus vector + Neptune Gremlin **shipped**)
 - `pkg/storage`: block/archive/controller **cloud** adapters (file local + block local + archive filesystem shipped)
-- `pkg/data`: real Typesense/OpenSearch HTTP clients (memory stubs exist); Snowflake ✅ thin SQL/HTTP
 - `pkg/analytics`: warehouse adapters (exact CounterStore memory ✅)
-- `pkg/metering`: period aggregation / rate-card mutation APIs; postgres adapter
+- `pkg/metering`: period aggregation / rate-card mutation APIs (postgres Meter/Rater **shipped**)
 - `pkg/api`: GraphQL polish only (Echo↔stdlib + WS rooms/auth + gRPC auth/stream errors ✅)
-- `pkg/security`: cloud secret managers, scanners, GuardDuty; real CIRCL/liboqs PQC (experimental stub remains) — AWS WAF + GCP/Azure KMS **shipped**
-- `pkg/cloud`: postgres controlplane driver (PXE imaging **shipped**)
+- `pkg/security`: real CIRCL/liboqs PQC (experimental stub remains); Azure Key Vault secrets — AWS/GCP secrets + GuardDuty + WAF/KMS **shipped**
+- `pkg/cloud`: (postgres controlplane + PXE imaging **shipped**)
 - `pkg/servicemesh`: etcd/K8s discovery (mTLS helpers + honest retry docs landed)
 - `pkg/enterprise`: fuller standards layout polish (ProjectionRunner + durable checkpoint + messaging outbox landed)
-- `pkg/workflow`: real cron; cloud adapter completeness; saga/scheduler instrumented
-- `pkg/iot`: device certs; Greengrass behind root Client
-- `pkg/web3`: fuller SDK isolation under adapters
-- `pkg/ai`: fuller prompt engine; remaining ML depth beyond inference/feature instrumented
-- `pkg/algorithms`: Raft/Paxos/Chord/SWIM/Louvain beyond educational stubs; sticky LB
+- `pkg/workflow`: cloud adapter completeness (robfig cron + saga/scheduler instrumented **shipped**)
+- `pkg/iot`: cloud device-cert SDK wiring; MQTT Paho behind root Client; CoAP UDP
+- `pkg/web3`: Solana behind root interface; WalletConnect/DID resolver
+- `pkg/ai`: remaining ML depth beyond inference/feature instrumented; speech cloud polish
+- `pkg/algorithms`: Raft/Paxos/Chord/SWIM/Louvain beyond educational stubs (sticky LB **shipped**)
 - `pkg/datastructures`: drive reuse into algorithms/cache/workflow
 
 ### Progress since review (branch `branch/package-readiness-review-35ed`)
@@ -80,6 +79,7 @@ Landed foundation/reuse/domain hardening (scores above are the *pre-fix* snapsho
 - ✅ API/data depth: OpenAPI FromRoutes + Echo↔stdlib bridge; WS rooms + upgrade auth; gRPC Auth + StreamError interceptors; Snowflake thin adapter; analytics ExactStore; block local + archive filesystem
 - ✅ Deep wave: enterprise ProjectionRunner + checkpoint sql/postgres + EventedStore messaging outbox; servicemesh mTLS helpers; speech AWS/Google adapters; ml inference/feature instrumented+errors+memory
 - ✅ Remaining adapters: Cassandra KV (gocql + injectable SessionAPI); Milvus vector REST; AWS WAFv2 IPSet; GCP/Azure KMS Encrypt/Decrypt; PXE provisioning HTTP
+- ✅ Deep Hyperforge gaps: Typesense/OpenSearch real HTTP clients; web3 adapters/geth+kubo (ethereum/ipfs thin wrappers); greengrass `iot.Client` adapter + device/cert helpers; `config.Load` in search/web3/iot + templates/service/starter; prompt `{{#if}}`/`{{include:}}`; TODO overclaim demotions
 
 ---
 
@@ -95,7 +95,7 @@ Landed foundation/reuse/domain hardening (scores above are the *pre-fix* snapsho
 | errors | 58→improved | Codes/IsCode/Wrap/FromHTTP/FromGRPC |
 | datastructures | 58 | Broad catalog; many stubs / low reuse |
 | communication | 58 | Ready: root drivers/errors/resilience, html/text templates, adapter tests |
-| data | 62→improved | Search+Suggest; Typesense/OpenSearch memory stubs; Snowflake SQL/HTTP; bigdata errors/instrumented |
+| data | 62→improved | Search+Suggest; Typesense/OpenSearch HTTP; Snowflake SQL/HTTP; bigdata errors/instrumented |
 | compute | 52→78 | EC2/GCE/Docker + k8s Exec; Azure VM/Functions scaffolds |
 | concurrency | 58→improved | singleflight + adaptive WorkerPool option |
 | network | 50* | LB/DNS/CDN/APIGW/IP instrumented; cloud adapters reserved |
@@ -157,8 +157,9 @@ Landed foundation/reuse/domain hardening (scores above are the *pre-fix* snapsho
 - [x] 🔗 Route validation through `pkg/validator` (not raw playground)
 - [x] ✅ Typed `AppError`s (`InvalidArgument` / `Internal`) instead of unstructured `Wrap`
 - [x] ✅ `LoadFrom(path)` / options; multi-format; secrets integration
-- [ ] ❌ In-repo adoption (`config.Load` unused outside itself)
+- [x] ✅ In-repo adoption (`LoadConfig` on search/web3/iot + `templates/service/starter`)
 - [x] ✅ Failure-path tests
+- [ ] ❌ Broader adoption across remaining packages/services
 
 ### `pkg/validator` (~32 → improved)
 - [x] ✅ Interfaces + `errors.go` + `instrumented.go`
@@ -234,11 +235,11 @@ Landed foundation/reuse/domain hardening (scores above are the *pre-fix* snapsho
 
 ### `pkg/data` (~56 → improved)
 - [x] ✅ Docs: top-level `etl` / `processing` marked planned-only (`data/doc.go`, `pkg/README`)
-- [x] ✅ Search `Suggest` autocomplete on interface + memory; Typesense/OpenSearch memory stubs
+- [x] ✅ Search `Suggest` autocomplete on interface + memory; Typesense/OpenSearch HTTP clients
 - [x] ✅ Reuse `pkg/concurrency` (SmartRWMutex/SmartMutex) in search memory, mapreduce, DAG
 - [x] ✅ Bigdata `errors.go` + instrumented logging; Spark docs honest (local spark-submit, not Connect)
 - [x] ✅ Snowflake thin adapter (`bigdata/adapters/snowflake` SQL driver + HTTP SQL API)
-- [ ] ❌ Real Typesense/OpenSearch HTTP clients (memory stubs remain)
+- [x] ✅ Real Typesense/OpenSearch HTTP clients (httptest-tested)
 
 ### `pkg/streaming` (~25 → improved)
 - [x] ✅ Remove Pub/Sub duplication with `pkg/messaging` (Kinesis/EventHubs + memory only)
@@ -396,12 +397,14 @@ Landed foundation/reuse/domain hardening (scores above are the *pre-fix* snapsho
 - [x] ✅ MQTT WaitTimeout bug fixed; OTA semver via `golang.org/x/mod/semver`
 - [x] ✅ CoAP stub (`protocols/coap`) + device registry interface/memory
 - [x] ✅ AWS IoT behind root Client interface (`adapters/awsiot.NewAdapter`); blob-backed OTA (`device/ota.BlobUpdater`)
+- [x] ✅ Greengrass behind root Client (`adapters/greengrass.NewAdapter`); device cert helpers (`device/cert`)
 - [x] ✅ Demoted TODO overclaims
 
 ### `pkg/web3` (~22)
 - [x] ✅ Interfaces + adapters/memory + instrumented + tests
 - [x] ✅ Softened WalletConnect / DID claims; race-safe SIWE nonces
-- [ ] 🔄 SDK isolation under adapters (ethereum/ipfs still concrete scaffolds)
+- [x] ✅ SDK isolation: `adapters/geth` + `adapters/kubo` implement root Client/Store; ethereum/ipfs thin wrappers
+- [ ] 🔄 Solana behind root interface; WalletConnect / DID resolver
 
 ---
 
@@ -413,12 +416,12 @@ Landed foundation/reuse/domain hardening (scores above are the *pre-fix* snapsho
 - [x] ✅ Memory adapters for embedding + image generation
 - [x] ✅ Softened dual `ai/llm` vs `genai/llm` ledger in `pkg/TODO.md`; fixed Generate vs Chat docs
 - [x] ✅ `genai/gateway` multi-provider `llm.Client` router with ordered fallback + memory tests
-- [x] ✅ `genai/prompt` versioned template store stub (`{{key}}` render) + memory adapter
+- [x] ✅ `genai/prompt` versioned templates + `{{key}}` / `{{#if}}` / `{{include:}}` + memory adapter
 - [x] ✅ Multimodal `Message.Parts` / `ContentPart`; conversation memory `AddUserParts`; OpenAI + memory adapter paths; tests
 - [x] ✅ `genai/evals`: `EvalRunner`, golden set, exact-match + LLM-as-judge (memory-backed tests)
 - [x] ✅ RAG ↔ `pkg/database/vector` + `pkg/database/rerank` (`WithReranker`, `RetrieveResults` + metadata filter)
 - [x] ✅ OCR Textract cloud adapter (+ `ocr/errors.go`); vision Rekognition already present
-- [ ] ❌ Fuller prompt engine; speech cloud adapters beyond stubs
+- [ ] ❌ Speech cloud adapters polish; fuller prompt ops (A/B, remote registries)
 - [ ] ❌ instrumented/errors/memory for *all* remaining AI capabilities (ml depth)
 
 ### `pkg/algorithms` (~38 → improved)

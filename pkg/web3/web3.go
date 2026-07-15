@@ -22,9 +22,8 @@ type Receipt struct {
 }
 
 // Client is the primary Ethereum (EVM) client interface.
-// Implementations include adapters/memory. The concrete geth wrapper under
-// blockchain/ethereum is not yet adapted behind this interface (SDK isolation
-// is best-effort).
+// Implementations include adapters/memory and adapters/geth
+// (blockchain/ethereum is a thin re-export of geth).
 type Client interface {
 	// Close releases the underlying connection.
 	Close()
@@ -58,8 +57,8 @@ type Client interface {
 }
 
 // Store is the primary IPFS content-addressed storage interface.
-// Implementations include adapters/memory. The HTTP client under storage/ipfs
-// is a concrete scaffold, not yet adapted behind this interface.
+// Implementations include adapters/memory and adapters/kubo
+// (storage/ipfs is a thin re-export of kubo).
 type Store interface {
 	// Add uploads content and returns its CID (or memory content id).
 	Add(ctx context.Context, data []byte) (string, error)

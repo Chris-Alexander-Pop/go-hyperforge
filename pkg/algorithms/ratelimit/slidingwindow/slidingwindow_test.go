@@ -94,8 +94,119 @@ func (m *mockCache) Incr(ctx context.Context, key string, delta int64) (int64, e
 	return val, nil
 }
 
+func (m *mockCache) Exists(ctx context.Context, key string) (bool, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if m.expired(key) {
+		delete(m.items, key)
+		delete(m.ttls, key)
+		return false, nil
+	}
+	_, ok := m.items[key]
+	return ok, nil
+}
+
+func (m *mockCache) MGet(ctx context.Context, keys []string, dest interface{}) error {
+	return cache.ErrKeyNotFound
+}
+
+func (m *mockCache) MSet(ctx context.Context, items map[string]interface{}, ttl time.Duration) error {
+	for k, v := range items {
+		if err := m.Set(ctx, k, v, ttl); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (m *mockCache) Expire(ctx context.Context, key string, ttl time.Duration) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if _, ok := m.items[key]; !ok {
+		return cache.ErrKeyNotFound
+	}
+	if ttl > 0 {
+		m.ttls[key] = time.Now().Add(ttl)
+	} else {
+		m.ttls[key] = time.Time{}
+	}
+	return nil
+}
+
+func (m *mockCache) GetTTL(ctx context.Context, key string) (time.Duration, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if m.expired(key) {
+		delete(m.items, key)
+		delete(m.ttls, key)
+		return 0, cache.ErrKeyExpired
+	}
+	expiry, ok := m.ttls[key]
+	if !ok || expiry.IsZero() {
+		if _, exists := m.items[key]; !exists {
+			return 0, cache.ErrKeyNotFound
+		}
+		return 0, nil
+	}
+	return time.Until(expiry), nil
+}
+
 func (m *mockCache) Close() error {
 	return nil
+}
+
+func (m *mockCache) Exists(ctx context.Context, key string) (bool, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if m.expired(key) {
+		delete(m.items, key)
+		delete(m.ttls, key)
+		return false, nil
+	}
+	_, ok := m.items[key]
+	return ok, nil
+}
+
+func (m *mockCache) MGet(ctx context.Context, keys []string, dest interface{}) error {
+	return cache.ErrKeyNotFound
+}
+
+func (m *mockCache) MSet(ctx context.Context, items map[string]interface{}, ttl time.Duration) error {
+	for k, v := range items {
+		if err := m.Set(ctx, k, v, ttl); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (m *mockCache) Expire(ctx context.Context, key string, ttl time.Duration) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if _, ok := m.items[key]; !ok {
+		return cache.ErrKeyNotFound
+	}
+	if ttl > 0 {
+		m.ttls[key] = time.Now().Add(ttl)
+	} else {
+		m.ttls[key] = time.Time{}
+	}
+	return nil
+}
+
+func (m *mockCache) GetTTL(ctx context.Context, key string) (time.Duration, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if m.expired(key) {
+		delete(m.items, key)
+		delete(m.ttls, key)
+		return 0, cache.ErrKeyExpired
+	}
+	expiry, ok := m.ttls[key]
+	if !ok || expiry.IsZero() {
+		return 0, nil
+	}
+	return time.Until(expiry), nil
 }
 
 func TestAllow(t *testing.T) {

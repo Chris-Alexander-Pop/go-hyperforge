@@ -1,14 +1,6 @@
 /*
-Package ipfs provides an IPFS HTTP API client scaffold.
+Package ipfs is a thin wrapper around pkg/web3/adapters/kubo.
 
-Prefer pkg/web3.Store and adapters/memory for new code; this package is not yet
-adapted behind the root Store interface.
-
-Usage:
-
-	import "github.com/chris-alexander-pop/go-hyperforge/pkg/web3/storage/ipfs"
-
-	client, err := ipfs.New(ipfs.Config{APIURL: "http://localhost:5001"})
-	cid, err := client.Add(ctx, data)
+Prefer adapters/kubo (implements web3.Store) or adapters/memory for new code.
 */
 package ipfs

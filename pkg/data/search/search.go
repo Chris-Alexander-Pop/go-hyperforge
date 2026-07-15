@@ -2,13 +2,11 @@
 //
 // Supported backends:
 //   - Memory: In-memory search for testing (includes Suggest autocomplete)
-//   - Elasticsearch: Elasticsearch adapter (often usable with OpenSearch-compatible APIs)
+//   - Elasticsearch: Elasticsearch adapter
+//   - OpenSearch: dedicated HTTP client (ES-compatible REST)
 //   - Meilisearch: Meilisearch adapter
 //   - Algolia: Algolia search adapter
-//   - Typesense / OpenSearch: memory-backed stubs for local scaffolding (not wire clients)
-//
-// Planned (not yet implemented): real Typesense HTTP client; dedicated OpenSearch
-// SDK (Elasticsearch adapter remains the production OpenSearch-compatible path).
+//   - Typesense: Typesense HTTP API client
 //
 // Usage:
 //
@@ -45,6 +43,9 @@ type Config struct {
 	ElasticsearchPassword string `env:"SEARCH_ES_PASSWORD"`
 	ElasticsearchAPIKey   string `env:"SEARCH_ES_API_KEY"`
 
+	// OpenSearchURL overrides ElasticsearchURL when Driver=opensearch (tests via httptest).
+	OpenSearchURL string `env:"SEARCH_OPENSEARCH_URL"`
+
 	// Meilisearch specific
 	MeilisearchURL    string `env:"SEARCH_MEILI_URL" env-default:"http://localhost:7700"`
 	MeilisearchAPIKey string `env:"SEARCH_MEILI_API_KEY"`
@@ -53,6 +54,10 @@ type Config struct {
 	AlgoliaAppID     string `env:"SEARCH_ALGOLIA_APP_ID"`
 	AlgoliaAPIKey    string `env:"SEARCH_ALGOLIA_API_KEY"`
 	AlgoliaSearchKey string `env:"SEARCH_ALGOLIA_SEARCH_KEY"`
+
+	// Typesense specific
+	TypesenseURL    string `env:"SEARCH_TYPESENSE_URL" env-default:"http://localhost:8108"`
+	TypesenseAPIKey string `env:"SEARCH_TYPESENSE_API_KEY"`
 
 	// Common options
 	Timeout       time.Duration `env:"SEARCH_TIMEOUT" env-default:"30s"`
