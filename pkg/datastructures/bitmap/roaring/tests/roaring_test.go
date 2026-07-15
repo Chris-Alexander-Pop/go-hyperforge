@@ -42,7 +42,7 @@ func TestRoaring_ArrayToBitmapPromotion(t *testing.T) {
 			t.Fatalf("missing %d after promotion", i)
 		}
 	}
-	if !b.Contains(n-1) {
+	if !b.Contains(n - 1) {
 		t.Fatal("missing last value after promotion")
 	}
 }

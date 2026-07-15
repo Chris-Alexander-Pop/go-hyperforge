@@ -4,12 +4,12 @@ import "github.com/chris-alexander-pop/system-design-library/pkg/errors"
 
 // Error codes for bigdata operations.
 const (
-	CodeQueryFailed     = "BIGDATA_QUERY_FAILED"
-	CodeInvalidQuery    = "BIGDATA_INVALID_QUERY"
+	CodeQueryFailed      = "BIGDATA_QUERY_FAILED"
+	CodeInvalidQuery     = "BIGDATA_INVALID_QUERY"
 	CodeConnectionFailed = "BIGDATA_CONNECTION_FAILED"
-	CodeClosed          = "BIGDATA_CLOSED"
-	CodeTimeout         = "BIGDATA_TIMEOUT"
-	CodeNotFound        = "BIGDATA_NOT_FOUND"
+	CodeClosed           = "BIGDATA_CLOSED"
+	CodeTimeout          = "BIGDATA_TIMEOUT"
+	CodeNotFound         = "BIGDATA_NOT_FOUND"
 )
 
 // ErrClosed is returned when operating on a closed Client.

@@ -72,7 +72,7 @@ func Init(ctx context.Context, cfg Config) (func(context.Context) error, error) 
 	}
 
 	var (
-		tp  *sdktrace.TracerProvider
+		tp   *sdktrace.TracerProvider
 		err2 error
 	)
 

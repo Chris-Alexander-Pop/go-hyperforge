@@ -13,9 +13,9 @@ import (
 // Client is an in-memory LLM client for testing purposes.
 // It returns predictable responses based on input patterns.
 type Client struct {
-	responses   map[string]string
-	counter     int
-	chunkRunes  int // StreamChat chunk size in runes; default 8
+	responses  map[string]string
+	counter    int
+	chunkRunes int // StreamChat chunk size in runes; default 8
 }
 
 // New creates a new in-memory LLM client.

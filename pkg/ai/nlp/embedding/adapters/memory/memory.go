@@ -50,7 +50,7 @@ func (s *Service) vectorFor(text string) []float32 {
 	vec := make([]float32, s.dim)
 	for i := 0; i < s.dim; i++ {
 		// Mix seed with index for a stable pseudo-random component in [-1, 1].
-		v := float32(((seed >> (i % 32)) ^ uint64(i*2654435761))%1000)/500.0 - 1.0
+		v := float32(((seed>>(i%32))^uint64(i*2654435761))%1000)/500.0 - 1.0
 		vec[i] = v
 	}
 	return vec
