@@ -561,6 +561,7 @@ func TestCanceledContext(t *testing.T) {
 }
 
 type countingProjector struct {
+	mu    sync.Mutex
 	types []string
 	seen  []string
 }
@@ -572,8 +573,18 @@ func (p *countingProjector) Project(ctx context.Context, event interface{}) erro
 	if !ok {
 		return errors.New("unexpected event type")
 	}
+	p.mu.Lock()
+	defer p.mu.Unlock()
 	p.seen = append(p.seen, ev.EventType)
 	return nil
+}
+
+func (p *countingProjector) Seen() []string {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	out := make([]string, len(p.seen))
+	copy(out, p.seen)
+	return out
 }
 
 func TestProjectionRunnerCatchUpAndCheckpoint(t *testing.T) {
@@ -592,8 +603,8 @@ func TestProjectionRunnerCatchUpAndCheckpoint(t *testing.T) {
 	if err := runner.RunOnce(ctx); err != nil {
 		t.Fatalf("RunOnce: %v", err)
 	}
-	if len(proj.seen) != 2 {
-		t.Fatalf("expected 2 projected events, got %v", proj.seen)
+	if len(proj.Seen()) != 2 {
+		t.Fatalf("expected 2 projected events, got %v", proj.Seen())
 	}
 	cp, err := cps.Load(ctx, "orders-rm")
 	if err != nil {
@@ -607,8 +618,8 @@ func TestProjectionRunnerCatchUpAndCheckpoint(t *testing.T) {
 	if err := runner.RunOnce(ctx); err != nil {
 		t.Fatalf("RunOnce 2: %v", err)
 	}
-	if len(proj.seen) != 2 {
-		t.Fatalf("expected no re-projection, got %v", proj.seen)
+	if len(proj.Seen()) != 2 {
+		t.Fatalf("expected no re-projection, got %v", proj.Seen())
 	}
 
 	// New events continue from checkpoint.
@@ -618,22 +629,46 @@ func TestProjectionRunnerCatchUpAndCheckpoint(t *testing.T) {
 	if err := runner.RunOnce(ctx); err != nil {
 		t.Fatalf("RunOnce 3: %v", err)
 	}
-	if len(proj.seen) != 3 {
-		t.Fatalf("expected 3 projected events, got %v", proj.seen)
+	if len(proj.Seen()) != 3 {
+		t.Fatalf("expected 3 projected events, got %v", proj.Seen())
 	}
 }
 
 type recordingMetrics struct {
+	mu      sync.Mutex
 	batches int
 	errors  int
 	idle    int
 }
 
-func (m *recordingMetrics) OnBatch(name string, applied int, advanced int64) { m.batches++ }
-func (m *recordingMetrics) OnError(name string, err error)                   { m.errors++ }
-func (m *recordingMetrics) OnCatchUpIdle(name string)                        { m.idle++ }
+func (m *recordingMetrics) OnBatch(name string, applied int, advanced int64) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.batches++
+}
+func (m *recordingMetrics) OnError(name string, err error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.errors++
+}
+func (m *recordingMetrics) OnCatchUpIdle(name string) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.idle++
+}
+func (m *recordingMetrics) Batches() int {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return m.batches
+}
+func (m *recordingMetrics) Errors() int {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return m.errors
+}
 
 type failOnceProjector struct {
+	mu     sync.Mutex
 	types  []string
 	calls  int
 	failAt int
@@ -642,6 +677,8 @@ type failOnceProjector struct {
 
 func (p *failOnceProjector) EventTypes() []string { return p.types }
 func (p *failOnceProjector) Project(ctx context.Context, event interface{}) error {
+	p.mu.Lock()
+	defer p.mu.Unlock()
 	p.calls++
 	ev := event.(eventsource.Event)
 	if p.calls == p.failAt {
@@ -649,6 +686,13 @@ func (p *failOnceProjector) Project(ctx context.Context, event interface{}) erro
 	}
 	p.seen = append(p.seen, ev.EventType)
 	return nil
+}
+func (p *failOnceProjector) Seen() []string {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	out := make([]string, len(p.seen))
+	copy(out, p.seen)
+	return out
 }
 
 func TestProjectionRunnerResetAndInstrumented(t *testing.T) {
@@ -668,8 +712,8 @@ func TestProjectionRunnerResetAndInstrumented(t *testing.T) {
 	if err := inst.RunOnce(ctx); err != nil {
 		t.Fatal(err)
 	}
-	if metrics.batches != 1 {
-		t.Fatalf("batches=%d", metrics.batches)
+	if metrics.Batches() != 1 {
+		t.Fatalf("batches=%d", metrics.Batches())
 	}
 	if err := inst.ResetCheckpoint(ctx); err != nil {
 		t.Fatal(err)
@@ -681,8 +725,8 @@ func TestProjectionRunnerResetAndInstrumented(t *testing.T) {
 	if err := inst.RunOnce(ctx); err != nil {
 		t.Fatal(err)
 	}
-	if len(proj.seen) != 2 {
-		t.Fatalf("expected re-projection after reset, got %v", proj.seen)
+	if len(proj.Seen()) != 2 {
+		t.Fatalf("expected re-projection after reset, got %v", proj.Seen())
 	}
 }
 
@@ -726,7 +770,7 @@ func TestProjectionRunnerRunBackoffAndConfig(t *testing.T) {
 		case <-deadline:
 			t.Fatal("timeout waiting for successful projection after backoff")
 		case <-time.After(10 * time.Millisecond):
-			if len(proj.seen) >= 1 && metrics.errors >= 1 {
+			if len(proj.Seen()) >= 1 && metrics.Errors() >= 1 {
 				cancel()
 				<-done
 				return
@@ -780,11 +824,12 @@ func TestContinuousProjectorOutboxAndEventStore(t *testing.T) {
 		case <-deadline:
 			t.Fatal("timeout waiting for outbox projection")
 		case <-time.After(10 * time.Millisecond):
-			if len(proj.seen) >= 1 {
+			seen := proj.Seen()
+			if len(seen) >= 1 {
 				cancel()
 				<-done
-				if proj.seen[0] != "order.created" {
-					t.Fatalf("seen=%v", proj.seen)
+				if seen[0] != "order.created" {
+					t.Fatalf("seen=%v", seen)
 				}
 				goto eventStoreMode
 			}
@@ -818,7 +863,7 @@ eventStoreMode:
 		case <-deadline:
 			t.Fatal("timeout waiting for eventstore continuous projection")
 		case <-time.After(10 * time.Millisecond):
-			if len(proj2.seen) >= 1 {
+			if len(proj2.Seen()) >= 1 {
 				esCancel()
 				<-esDone
 				return
