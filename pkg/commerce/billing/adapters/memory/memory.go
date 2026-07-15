@@ -19,6 +19,8 @@ type Service struct {
 	invoices      map[string]*billing.Invoice
 	plans         map[string]*billing.Plan
 	mu            *concurrency.SmartRWMutex
+	// nowFunc allows tests to control "now" for proration.
+	nowFunc func() time.Time
 }
 
 // DefaultPlans returns the built-in memory plan catalog.
@@ -62,7 +64,23 @@ func NewWithPlans(plans map[string]*billing.Plan) *Service {
 		invoices:      make(map[string]*billing.Invoice),
 		plans:         cp,
 		mu:            concurrency.NewSmartRWMutex(concurrency.MutexConfig{Name: "commerce-billing-memory"}),
+		nowFunc:       func() time.Time { return time.Now().UTC() },
 	}
+}
+
+// SetNowFunc overrides the clock (test helper).
+func (s *Service) SetNowFunc(fn func() time.Time) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if fn == nil {
+		s.nowFunc = func() time.Time { return time.Now().UTC() }
+		return
+	}
+	s.nowFunc = fn
+}
+
+func (s *Service) now() time.Time {
+	return s.nowFunc()
 }
 
 func (s *Service) GetPlan(ctx context.Context, planID string) (*billing.Plan, error) {
@@ -107,21 +125,22 @@ func (s *Service) CreateSubscription(ctx context.Context, customerID string, pla
 	}
 
 	id := uuid.New().String()
-	now := time.Now().UTC()
+	now := s.now()
 	next := now.AddDate(0, 1, 0)
 	if plan.Interval == "year" {
 		next = now.AddDate(1, 0, 0)
 	}
 	sub := &billing.Subscription{
-		ID:         id,
-		CustomerID: customerID,
-		PlanID:     planID,
-		Status:     billing.StatusActive,
-		Amount:     plan.Amount,
-		Interval:   plan.Interval,
-		NextBillAt: next,
-		CreatedAt:  now,
-		UpdatedAt:  now,
+		ID:          id,
+		CustomerID:  customerID,
+		PlanID:      planID,
+		Status:      billing.StatusActive,
+		Amount:      plan.Amount,
+		Interval:    plan.Interval,
+		NextBillAt:  next,
+		PeriodStart: now,
+		CreatedAt:   now,
+		UpdatedAt:   now,
 	}
 	s.subscriptions[id] = sub
 	cp := *sub
@@ -145,7 +164,7 @@ func (s *Service) CancelSubscription(ctx context.Context, subscriptionID string)
 	}
 
 	sub.Status = billing.StatusCanceled
-	sub.UpdatedAt = time.Now().UTC()
+	sub.UpdatedAt = s.now()
 	cp := *sub
 	return &cp, nil
 }
@@ -190,12 +209,40 @@ func (s *Service) UpgradeSubscription(ctx context.Context, subscriptionID string
 		return nil, billing.ErrPlanNotFound
 	}
 
-	// Proration stub: swap plan/amount immediately; real proration is future work.
+	now := s.now()
+	periodStart := sub.PeriodStart
+	if periodStart.IsZero() {
+		periodStart = sub.CreatedAt
+	}
+	periodEnd := sub.NextBillAt
+	if !periodEnd.After(periodStart) {
+		periodEnd = periodStart.AddDate(0, 1, 0)
+	}
+
+	pr, err := billing.Prorate(sub.Amount, plan.Amount, periodStart, periodEnd, now)
+	if err != nil {
+		return nil, err
+	}
+
+	// Issue a proration invoice when the customer owes a net positive amount.
+	if pr.Net.Amount > 0 {
+		inv := &billing.Invoice{
+			ID:             uuid.New().String(),
+			SubscriptionID: sub.ID,
+			CustomerID:     sub.CustomerID,
+			Amount:         pr.Net,
+			Status:         billing.InvoiceOpen,
+			IssuedAt:       now,
+			Description:    "proration",
+		}
+		s.invoices[inv.ID] = inv
+	}
+
 	sub.PlanID = newPlanID
 	sub.Amount = plan.Amount
 	sub.Interval = plan.Interval
 	sub.Status = billing.StatusActive
-	sub.UpdatedAt = time.Now().UTC()
+	sub.UpdatedAt = now
 	cp := *sub
 	return &cp, nil
 }
@@ -217,9 +264,50 @@ func (s *Service) MarkPastDue(ctx context.Context, subscriptionID string) (*bill
 	}
 
 	sub.Status = billing.StatusPastDue
-	sub.UpdatedAt = time.Now().UTC()
+	sub.UpdatedAt = s.now()
 	cp := *sub
 	return &cp, nil
+}
+
+// ProcessDunning transitions open invoices for the subscription to past_due
+// and marks the subscription StatusPastDue.
+func (s *Service) ProcessDunning(ctx context.Context, subscriptionID string) (*billing.DunningResult, error) {
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
+
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	sub, ok := s.subscriptions[subscriptionID]
+	if !ok {
+		return nil, billing.ErrSubscriptionNotFound
+	}
+	if sub.Status == billing.StatusCanceled {
+		return nil, billing.ErrSubscriptionCanceled
+	}
+
+	now := s.now()
+	var transitioned []*billing.Invoice
+	for _, inv := range s.invoices {
+		if inv.SubscriptionID != subscriptionID {
+			continue
+		}
+		if inv.Status != billing.InvoiceOpen {
+			continue
+		}
+		inv.Status = billing.InvoicePastDue
+		cp := *inv
+		transitioned = append(transitioned, &cp)
+	}
+
+	sub.Status = billing.StatusPastDue
+	sub.UpdatedAt = now
+	subCP := *sub
+	return &billing.DunningResult{
+		Subscription: &subCP,
+		Invoices:     transitioned,
+	}, nil
 }
 
 func (s *Service) CreateInvoice(ctx context.Context, customerID string, amount commerce.Money) (*billing.Invoice, error) {
@@ -238,10 +326,60 @@ func (s *Service) CreateInvoice(ctx context.Context, customerID string, amount c
 		ID:         id,
 		CustomerID: customerID,
 		Amount:     amount,
-		Status:     "open",
-		IssuedAt:   time.Now().UTC(),
+		Status:     billing.InvoiceOpen,
+		IssuedAt:   s.now(),
 	}
 	s.invoices[id] = inv
 	cp := *inv
 	return &cp, nil
+}
+
+// CreateSubscriptionInvoice creates an open invoice linked to a subscription (test/helper).
+func (s *Service) CreateSubscriptionInvoice(ctx context.Context, subscriptionID string, amount commerce.Money) (*billing.Invoice, error) {
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
+	if err := amount.Validate(); err != nil {
+		return nil, err
+	}
+
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	sub, ok := s.subscriptions[subscriptionID]
+	if !ok {
+		return nil, billing.ErrSubscriptionNotFound
+	}
+
+	id := uuid.New().String()
+	inv := &billing.Invoice{
+		ID:             id,
+		SubscriptionID: subscriptionID,
+		CustomerID:     sub.CustomerID,
+		Amount:         amount,
+		Status:         billing.InvoiceOpen,
+		IssuedAt:       s.now(),
+	}
+	s.invoices[id] = inv
+	cp := *inv
+	return &cp, nil
+}
+
+func (s *Service) ListInvoices(ctx context.Context, customerID string) ([]*billing.Invoice, error) {
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
+
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	out := make([]*billing.Invoice, 0)
+	for _, inv := range s.invoices {
+		if customerID != "" && inv.CustomerID != customerID {
+			continue
+		}
+		cp := *inv
+		out = append(out, &cp)
+	}
+	return out, nil
 }

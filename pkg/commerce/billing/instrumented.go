@@ -119,6 +119,25 @@ func (s *InstrumentedService) MarkPastDue(ctx context.Context, subscriptionID st
 	return sub, err
 }
 
+func (s *InstrumentedService) ProcessDunning(ctx context.Context, subscriptionID string) (*DunningResult, error) {
+	ctx, span := s.tracer.Start(ctx, "billing.ProcessDunning", trace.WithAttributes(
+		attribute.String("subscription.id", subscriptionID),
+	))
+	defer span.End()
+
+	logger.L().InfoContext(ctx, "processing dunning", "subscription_id", subscriptionID)
+
+	result, err := s.next.ProcessDunning(ctx, subscriptionID)
+	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
+		logger.L().ErrorContext(ctx, "failed to process dunning", "error", err)
+	} else if result != nil {
+		span.SetAttributes(attribute.Int("invoices.transitioned", len(result.Invoices)))
+	}
+	return result, err
+}
+
 func (s *InstrumentedService) CreateInvoice(ctx context.Context, customerID string, amount commerce.Money) (*Invoice, error) {
 	ctx, span := s.tracer.Start(ctx, "billing.CreateInvoice", trace.WithAttributes(
 		attribute.String("customer.id", customerID),
@@ -139,4 +158,18 @@ func (s *InstrumentedService) CreateInvoice(ctx context.Context, customerID stri
 		logger.L().InfoContext(ctx, "invoice created", "invoice_id", inv.ID)
 	}
 	return inv, err
+}
+
+func (s *InstrumentedService) ListInvoices(ctx context.Context, customerID string) ([]*Invoice, error) {
+	ctx, span := s.tracer.Start(ctx, "billing.ListInvoices", trace.WithAttributes(
+		attribute.String("customer.id", customerID),
+	))
+	defer span.End()
+
+	invs, err := s.next.ListInvoices(ctx, customerID)
+	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
+	}
+	return invs, err
 }

@@ -8,7 +8,7 @@ import (
 
 // Config holds tax configuration.
 type Config struct {
-	// Provider: "memory", "taxjar" (planned), etc.
+	// Provider: "memory", "taxjar", "avalara".
 	Provider string `env:"TAX_PROVIDER" env-default:"memory"`
 }
 
@@ -48,6 +48,3 @@ type Calculator interface {
 	// CalculateTax calculates tax for a given amount and location.
 	CalculateTax(ctx context.Context, amount commerce.Money, loc Location) (*TaxResult, error)
 }
-
-// Planned TaxJar / Avalara adapters will implement Calculator against remote APIs.
-// The memory adapter models multi-jurisdiction rates locally until those ship.

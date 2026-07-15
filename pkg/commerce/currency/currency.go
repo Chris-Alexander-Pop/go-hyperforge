@@ -9,7 +9,7 @@ import (
 
 // Config holds currency configuration.
 type Config struct {
-	// Provider: "memory", "openexchangerates", etc.
+	// Provider: "memory", "openexchangerates", "frankfurter".
 	Provider string `env:"CURRENCY_PROVIDER" env-default:"memory"`
 }
 

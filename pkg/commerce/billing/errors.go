@@ -17,4 +17,13 @@ var (
 
 	// ErrSamePlan indicates an upgrade target matches the current plan.
 	ErrSamePlan = errors.InvalidArgument("subscription already on this plan", nil)
+
+	// ErrCurrencyMismatch indicates plan amounts use different currencies.
+	ErrCurrencyMismatch = errors.InvalidArgument("plan currency mismatch", nil)
+
+	// ErrInvalidPeriod indicates a billing period end is not after its start.
+	ErrInvalidPeriod = errors.InvalidArgument("invalid billing period", nil)
+
+	// ErrInvoiceNotFound indicates the invoice does not exist.
+	ErrInvoiceNotFound = errors.NotFound("invoice not found", nil)
 )

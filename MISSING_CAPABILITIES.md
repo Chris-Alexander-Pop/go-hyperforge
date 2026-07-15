@@ -24,7 +24,7 @@ Landed foundation/reuse/domain hardening (scores above are the *pre-fix* snapsho
 - ✅ `storage` root drivers, blob errors/resilience, GCS/Azure `blob.Store`, S3 miss→NotFound, SmartRWMutex memory adapters
 - ✅ `security`: root/errors, crypto harden + memory KeyProvider, secrets Rotate/events, reCAPTCHA adapter, honest docs + auth bridge
 - ✅ `auth`: OAuth2 AS + IdP verify/login; SMS/email MFA via communication; Apple social; WebAuthn memory test path; EncryptionKey; root errors
-- ✅ `commerce`: root Money, payment webhooks/auth-capture/idempotency/events/resilience, billing plans+past_due, tax multi-jurisdiction, FX formatting
+- ✅ `commerce`: root Money, payment webhooks/auth-capture/idempotency/events/resilience, billing plans+proration+dunning, TaxJar/Avalara, live FX
 - ✅ `messaging`: NewFromConfig(memory), Publish/Consume options helpers, ErrQueueFull, ResilientConsumer, dedup TOCTOU, wrapper tests
 - ✅ `compute`: root compute.go, SmartRWMutex memory, package sentinels, k8s Create→Get ID fix, container resilient wrapper, honest EC2/Docker stubs docs
 - ✅ `cloud`: scheduler binpack/spread/random, controlplane/provisioning/scheduler memory tests, docs vs pkg/compute
@@ -33,7 +33,7 @@ Landed foundation/reuse/domain hardening (scores above are the *pre-fix* snapsho
 - ✅ `test`: Suite self-tests + examples; StartPostgres/StartRedis Short-skip + t.Cleanup
 - ✅ `auth` SAML: SP client interface + memory ACS/AuthnRequest stub (XML crypto Unimplemented)
 - ✅ `ai` gateway + prompt: multi-provider `genai/gateway` fallback router; versioned `genai/prompt` template stub
-- 🔄 Remaining large gaps still listed below (TaxJar/Avalara/live FX, AI multimodal/evals, cloud IaaS adapters, security Vault/cloud KMS/WAF, etc.)
+- 🔄 Remaining large gaps still listed below (AI multimodal/evals, cloud IaaS adapters, security Vault/cloud KMS/WAF, etc.)
 
 ---
 
@@ -55,7 +55,7 @@ Landed foundation/reuse/domain hardening (scores above are the *pre-fix* snapsho
 | network | 50* | LB/DNS/CDN/APIGW/IP instrumented; cloud adapters reserved |
 | api | 48 | Broad surface; GraphQL stub; standards weak |
 | test | 45→improved | Suite self-tests/examples; containers Short-skip + Cleanup |
-| commerce | 42→68 | Money + payment depth; billing plans; tax multi-jurisdiction; FX still memory |
+| commerce | 42→78 | Money + payment depth; billing proration+dunning; TaxJar/Avalara; live FX |
 | events | 42 | Skeleton bus; unsafe async |
 | workflow | 38 | Scaffold; no events/messaging/distlock |
 | algorithms | 38 | Many educational stubs |
@@ -307,10 +307,11 @@ Landed foundation/reuse/domain hardening (scores above are the *pre-fix* snapsho
 ### `pkg/commerce` (~42 → improved)
 - [x] ✅ Root `commerce.go`; shared `Money` (int64 minor units, no float64)
 - [x] ✅ Payment webhooks (Stripe HMAC + PayPal verifier), Authorizer auth/capture/void, Charge idempotency; Braintree claim dropped
-- [x] ✅ Billing Plan catalog + Upgrade stub + `StatusPastDue` via MarkPastDue; memory plan catalog
+- [x] ✅ Billing Plan catalog + Upgrade with proration + `StatusPastDue` via MarkPastDue; ProcessDunning (invoice→past_due); memory plan catalog
 - [x] 🔗 `pkg/resilience` on Stripe/PayPal (+ ResilientProvider); `SmartRWMutex` in memory adapters
 - [x] ✅ Domain events (`NewEventedProvider`); webhook + money + memory billing unit tests
-- [ ] 🔄 Real proration/dunning automation; TaxJar/Avalara adapters; live FX `LiveRateProvider` impl
+- [x] ✅ TaxJar + Avalara HTTP adapters (`tax/adapters/taxjar`, `tax/adapters/avalara`) with httptest tests
+- [x] ✅ Live FX `LiveRateProvider`/`Converter` via `currency/adapters/openexchangerates` (OER + Frankfurter; optional `pkg/cache`)
 
 ### `pkg/enterprise` (~24)
 - [ ] ❌ Full standards layout (instrumented, adapters/memory, Config, tests)
@@ -374,7 +375,7 @@ Landed foundation/reuse/domain hardening (scores above are the *pre-fix* snapsho
 1. **Foundation correctness:** logger Init/trace, errors codes/Wrap/IsCode, config→validator, cache TTL + miss semantics
 2. **Reuse cleanup:** servicemesh wraps resilience/algorithms; network uses loadbalancing algos; database uses resilience; streaming vs messaging boundary
 3. **Standards skeleton:** events Config/errors/lifecycle; enterprise/iot/web3/metering tests + memory adapters
-4. **Catalog depth:** commerce TaxJar/Avalara/live FX; auth OAuth2 polish; storage file/block/archive cloud adapters; AI gateway/streaming
+4. **Catalog depth:** auth OAuth2 polish; storage file/block/archive cloud adapters; AI gateway/streaming
 5. **Docs honesty:** `pkg/TODO.md` status pass; `pkg/README.md` maturity notes; package `doc.go` overclaims
 
 ---
