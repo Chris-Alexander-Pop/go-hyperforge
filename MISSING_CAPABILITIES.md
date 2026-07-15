@@ -14,26 +14,24 @@
 
 ### Still open (truly remaining)
 
-Residual backlog is **cross-cutting adoption debt** plus a few honest adapter gaps:
+Capability packages for Hyperforge are **feature-complete enough to define services**. What remains is mostly **repo-wide adoption polish** and a few deep cloud-provider integrations:
 
-- 🔗 Adopt `pkg/errors` (no raw `fmt.Errorf` / stdlib `errors.New` for domain errors) at remaining call sites
-- 🔗 Adopt `pkg/concurrency.SmartMutex` / `SmartRWMutex` instead of bare `sync.Mutex` / `RWMutex` (high-traffic packages partially done; datastructures + long tail remain)
-- 🔗 Adopt `pkg/resilience` for remaining external I/O paths that still roll their own retry/CB
-- 🔗 Prefer `pkg/algorithms/*` / `pkg/datastructures/*` / `pkg/events` / `pkg/validator` over local copies where standards apply (graph heaps / bloom / workflow LRU landed; long-tail sites remain)
-- ❌ PACKAGE_STANDARDS skeletons (`errors.go` + `instrumented.go` + `adapters/memory/`) on packages that still lack them
-- ❌ Broader `pkg/test.Suite` / interface conformance tests beyond the packages already migrated
-- ❌ Broader `config.Load` adoption beyond search/web3/iot/starter
-- ⚠️ Keep `pkg/TODO.md` honest as packages deepen (demote false ✅ when scaffolding is discovered)
-- 🔄 `pkg/workflow`: Temporal worker hosting; full ASL Choice/Parallel; Logic Apps ARM deploy + MSI
-- 🔄 `pkg/storage`: real EC2/EBS SDK; Azure/GCS archive; Ceph/CSI
-- 🔄 `pkg/enterprise`: snapshot store + outbox-driven continuous projections beyond catch-up Run
-- 🔄 `pkg/security`: Dilithium/ML-DSA; Azure Key Vault secrets; ClamAV scanner
-- 🔄 `pkg/metering`: rate-card mutation APIs
+- 🔗 Adopt `pkg/errors` / `SmartMutex` / `resilience` / `validator` / `algorithms` / `datastructures` / `events` at remaining long-tail call sites
+- ❌ PACKAGE_STANDARDS skeletons + `pkg/test.Suite` / `config.Load` on packages not yet migrated
+- ⚠️ Keep `pkg/TODO.md` honest as packages deepen
+- 🔄 Optional depth: Temporal worker hosting; full ASL Choice/Parallel; Logic Apps ARM+MSI; real EC2/EBS SDK; Azure/GCS archive; Ceph/CSI; continuous outbox-driven projections
 
 ### Progress since review (branch `branch/package-readiness-review-35ed`)
 
 Landed foundation/reuse/domain hardening (scores above are the *pre-fix* snapshot):
 
+- ✅ `security`: CIRCL ML-DSA (Dilithium), Azure Key Vault secrets, ClamAV INSTREAM scanner
+- ✅ `metering`: rate-card Update/Delete/ListHistory + period aggregation
+- ✅ `workflow`: Temporal/SFN/LogicApps depth; saga/scheduler instrumented
+- ✅ `storage`: EBS deepen, Glacier restore, LVM local controller
+- ✅ `enterprise`: ProjectionRunner backoff/metrics/instrumented
+- ✅ `algorithms`: Paxos learner/multi, Chord join/stabilize, SWIM events, real Louvain ΔQ
+- ✅ `api` GraphQL: SDL registry, playground/introspection options
 - ✅ `iot`: adapters/mqtt (Paho→Client); CoAP UDP; device/cert adapters/awsiot
 - ✅ `web3`: SolanaClient + adapters/solana; WalletConnect stub; DID ethr/web resolvers
 - ✅ `ai`: training instrumented/errors/memory; speech HTTP mapping; prompt A/B + RemoteRegistry
