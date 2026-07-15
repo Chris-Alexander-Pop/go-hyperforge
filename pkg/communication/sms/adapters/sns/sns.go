@@ -38,6 +38,16 @@ func New(ctx context.Context, cfg sms.Config) (*Sender, error) {
 
 // Send implements sms.Sender.
 func (s *Sender) Send(ctx context.Context, msg *sms.Message) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	if msg == nil {
+		return errors.InvalidArgument("message is required", nil)
+	}
+	if msg.To == "" {
+		return errors.InvalidArgument("recipient is required", nil)
+	}
+
 	input := &sns.PublishInput{
 		Message:     aws.String(msg.Body),
 		PhoneNumber: aws.String(msg.To),

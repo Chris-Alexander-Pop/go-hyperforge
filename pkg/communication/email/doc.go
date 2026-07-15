@@ -1,4 +1,5 @@
-// Package email provides functionality for email.
+// Package email provides email delivery via SendGrid, SES, SMTP, and an in-memory adapter.
 //
-// TODO: Add detailed documentation.
+// Wrap senders with NewResilientSender (wired from Config.RetryMax / RetryBackoff)
+// and NewInstrumentedSender for observability.
 package email

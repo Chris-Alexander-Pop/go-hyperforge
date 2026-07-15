@@ -80,7 +80,8 @@ type Attachment struct {
 
 // Config holds configuration for the Email Sender.
 type Config struct {
-	// Driver specifies the email backend: "memory", "sendgrid", "ses", "smtp".
+	// Driver specifies the email backend: memory, sendgrid, ses, or smtp
+	// (see communication.Driver* constants).
 	Driver string `env:"EMAIL_DRIVER" env-default:"memory" validate:"required"`
 
 	// DefaultFrom is the default sender email address.

@@ -63,7 +63,8 @@ type AttachmentField struct {
 
 // Config holds configuration for the Chat Sender.
 type Config struct {
-	// Driver specifies the chat backend: "memory", "slack", "discord".
+	// Driver specifies the chat backend: memory, slack, or discord
+	// (see communication.Driver* constants).
 	Driver string `env:"CHAT_DRIVER" env-default:"memory" validate:"required"`
 
 	// RetryConfig configures the retry behavior for failed sends.

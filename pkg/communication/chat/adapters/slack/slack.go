@@ -31,9 +31,16 @@ func New(cfg chat.Config) (chat.Sender, error) {
 
 // Send implements chat.Sender.
 func (s *Sender) Send(ctx context.Context, msg *chat.Message) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	if msg == nil {
+		return errors.InvalidArgument("message is required", nil)
+	}
+
 	channelID := msg.ChannelID
 	if channelID == "" {
-		channelID = msg.UserID // Fallback to UserID if ChannelID is empty, though Slack API treats them similarly often.
+		channelID = msg.UserID
 	}
 	if channelID == "" {
 		return errors.InvalidArgument("ChannelID or UserID required", nil)

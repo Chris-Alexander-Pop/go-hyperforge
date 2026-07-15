@@ -1,4 +1,2 @@
-// Package template provides functionality for template.
-//
-// TODO: Add detailed documentation.
+// Package template provides message templating via memory, text/template, and html/template adapters.
 package template

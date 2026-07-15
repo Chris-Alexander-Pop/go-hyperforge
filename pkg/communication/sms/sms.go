@@ -39,7 +39,8 @@ type Message struct {
 
 // Config holds configuration for the SMS Sender.
 type Config struct {
-	// Driver specifies the SMS backend: "memory", "twilio", "sns".
+	// Driver specifies the SMS backend: memory, twilio, or sns
+	// (see communication.Driver* constants).
 	Driver string `env:"SMS_DRIVER" env-default:"memory" validate:"required"`
 
 	// DefaultFrom is the default sender phone number or ID.

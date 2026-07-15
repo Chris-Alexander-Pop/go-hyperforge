@@ -1,4 +1,2 @@
-// Package memory provides functionality for memory.
-//
-// TODO: Add detailed documentation.
+// Package memory provides an in-memory template.Engine using text/template.
 package memory

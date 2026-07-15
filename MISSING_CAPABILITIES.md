@@ -24,7 +24,7 @@
 | logger | 58 | Widely used; Init/Async/trace bugs |
 | errors | 58 | Foundation usable; codes/Is/Wrap incomplete |
 | datastructures | 58 | Broad catalog; many stubs / low reuse |
-| communication | 58 | Adapters present; resilience/template/tests thin |
+| communication | 58 | Ready: root drivers/errors/resilience, html/text templates, adapter tests |
 | data | 56 | Search strong; bigdata/docs overclaim |
 | compute | 52 | Interfaces + memory; cloud stubs |
 | concurrency | 52 | SmartMutex strong; rest experimental |
@@ -193,10 +193,10 @@
 - [x] ✅ Clarify vs streaming for GCP Pub/Sub (streaming docs point to messaging)
 
 ### `pkg/communication` (~58)
-- [ ] ❌ Root `communication.go`; `errors.go`; `resilient.go` using `pkg/resilience`
-- [ ] ❌ Real html/text template adapters (not sprintf stub)
-- [ ] ❌ Honor Attachments/MediaURL/Retry*; propagate ctx on HTTP SDKs
-- [ ] ❌ Adapter unit tests; Mailgun/WebPush or remove from docs
+- [x] ✅ Root `communication.go`; `errors.go`; `resilient.go` using `pkg/resilience`
+- [x] ✅ Real html/text template adapters (not sprintf stub)
+- [x] ✅ Honor Attachments/MediaURL/Retry*; propagate ctx on HTTP SDKs
+- [x] ✅ Adapter unit tests; Mailgun/WebPush softened in docs (not implemented)
 
 ### `pkg/api` (~48)
 - [ ] ❌ Real GraphQL wiring; gRPC health/stream/auth + `GRPCStatus` mapping

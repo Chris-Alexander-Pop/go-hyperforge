@@ -1,4 +1,5 @@
-// Package sms provides functionality for sms.
+// Package sms provides SMS delivery via Twilio, SNS, and an in-memory adapter.
 //
-// TODO: Add detailed documentation.
+// Wrap senders with NewResilientSender (wired from Config.RetryMax / RetryBackoff)
+// and NewInstrumentedSender for observability.
 package sms
