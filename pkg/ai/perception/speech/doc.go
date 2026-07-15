@@ -1,19 +1,13 @@
 // Package speech provides interfaces and adapters for Speech-to-Text (STT) and Text-to-Speech (TTS).
 //
-// This package unifies various speech processing services under a common interface,
-// allowing for easy switching between providers.
-//
-// Supported capabilities:
-//   - Synthesize: Convert text to audio
-//   - Transcribe: Convert audio to text
-//
 // Supported backends:
-//   - Memory: In-memory mock for testing
-//   - AWS Polly/Transcribe: (Planned)
-//   - Google Cloud Text-to-Speech/Speech-to-Text: (Planned)
+//   - Memory: in-memory mock for testing (adapters/memory)
+//   - OpenAI: Whisper transcription + TTS (adapters/openai)
+//   - AWS: Polly TTS + Transcribe STT via injectable SDK/HTTP (adapters/aws)
+//   - Google: Cloud Speech-to-Text / Text-to-Speech thin HTTP client (adapters/google)
 //
 // Basic usage:
 //
-//	synthesizer := memory.New()
-//	audio, err := synthesizer.Synthesize(ctx, "Hello world")
+//	client := memory.New()
+//	audio, err := client.TextToSpeech(ctx, "Hello world", speech.FormatMP3)
 package speech

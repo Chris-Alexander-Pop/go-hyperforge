@@ -2,10 +2,13 @@
 //
 // Supported backends:
 //   - Memory: In-memory registry for testing
-//   - Consul: HashiCorp Consul
-//   - Etcd: etcd key-value store
-//   - Kubernetes: Kubernetes service discovery
-//   - Eureka: Netflix Eureka
+//   - Consul: HashiCorp Consul HTTP agent/health API (adapters/consul)
+//
+// Planned / not yet implemented as adapters:
+//   - Etcd, Kubernetes, Eureka (Driver* constants reserved)
+//
+// Optional mTLS for HTTP discovery clients: WithMTLS / servicemesh.MTLSConfig.
+// Transient retries belong in pkg/resilience, not in adapters.
 //
 // Usage:
 //

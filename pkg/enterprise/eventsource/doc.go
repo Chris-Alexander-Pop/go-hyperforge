@@ -4,6 +4,9 @@
 // Version is greater than or equal to fromVersion (not a slice index).
 //
 // For local fan-out after Append, wrap an EventStore with EventedStore and a
-// pkg/events.Bus. For distributed delivery, publish from a projection onto
-// pkg/messaging instead.
+// pkg/events.Bus. For distributed delivery to projections/integrations, use
+// NewEventedStoreWithOutbox (local bus + pkg/messaging outbox).
+//
+// ProjectionRunner catch-up-projects LoadAll events onto a cqrs.Projector with
+// a durable CheckpointStore (memory or adapters/sql / adapters/postgres).
 package eventsource

@@ -27,12 +27,12 @@
 - `pkg/api`: Echo↔stdlib middleware bridge; WS rooms / upgrade auth; gRPC auth + stream error mapping
 - `pkg/security`: AWS WAF, GCP/Azure KMS, cloud secret managers, scanners, GuardDuty; real CIRCL/liboqs PQC (experimental stub remains)
 - `pkg/cloud`: PXE imaging + postgres controlplane driver
-- `pkg/servicemesh`: etcd/K8s discovery; mesh mTLS / retry docs
-- `pkg/enterprise`: projection runner; durable store; fuller standards layout polish
+- `pkg/servicemesh`: etcd/K8s discovery (mTLS helpers + honest retry docs landed)
+- `pkg/enterprise`: fuller standards layout polish (ProjectionRunner + durable checkpoint + messaging outbox landed)
 - `pkg/workflow`: real cron; cloud adapter completeness; saga/scheduler instrumented
 - `pkg/iot`: device certs; Greengrass behind root Client
 - `pkg/web3`: fuller SDK isolation under adapters
-- `pkg/ai`: fuller prompt engine; speech cloud adapters; instrumented/errors for remaining ML depth
+- `pkg/ai`: fuller prompt engine; remaining ML depth beyond inference/feature instrumented
 - `pkg/algorithms`: Raft/Paxos/Chord/SWIM/Louvain beyond educational stubs; sticky LB
 - `pkg/datastructures`: drive reuse into algorithms/cache/workflow
 

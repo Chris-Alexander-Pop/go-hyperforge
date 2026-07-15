@@ -14,6 +14,8 @@ import (
 	pkgerrors "github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 	"github.com/chris-alexander-pop/go-hyperforge/pkg/events"
 	eventsmemory "github.com/chris-alexander-pop/go-hyperforge/pkg/events/adapters/memory"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/messaging"
+	msgmemory "github.com/chris-alexander-pop/go-hyperforge/pkg/messaging/adapters/memory"
 )
 
 func TestAppendAndLoad(t *testing.T) {
@@ -386,5 +388,112 @@ func TestCanceledContext(t *testing.T) {
 	store := memory.NewEventStore()
 	if err := store.Append(ctx, "a", 0, []eventsource.Event{{EventType: "A"}}); !errors.Is(err, context.Canceled) {
 		t.Fatalf("expected context.Canceled, got %v", err)
+	}
+}
+
+type countingProjector struct {
+	types []string
+	seen  []string
+}
+
+func (p *countingProjector) EventTypes() []string { return p.types }
+
+func (p *countingProjector) Project(ctx context.Context, event interface{}) error {
+	ev, ok := event.(eventsource.Event)
+	if !ok {
+		return errors.New("unexpected event type")
+	}
+	p.seen = append(p.seen, ev.EventType)
+	return nil
+}
+
+func TestProjectionRunnerCatchUpAndCheckpoint(t *testing.T) {
+	ctx := context.Background()
+	store := memory.NewEventStore()
+	_ = store.Append(ctx, "o1", 0, []eventsource.Event{
+		{EventType: "order.created", AggregateType: "Order"},
+		{EventType: "order.paid", AggregateType: "Order"},
+		{EventType: "order.shipped", AggregateType: "Order"},
+	})
+
+	proj := &countingProjector{types: []string{"order.created", "order.paid"}}
+	cps := memory.NewCheckpointStore()
+	runner := eventsource.NewProjectionRunner(store, cps, proj, eventsource.ProjectionConfig{Name: "orders-rm"})
+
+	if err := runner.RunOnce(ctx); err != nil {
+		t.Fatalf("RunOnce: %v", err)
+	}
+	if len(proj.seen) != 2 {
+		t.Fatalf("expected 2 projected events, got %v", proj.seen)
+	}
+	cp, err := cps.Load(ctx, "orders-rm")
+	if err != nil {
+		t.Fatalf("Load checkpoint: %v", err)
+	}
+	if cp.Position != 3 {
+		t.Fatalf("checkpoint position want 3 got %d", cp.Position)
+	}
+
+	// Second run should not re-project.
+	if err := runner.RunOnce(ctx); err != nil {
+		t.Fatalf("RunOnce 2: %v", err)
+	}
+	if len(proj.seen) != 2 {
+		t.Fatalf("expected no re-projection, got %v", proj.seen)
+	}
+
+	// New events continue from checkpoint.
+	_ = store.Append(ctx, "o1", 3, []eventsource.Event{
+		{EventType: "order.created", AggregateType: "Order"},
+	})
+	if err := runner.RunOnce(ctx); err != nil {
+		t.Fatalf("RunOnce 3: %v", err)
+	}
+	if len(proj.seen) != 3 {
+		t.Fatalf("expected 3 projected events, got %v", proj.seen)
+	}
+}
+
+func TestEventedStoreWithOutbox(t *testing.T) {
+	ctx := context.Background()
+	broker := msgmemory.New(msgmemory.Config{BufferSize: 8})
+	defer broker.Close()
+	producer, err := broker.Producer("Order")
+	if err != nil {
+		t.Fatalf("Producer: %v", err)
+	}
+	consumer, err := broker.Consumer("Order", "g1")
+	if err != nil {
+		t.Fatalf("Consumer: %v", err)
+	}
+
+	got := make(chan []byte, 2)
+	cctx, cancel := context.WithTimeout(ctx, 2*time.Second)
+	defer cancel()
+	go func() {
+		_ = consumer.Consume(cctx, func(ctx context.Context, msg *messaging.Message) error {
+			got <- msg.Payload
+			return nil
+		})
+	}()
+
+	store := eventsource.NewEventedStoreWithOutbox(memory.NewEventStore(), nil, producer)
+	if err := store.Append(ctx, "o1", 0, []eventsource.Event{
+		{EventType: "order.created", AggregateType: "Order", ID: "e1"},
+	}); err != nil {
+		t.Fatalf("Append: %v", err)
+	}
+
+	select {
+	case payload := <-got:
+		var env events.OutboxPayload
+		if err := json.Unmarshal(payload, &env); err != nil {
+			t.Fatalf("unmarshal: %v", err)
+		}
+		if env.Type != "order.created" || env.Topic != "Order" {
+			t.Fatalf("envelope=%+v", env)
+		}
+	case <-time.After(2 * time.Second):
+		t.Fatal("timeout waiting for messaging outbox")
 	}
 }

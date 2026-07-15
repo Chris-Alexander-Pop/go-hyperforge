@@ -15,7 +15,8 @@ Package enterprise provides Domain-Driven Design (DDD), CQRS, and Event Sourcing
     pkg/events after Append.
   - pkg/messaging: durable, broker-backed messaging (Kafka, NATS, SQS, …).
     Prefer messaging when projections or integrations cross process boundaries;
-    pkg/events remains for local fan-out.
+    use NewEventedStoreWithOutbox for Append → events + messaging outbox.
+    ProjectionRunner + CheckpointStore catch up read models from the event store.
   - pkg/audit: compliance/security audit trail (who did what). Domain and
     stream events are not audit logs; emit audit events separately when needed.
   - pkg/workflow: long-running process / saga orchestration. Workflows may

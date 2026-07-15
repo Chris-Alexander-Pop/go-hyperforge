@@ -33,6 +33,7 @@ type Config struct {
 	Namespace string `env:"CONSUL_NAMESPACE"`
 
 	// HTTPClient overrides the default client (15s timeout).
+	// Use discovery.WithMTLS to attach optional client certificates.
 	HTTPClient *http.Client
 
 	// WatchWait is the max blocking-query wait (default 5s; Consul accepts up to ~10m).
