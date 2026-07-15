@@ -5,11 +5,22 @@
 > Status legend: ❌ missing · 🔄 partial/stub · ⚠️ docs overclaim · 🔗 should reuse another package
 
 **Policy:** Cloud agents must spawn subagents only with model `cursor-grok-4.5-high` (see `.cursor/rules/cloud-agent-subagent-model.mdc`).
+**Attribution:** All commits must be authored as Chris Pop `<chrisalexanderpop@gmail.com>` (see `.cursor/rules/git-commit-attribution.mdc`).
 
 **Cross-cutting rules for all follow-up work:**
 1. Prefer existing packages — never reinvent (`pkg/errors`, `pkg/logger`, `pkg/resilience`, `pkg/concurrency`, `pkg/algorithms/*`, `pkg/datastructures/*`, `pkg/events`, `pkg/messaging`, `pkg/validator`).
 2. Important functions need thorough tests (aim for full coverage of public API paths, including failure modes and `-race` where concurrent).
 3. Docs must match reality — demote false ✅ in `pkg/TODO.md` when implementing or when documenting gaps here.
+
+### Progress since review (branch `branch/package-readiness-review-35ed`)
+
+Landed foundation/reuse/domain hardening (scores above are the *pre-fix* snapshot):
+
+- ✅ `errors`, `logger`, `cache`, `events`, `config`, `validator`, `resilience`
+- ✅ `servicemesh` facades → resilience/algorithms; `network/loadbalancer` → algorithms
+- ✅ `enterprise`, `metering`, `analytics`, `audit`, `iot`, `web3`, `communication`, `streaming`
+- ✅ `database` resilience/sharding helpers; `workflow` distlock + events + cron
+- 🔄 Remaining large gaps still listed below (auth OAuth2 AS, commerce depth, AI gateway, cloud IaaS adapters, security production drivers, etc.)
 
 ---
 
