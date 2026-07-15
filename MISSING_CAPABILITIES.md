@@ -24,7 +24,8 @@ Landed foundation/reuse/domain hardening (scores above are the *pre-fix* snapsho
 - ✅ `storage` root drivers, blob errors/resilience, GCS/Azure `blob.Store`, S3 miss→NotFound, SmartRWMutex memory adapters
 - ✅ `security`: root/errors, crypto harden + memory KeyProvider, secrets Rotate/events, reCAPTCHA adapter, honest docs + auth bridge
 - 🔄 `auth`: OAuth2 AS interfaces + memory; Cognito/Entra/GCP Verify/Login; OIDC exchange; EncryptionKey; root errors.go
-- 🔄 Remaining large gaps still listed below (commerce depth, AI gateway, cloud IaaS adapters, security Vault/cloud KMS/WAF, etc.)
+- ✅ `commerce`: root Money, payment webhooks/auth-capture/idempotency/events/resilience, billing plans+past_due, tax multi-jurisdiction, FX formatting
+- 🔄 Remaining large gaps still listed below (TaxJar/Avalara/live FX, AI gateway, cloud IaaS adapters, security Vault/cloud KMS/WAF, etc.)
 
 ---
 
@@ -46,7 +47,7 @@ Landed foundation/reuse/domain hardening (scores above are the *pre-fix* snapsho
 | network | 50* | LB/DNS OK; CDN/APIGW/IP thin; no algo reuse |
 | api | 48 | Broad surface; GraphQL stub; standards weak |
 | test | 45 | Thin Suite; low adoption; dead containers |
-| commerce | 42 | Payment partial; billing/tax/FX memory |
+| commerce | 42→68 | Money + payment depth; billing plans; tax multi-jurisdiction; FX still memory |
 | events | 42 | Skeleton bus; unsafe async |
 | workflow | 38 | Scaffold; no events/messaging/distlock |
 | algorithms | 38 | Many educational stubs |
@@ -284,12 +285,13 @@ Landed foundation/reuse/domain hardening (scores above are the *pre-fix* snapsho
 
 ## 6. Domain & enterprise
 
-### `pkg/commerce` (~42)
-- [ ] ❌ Root `commerce.go`; shared `Money` (no float64)
-- [ ] ❌ Payment webhooks, auth/capture, idempotency; Braintree or drop claim
-- [ ] ❌ Billing plans/proration/dunning; TaxJar/Avalara; live FX
-- [ ] 🔗 `pkg/resilience` on Stripe/PayPal; `pkg/concurrency` in memory
-- [ ] ❌ Domain events; stripe/paypal unit tests
+### `pkg/commerce` (~42 → improved)
+- [x] ✅ Root `commerce.go`; shared `Money` (int64 minor units, no float64)
+- [x] ✅ Payment webhooks (Stripe HMAC + PayPal verifier), Authorizer auth/capture/void, Charge idempotency; Braintree claim dropped
+- [x] ✅ Billing Plan catalog + Upgrade stub + `StatusPastDue` via MarkPastDue; memory plan catalog
+- [x] 🔗 `pkg/resilience` on Stripe/PayPal (+ ResilientProvider); `SmartRWMutex` in memory adapters
+- [x] ✅ Domain events (`NewEventedProvider`); webhook + money + memory billing unit tests
+- [ ] 🔄 Real proration/dunning automation; TaxJar/Avalara adapters; live FX `LiveRateProvider` impl
 
 ### `pkg/enterprise` (~24)
 - [ ] ❌ Full standards layout (instrumented, adapters/memory, Config, tests)
@@ -348,7 +350,7 @@ Landed foundation/reuse/domain hardening (scores above are the *pre-fix* snapsho
 1. **Foundation correctness:** logger Init/trace, errors codes/Wrap/IsCode, config→validator, cache TTL + miss semantics
 2. **Reuse cleanup:** servicemesh wraps resilience/algorithms; network uses loadbalancing algos; database uses resilience; streaming vs messaging boundary
 3. **Standards skeleton:** events Config/errors/lifecycle; enterprise/iot/web3/metering tests + memory adapters
-4. **Catalog depth:** commerce webhooks/FX/tax; auth OAuth2; storage file/block/archive cloud adapters; AI gateway/streaming
+4. **Catalog depth:** commerce TaxJar/Avalara/live FX; auth OAuth2 polish; storage file/block/archive cloud adapters; AI gateway/streaming
 5. **Docs honesty:** `pkg/TODO.md` status pass; `pkg/README.md` maturity notes; package `doc.go` overclaims
 
 ---

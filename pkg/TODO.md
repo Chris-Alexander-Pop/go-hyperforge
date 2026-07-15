@@ -114,16 +114,17 @@
 
 ## 3. Commerce (`pkg/commerce`)
 
-> 🔄 Partial — Stripe/PayPal exist but incomplete; billing/tax/FX mostly memory. See [`MISSING_CAPABILITIES.md`](../MISSING_CAPABILITIES.md#pkgcommerce-42).
+> 🔄 Improved — Money + payment webhooks/auth-capture/idempotency/events; billing plans; tax multi-jurisdiction memory. TaxJar/Avalara + live FX still open. See [`MISSING_CAPABILITIES.md`](../MISSING_CAPABILITIES.md).
 
 | Package | Status | Enables Services | Description |
 |---------|--------|------------------|-------------|
-| `pkg/commerce/payment` | 🔄 | payment-gateway | Payment Interface |
-| `pkg/commerce/payment/adapters/stripe` | 🔄 | payment-gateway | Stripe Adapter (partial; webhooks/auth-capture gaps) |
-| `pkg/commerce/payment/adapters/paypal` | 🔄 | payment-gateway | PayPal Adapter (partial) |
-| `pkg/commerce/billing` | 🔄 | billing-engine | Invoicing & Subscription Logic (memory-heavy) |
-| `pkg/commerce/tax` | 🔄 | tax-service | Tax Calculation (memory; no TaxJar/Avalara) |
-| `pkg/commerce/currency` | 🔄 | currency-exchange | FX Rates & Conversion (memory; no live FX) |
+| `pkg/commerce` | ✅ | — | Shared `Money` (int64 minor units) |
+| `pkg/commerce/payment` | ✅ | payment-gateway | Provider + Authorizer + webhooks + Evented/Resilient |
+| `pkg/commerce/payment/adapters/stripe` | ✅ | payment-gateway | Stripe + webhook verify + resilience |
+| `pkg/commerce/payment/adapters/paypal` | ✅ | payment-gateway | PayPal + webhook verify + resilience |
+| `pkg/commerce/billing` | 🔄 | billing-engine | Plans/upgrade/past_due; proration stub |
+| `pkg/commerce/tax` | 🔄 | tax-service | Multi-jurisdiction memory; TaxJar planned |
+| `pkg/commerce/currency` | 🔄 | currency-exchange | Static FX + FormatMoney; live feed interface only |
 
 ---
 

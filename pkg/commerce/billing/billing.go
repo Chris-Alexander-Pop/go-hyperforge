@@ -3,6 +3,8 @@ package billing
 import (
 	"context"
 	"time"
+
+	"github.com/chris-alexander-pop/system-design-library/pkg/commerce"
 )
 
 // Config holds billing configuration.
@@ -20,14 +22,22 @@ const (
 	StatusPastDue  SubscriptionStatus = "past_due"
 )
 
+// Plan describes a billable product tier.
+type Plan struct {
+	ID       string
+	Name     string
+	Amount   commerce.Money
+	Interval string // "month", "year"
+	Metadata map[string]string
+}
+
 // Subscription represents a recurring billing agreement.
 type Subscription struct {
 	ID         string
 	CustomerID string
 	PlanID     string
 	Status     SubscriptionStatus
-	Amount     float64
-	Currency   string
+	Amount     commerce.Money
 	Interval   string // "month", "year"
 	NextBillAt time.Time
 	CreatedAt  time.Time
@@ -39,16 +49,23 @@ type Invoice struct {
 	ID             string
 	SubscriptionID string
 	CustomerID     string
-	Amount         float64
-	Currency       string
-	Status         string // "paid", "open", "void"
+	Amount         commerce.Money
+	Status         string // "paid", "open", "void", "past_due"
 	IssuedAt       time.Time
 	PaidAt         *time.Time
 }
 
+// Catalog looks up plans. Memory adapters ship a built-in catalog.
+type Catalog interface {
+	GetPlan(ctx context.Context, planID string) (*Plan, error)
+	ListPlans(ctx context.Context) ([]*Plan, error)
+}
+
 // Service defines the billing operations.
 type Service interface {
-	// CreateSubscription creates a new subscription.
+	Catalog
+
+	// CreateSubscription creates a new subscription for a known plan.
 	CreateSubscription(ctx context.Context, customerID string, planID string) (*Subscription, error)
 
 	// CancelSubscription cancels an existing subscription.
@@ -57,6 +74,13 @@ type Service interface {
 	// GetSubscription retrieves a subscription.
 	GetSubscription(ctx context.Context, subscriptionID string) (*Subscription, error)
 
+	// UpgradeSubscription moves a subscription to a different plan.
+	// Proration is a stub in the memory adapter (amount updates immediately).
+	UpgradeSubscription(ctx context.Context, subscriptionID string, newPlanID string) (*Subscription, error)
+
+	// MarkPastDue sets StatusPastDue after a failed invoice payment (dunning hook).
+	MarkPastDue(ctx context.Context, subscriptionID string) (*Subscription, error)
+
 	// CreateInvoice creates a one-off invoice.
-	CreateInvoice(ctx context.Context, customerID string, amount float64, currency string) (*Invoice, error)
+	CreateInvoice(ctx context.Context, customerID string, amount commerce.Money) (*Invoice, error)
 }

@@ -3,6 +3,7 @@ package billing
 import (
 	"context"
 
+	"github.com/chris-alexander-pop/system-design-library/pkg/commerce"
 	"github.com/chris-alexander-pop/system-design-library/pkg/logger"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
@@ -22,6 +23,14 @@ func NewInstrumentedService(next Service) *InstrumentedService {
 		next:   next,
 		tracer: otel.Tracer("pkg/commerce/billing"),
 	}
+}
+
+func (s *InstrumentedService) GetPlan(ctx context.Context, planID string) (*Plan, error) {
+	return s.next.GetPlan(ctx, planID)
+}
+
+func (s *InstrumentedService) ListPlans(ctx context.Context) ([]*Plan, error) {
+	return s.next.ListPlans(ctx)
 }
 
 func (s *InstrumentedService) CreateSubscription(ctx context.Context, customerID string, planID string) (*Subscription, error) {
@@ -79,16 +88,48 @@ func (s *InstrumentedService) GetSubscription(ctx context.Context, subscriptionI
 	return sub, err
 }
 
-func (s *InstrumentedService) CreateInvoice(ctx context.Context, customerID string, amount float64, currency string) (*Invoice, error) {
-	ctx, span := s.tracer.Start(ctx, "billing.CreateInvoice", trace.WithAttributes(
-		attribute.String("customer.id", customerID),
-		attribute.Float64("invoice.amount", amount),
+func (s *InstrumentedService) UpgradeSubscription(ctx context.Context, subscriptionID string, newPlanID string) (*Subscription, error) {
+	ctx, span := s.tracer.Start(ctx, "billing.UpgradeSubscription", trace.WithAttributes(
+		attribute.String("subscription.id", subscriptionID),
+		attribute.String("plan.id", newPlanID),
 	))
 	defer span.End()
 
-	logger.L().InfoContext(ctx, "creating invoice", "customer_id", customerID, "amount", amount)
+	sub, err := s.next.UpgradeSubscription(ctx, subscriptionID, newPlanID)
+	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
+		logger.L().ErrorContext(ctx, "failed to upgrade subscription", "error", err)
+	}
+	return sub, err
+}
 
-	inv, err := s.next.CreateInvoice(ctx, customerID, amount, currency)
+func (s *InstrumentedService) MarkPastDue(ctx context.Context, subscriptionID string) (*Subscription, error) {
+	ctx, span := s.tracer.Start(ctx, "billing.MarkPastDue", trace.WithAttributes(
+		attribute.String("subscription.id", subscriptionID),
+	))
+	defer span.End()
+
+	sub, err := s.next.MarkPastDue(ctx, subscriptionID)
+	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
+		logger.L().ErrorContext(ctx, "failed to mark past due", "error", err)
+	}
+	return sub, err
+}
+
+func (s *InstrumentedService) CreateInvoice(ctx context.Context, customerID string, amount commerce.Money) (*Invoice, error) {
+	ctx, span := s.tracer.Start(ctx, "billing.CreateInvoice", trace.WithAttributes(
+		attribute.String("customer.id", customerID),
+		attribute.Int64("invoice.amount", amount.Amount),
+		attribute.String("invoice.currency", amount.Currency),
+	))
+	defer span.End()
+
+	logger.L().InfoContext(ctx, "creating invoice", "customer_id", customerID, "amount", amount.Amount)
+
+	inv, err := s.next.CreateInvoice(ctx, customerID, amount)
 	if err != nil {
 		span.RecordError(err)
 		span.SetStatus(codes.Error, err.Error())

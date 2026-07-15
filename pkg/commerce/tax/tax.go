@@ -2,11 +2,13 @@ package tax
 
 import (
 	"context"
+
+	"github.com/chris-alexander-pop/system-design-library/pkg/commerce"
 )
 
 // Config holds tax configuration.
 type Config struct {
-	// Provider: "memory", "taxjar", etc.
+	// Provider: "memory", "taxjar" (planned), etc.
 	Provider string `env:"TAX_PROVIDER" env-default:"memory"`
 }
 
@@ -18,16 +20,34 @@ type Location struct {
 	PostalCode string
 }
 
+// Jurisdiction identifies a tax authority (country + optional subdivision).
+type Jurisdiction struct {
+	Country string
+	State   string // province/region; empty means country-level
+}
+
+// Key returns a stable map key for the jurisdiction.
+func (j Jurisdiction) Key() string {
+	if j.State == "" {
+		return j.Country
+	}
+	return j.Country + "/" + j.State
+}
+
 // TaxResult represents the calculated tax.
 type TaxResult struct {
-	TotalTax      float64
+	TotalTax      commerce.Money
 	Rate          float64
-	Breakdown     map[string]float64 // e.g., "state": 5.0, "city": 1.0
-	TaxableAmount float64
+	Breakdown     map[string]commerce.Money // e.g. "state", "city", "country"
+	TaxableAmount commerce.Money
+	Jurisdiction  Jurisdiction
 }
 
 // Calculator defines the tax calculation interface.
 type Calculator interface {
 	// CalculateTax calculates tax for a given amount and location.
-	CalculateTax(ctx context.Context, amount float64, loc Location) (*TaxResult, error)
+	CalculateTax(ctx context.Context, amount commerce.Money, loc Location) (*TaxResult, error)
 }
+
+// Planned TaxJar / Avalara adapters will implement Calculator against remote APIs.
+// The memory adapter models multi-jurisdiction rates locally until those ship.

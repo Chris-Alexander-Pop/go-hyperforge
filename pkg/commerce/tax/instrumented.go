@@ -3,6 +3,7 @@ package tax
 import (
 	"context"
 
+	"github.com/chris-alexander-pop/system-design-library/pkg/commerce"
 	"github.com/chris-alexander-pop/system-design-library/pkg/logger"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
@@ -24,15 +25,16 @@ func NewInstrumentedCalculator(next Calculator) *InstrumentedCalculator {
 	}
 }
 
-func (c *InstrumentedCalculator) CalculateTax(ctx context.Context, amount float64, loc Location) (*TaxResult, error) {
+func (c *InstrumentedCalculator) CalculateTax(ctx context.Context, amount commerce.Money, loc Location) (*TaxResult, error) {
 	ctx, span := c.tracer.Start(ctx, "tax.CalculateTax", trace.WithAttributes(
-		attribute.Float64("amount", amount),
+		attribute.Int64("amount", amount.Amount),
+		attribute.String("currency", amount.Currency),
 		attribute.String("location.country", loc.Country),
 		attribute.String("location.state", loc.State),
 	))
 	defer span.End()
 
-	logger.L().DebugContext(ctx, "calculating tax", "amount", amount, "country", loc.Country)
+	logger.L().DebugContext(ctx, "calculating tax", "amount", amount.Amount, "country", loc.Country)
 
 	res, err := c.next.CalculateTax(ctx, amount, loc)
 	if err != nil {
@@ -40,7 +42,7 @@ func (c *InstrumentedCalculator) CalculateTax(ctx context.Context, amount float6
 		span.SetStatus(codes.Error, err.Error())
 		logger.L().ErrorContext(ctx, "failed to calculate tax", "error", err)
 	} else {
-		span.SetAttributes(attribute.Float64("tax.total", res.TotalTax))
+		span.SetAttributes(attribute.Int64("tax.total", res.TotalTax.Amount))
 	}
 	return res, err
 }
