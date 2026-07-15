@@ -14,12 +14,15 @@
 
 ### Still open (truly remaining)
 
-Capability packages for Hyperforge are **feature-complete enough to define services**. What remains is mostly **repo-wide adoption polish** and a few deep cloud-provider integrations:
+Capability packages for Hyperforge are **feature-complete enough to define services**.
+The optional-depth backlog (Temporal worker hosting, ASL Choice/Parallel, Azure/GCS
+archive, real EC2/EBS SDK, continuous outbox-driven projections) is **complete**.
+What remains is **cross-cutting adoption** across call sites—not new capability packages:
 
 - 🔗 Adopt `pkg/errors` / `SmartMutex` / `resilience` / `validator` / `algorithms` / `datastructures` / `events` at remaining long-tail call sites
 - ❌ PACKAGE_STANDARDS skeletons + `pkg/test.Suite` / `config.Load` on packages not yet migrated
 - ⚠️ Keep `pkg/TODO.md` honest as packages deepen
-- 🔄 Optional depth: Temporal worker hosting; full ASL Choice/Parallel; Logic Apps ARM+MSI; real EC2/EBS SDK; Azure/GCS archive; Ceph/CSI; continuous outbox-driven projections
+- 🔄 Optional production polish only: Logic Apps ARM+MSI; Ceph/CSI controllers; EBS volume-state waiters
 
 ### Progress since review (branch `branch/package-readiness-review-35ed`)
 
@@ -28,8 +31,8 @@ Landed foundation/reuse/domain hardening (scores above are the *pre-fix* snapsho
 - ✅ `security`: CIRCL ML-DSA (Dilithium), Azure Key Vault secrets, ClamAV INSTREAM scanner
 - ✅ `metering`: rate-card Update/Delete/ListHistory + period aggregation
 - ✅ `workflow`: Temporal/SFN/LogicApps depth; saga/scheduler instrumented
-- ✅ `storage`: EBS deepen, Glacier restore, LVM local controller
-- ✅ `enterprise`: ProjectionRunner backoff/metrics/instrumented
+- ✅ `storage`: EBS deepen + AWS SDK VolumeStore, Glacier restore, Azure/GCS archive, LVM local controller
+- ✅ `enterprise`: ProjectionRunner backoff/metrics/instrumented + ContinuousProjector (EventStore/outbox)
 - ✅ `algorithms`: Paxos learner/multi, Chord join/stabilize, SWIM events, real Louvain ΔQ
 - ✅ `api` GraphQL: SDL registry, playground/introspection options
 - ✅ `iot`: adapters/mqtt (Paho→Client); CoAP UDP; device/cert adapters/awsiot
@@ -87,6 +90,7 @@ Landed foundation/reuse/domain hardening (scores above are the *pre-fix* snapsho
 - ✅ Sibling domain wave (assumed landed): iot/web3/ai depth; workflow/metering/storage cloud depth; consensus sketches polish + GraphQL DX + datastructures reuse into algorithms/cache/workflow
 - ✅ Cross-cutting cleanup: TODO scaffolding demotions; messaging+resilience `pkg/test.Suite`; SmartRWMutex batch (LB/discovery/auth/sql shard/ai ml/coap/ratelimit; logger kept `sync.RWMutex` to avoid concurrency↔logger import cycle); logger Init bootstrap examples marked shipped
 - ✅ Workflow/metering/storage/enterprise polish: Temporal SDK status enums + ListWorkflow visibility + Close; Step Functions RoleArn + waitForTaskToken Signal; Logic Apps remote run fetch + Close; metering UpdateRate/DeleteRate/ListRateHistory; EBS from-snapshot + ListSnapshots; Glacier in-progress restore; controller LVM local sparse adapter; ProjectionRunner Run/ResetCheckpoint/backoff/metrics + Config + InstrumentedProjectionRunner
+- ✅ Optional-depth closeout: Temporal NewWorker hosting; memory Choice/Parallel; Azure+GCS archive adapters; EBS AWS SDK VolumeStore; ContinuousProjector (EventStore + outbox)
 
 ---
 
@@ -241,7 +245,9 @@ Landed foundation/reuse/domain hardening (scores above are the *pre-fix* snapsho
 - [x] ✅ EBS file stub: attach/detach/snapshot + CreateVolume from SnapshotID + ListSnapshots (not a real EC2 client)
 - [x] ✅ Glacier: RestoreObject + in-progress/complete job model; InstantRestore/CompleteRestore
 - [x] ✅ Controller `adapters/lvm` local sparse-file VolumeController for tests
-- [ ] ❌ Real EC2/EBS SDK client; Azure/GCS archive tiers; Ceph/CSI production controllers
+- [x] ✅ Real EC2/EBS SDK client (`adapters/ebs` NewSDK/NewSDKFromAPI)
+- [x] ✅ Azure Blob Archive + GCS ARCHIVE cold archive adapters
+- [ ] ❌ Ceph/CSI production controllers
 
 ### `pkg/data` (~56 → improved)
 - [x] ✅ Docs: top-level `etl` / `processing` marked planned-only (`data/doc.go`, `pkg/README`)
@@ -401,7 +407,8 @@ Landed foundation/reuse/domain hardening (scores above are the *pre-fix* snapsho
 - [x] 🔗 Bridge eventsource → `pkg/events` (`evented.go`); messaging noted in docs
 - [x] ✅ ProjectionRunner: RunOnce/Run with error backoff, ResetCheckpoint, ProjectionMetrics, Config + InstrumentedProjectionRunner
 - [x] ✅ Durable CheckpointStore (memory + sql/postgres) + EventedStore messaging outbox
-- [ ] ❌ Snapshot store + outbox-driven continuous projection beyond catch-up Run
+- [x] ✅ ContinuousProjector: EventStore catch-up loop + messaging outbox consumption with backoff
+- [ ] ❌ Snapshot store (aggregate snapshot persistence) beyond continuous projection
 
 ### `pkg/workflow` (~38 → improved)
 - [x] ✅ Memory engine Task/Wait state-machine execution + IdempotencyKey; timeout still honored on empty/legacy path
@@ -409,7 +416,8 @@ Landed foundation/reuse/domain hardening (scores above are the *pre-fix* snapsho
 - [x] ✅ Durable saga (`StateStore` memory + file/json; `DurableExecutor.Resume` / `ResumeAll`)
 - [x] ✅ Real cron via robfig/cron (`scheduler/cron.go`); instrumented durable saga executor + instrumented scheduler
 - [x] ✅ Temporal: SDK status enums, ListWorkflow visibility, Close; Step Functions RoleArn + callback Signal; Logic Apps remote run status + Close
-- [ ] ❌ Temporal worker hosting; full ASL Choice/Parallel; Logic Apps ARM deploy + MSI auth
+- [x] ✅ Temporal worker hosting (NewWorker / NewWorkerFromEngine); memory ASL Choice + Parallel
+- [ ] ❌ Logic Apps ARM deploy + MSI auth
 
 ### `pkg/iot` (~28 → improved)
 - [x] ✅ Root Client/Updater interfaces + memory adapters + instrumented + tests

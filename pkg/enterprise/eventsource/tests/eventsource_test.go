@@ -566,6 +566,107 @@ func TestProjectionRunnerRunBackoffAndConfig(t *testing.T) {
 	}
 }
 
+func TestContinuousProjectorOutboxAndEventStore(t *testing.T) {
+	ctx := context.Background()
+	broker := msgmemory.New(msgmemory.Config{BufferSize: 8})
+	defer broker.Close()
+	producer, err := broker.Producer("Order")
+	if err != nil {
+		t.Fatal(err)
+	}
+	consumer, err := broker.Consumer("Order", "proj")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	proj := &countingProjector{types: []string{"order.created"}}
+	cp, err := eventsource.NewContinuousProjector(eventsource.ContinuousProjectorConfig{
+		ProjectionConfig: eventsource.ProjectionConfig{
+			Name: "outbox-rm", PollInterval: 5 * time.Millisecond,
+			InitialBackoff: 5 * time.Millisecond, MaxBackoff: 20 * time.Millisecond,
+		},
+		Projector: proj,
+		Consumer:  consumer,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	runCtx, cancel := context.WithCancel(ctx)
+	defer cancel()
+	done := make(chan error, 1)
+	go func() { done <- cp.Run(runCtx) }()
+
+	store := eventsource.NewEventedStoreWithOutbox(memory.NewEventStore(), nil, producer)
+	if err := store.Append(ctx, "o1", 0, []eventsource.Event{
+		{EventType: "order.created", AggregateType: "Order", ID: "e1", Data: json.RawMessage(`{"id":"1"}`)},
+		{EventType: "order.ignored", AggregateType: "Order", ID: "e2"},
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	deadline := time.After(2 * time.Second)
+	for {
+		select {
+		case <-deadline:
+			t.Fatal("timeout waiting for outbox projection")
+		case <-time.After(10 * time.Millisecond):
+			if len(proj.seen) >= 1 {
+				cancel()
+				<-done
+				if proj.seen[0] != "order.created" {
+					t.Fatalf("seen=%v", proj.seen)
+				}
+				goto eventStoreMode
+			}
+		}
+	}
+
+eventStoreMode:
+	store2 := memory.NewEventStore()
+	_ = store2.Append(ctx, "o1", 0, []eventsource.Event{{EventType: "order.created"}})
+	proj2 := &countingProjector{types: []string{"order.created"}}
+	cps := memory.NewCheckpointStore()
+	cp2, err := eventsource.NewContinuousProjector(eventsource.ContinuousProjectorConfig{
+		ProjectionConfig: eventsource.ProjectionConfig{Name: "es-rm", PollInterval: 5 * time.Millisecond},
+		Store:            store2,
+		Checkpoints:      cps,
+		Projector:        proj2,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cp2.Runner() == nil {
+		t.Fatal("expected ProjectionRunner")
+	}
+	esCtx, esCancel := context.WithCancel(ctx)
+	defer esCancel()
+	esDone := make(chan error, 1)
+	go func() { esDone <- cp2.Run(esCtx) }()
+	deadline = time.After(2 * time.Second)
+	for {
+		select {
+		case <-deadline:
+			t.Fatal("timeout waiting for eventstore continuous projection")
+		case <-time.After(10 * time.Millisecond):
+			if len(proj2.seen) >= 1 {
+				esCancel()
+				<-esDone
+				return
+			}
+		}
+	}
+}
+
+func TestContinuousProjectorRequiresSource(t *testing.T) {
+	_, err := eventsource.NewContinuousProjector(eventsource.ContinuousProjectorConfig{
+		Projector: &countingProjector{},
+	})
+	if err == nil {
+		t.Fatal("expected error")
+	}
+}
+
 func TestEventedStoreWithOutbox(t *testing.T) {
 	ctx := context.Background()
 	broker := msgmemory.New(msgmemory.Config{BufferSize: 8})

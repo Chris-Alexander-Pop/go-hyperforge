@@ -1,8 +1,9 @@
-// Package ebs provides a file-backed AWS EBS-shaped block.VolumeStore.
+// Package ebs provides AWS EBS-shaped block.VolumeStore adapters.
 //
-// Shipped: Create/Get/List/Delete/Resize volumes; Attach/Detach; Create/Get/Delete/List
-// snapshots; CreateVolume from SnapshotID. IDs use vol-/snap- prefixes.
+// Shipped:
+//   - File stub (New / NewWithBlockConfig): local JSON volumes/snapshots with vol-/snap- IDs
+//   - SDK store (NewSDK / NewSDKFromAPI): real EC2 CreateVolume/AttachVolume/… via aws-sdk-go-v2
 //
-// Remaining gaps (honest): not a real EC2/EBS API client — no AWS SDK calls,
-// encryption/KMS, multi-attach, or AZ capacity checks.
+// Remaining gaps (honest): Azure Managed Disks / GCP PD / Ceph / multi-attach /
+// waiters for volume state transitions are not wrapped.
 package ebs

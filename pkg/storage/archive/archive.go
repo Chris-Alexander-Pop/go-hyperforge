@@ -5,8 +5,8 @@
 //   - Memory: In-memory cold store for unit tests (instant restore)
 //   - Filesystem: Local cold directory (objects + meta sidecars; instant restore)
 //   - Glacier: Thin S3 Glacier/DEEP_ARCHIVE adapter (adapters/glacier; injectable ObjectAPI)
-//
-// Planned (not implemented): Azure Blob Archive tier, Google Cloud Storage Archive class.
+//   - Azure: Blob Archive-tier adapter (adapters/azure; injectable BlobAPI)
+//   - GCS: ARCHIVE storage-class adapter (adapters/gcs; injectable ObjectAPI)
 //
 // Usage:
 //

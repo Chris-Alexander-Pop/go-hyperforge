@@ -3,7 +3,7 @@
 // Shipping backends today:
 //   - Memory: In-memory volume store for unit tests
 //   - Local: File-backed JSON metadata store for local/dev (not a real block device)
-//   - EBS: File-like AWS EBS stub with vol-/snap- IDs (adapters/ebs; not a real EC2 client)
+//   - EBS: File stub + AWS SDK EC2 VolumeStore (adapters/ebs; NewSDK / NewSDKFromAPI)
 //
 // Planned (not implemented): Azure Managed Disks, GCP Persistent Disks,
 // Ceph, OpenStack Cinder.

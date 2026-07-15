@@ -241,11 +241,16 @@ func (e *Engine) runExecution(
 		}
 
 		var err error
+		var choiceNext string
 		switch strings.ToLower(st.Type) {
 		case "task", "":
 			data, err = e.execTask(ctx, st, handlers, data)
 		case "wait":
 			err = e.execWait(ctx, st)
+		case "choice":
+			choiceNext, err = e.execChoice(st, data)
+		case "parallel":
+			data, err = e.execParallel(ctx, st, states, handlers, data)
 		case "succeed", "pass":
 			// no-op; pass data through
 		case "fail":
@@ -262,6 +267,15 @@ func (e *Engine) runExecution(
 			}
 			e.finish(exec, workflow.StatusFailed, data, err)
 			return
+		}
+
+		if strings.EqualFold(st.Type, "choice") {
+			if choiceNext == "" {
+				e.finish(exec, workflow.StatusCompleted, data, nil)
+				return
+			}
+			current = choiceNext
+			continue
 		}
 
 		if st.End || st.Next == "" {
@@ -302,6 +316,156 @@ func (e *Engine) execWait(ctx context.Context, st workflow.State) error {
 		return nil
 	case <-ctx.Done():
 		return ctx.Err()
+	}
+}
+
+func (e *Engine) execChoice(st workflow.State, input interface{}) (string, error) {
+	for _, rule := range st.Choices {
+		if matchChoice(rule, input) {
+			if rule.Next == "" {
+				return "", fmt.Errorf("choice rule for %q missing Next", st.Name)
+			}
+			return rule.Next, nil
+		}
+	}
+	if st.Default != "" {
+		return st.Default, nil
+	}
+	if st.Next != "" {
+		return st.Next, nil
+	}
+	return "", fmt.Errorf("no choice matched and no Default for state %q", st.Name)
+}
+
+func matchChoice(rule workflow.ChoiceRule, input interface{}) bool {
+	m, ok := input.(map[string]interface{})
+	if !ok {
+		return false
+	}
+	key := strings.TrimPrefix(rule.Variable, "$.")
+	key = strings.TrimPrefix(key, ".")
+	val, present := m[key]
+	if rule.IsPresent != nil {
+		return present == *rule.IsPresent
+	}
+	if !present {
+		return false
+	}
+	if rule.BooleanEquals != nil {
+		b, ok := val.(bool)
+		return ok && b == *rule.BooleanEquals
+	}
+	if rule.NumericEquals != nil {
+		switch n := val.(type) {
+		case float64:
+			return n == *rule.NumericEquals
+		case int:
+			return float64(n) == *rule.NumericEquals
+		case int64:
+			return float64(n) == *rule.NumericEquals
+		default:
+			return false
+		}
+	}
+	if rule.StringEquals != "" {
+		s, ok := val.(string)
+		return ok && s == rule.StringEquals
+	}
+	return false
+}
+
+func (e *Engine) execParallel(
+	ctx context.Context,
+	st workflow.State,
+	parentStates map[string]workflow.State,
+	handlers map[string]workflow.TaskHandler,
+	input interface{},
+) (interface{}, error) {
+	if len(st.Branches) == 0 {
+		return input, nil
+	}
+	type result struct {
+		idx int
+		out interface{}
+		err error
+	}
+	ch := make(chan result, len(st.Branches))
+	for i, br := range st.Branches {
+		go func(i int, br workflow.Branch) {
+			out, err := e.runBranch(ctx, br, parentStates, handlers, input)
+			ch <- result{idx: i, out: out, err: err}
+		}(i, br)
+	}
+	outs := make([]interface{}, len(st.Branches))
+	for range st.Branches {
+		r := <-ch
+		if r.err != nil {
+			return nil, r.err
+		}
+		outs[r.idx] = r.out
+	}
+	return outs, nil
+}
+
+func (e *Engine) runBranch(
+	ctx context.Context,
+	br workflow.Branch,
+	parentStates map[string]workflow.State,
+	handlers map[string]workflow.TaskHandler,
+	input interface{},
+) (interface{}, error) {
+	states := parentStates
+	if len(br.States) > 0 {
+		states = make(map[string]workflow.State, len(br.States))
+		for _, s := range br.States {
+			states[s.Name] = s
+		}
+	}
+	start := br.StartAt
+	if start == "" {
+		return input, fmt.Errorf("parallel branch missing StartAt")
+	}
+	data := input
+	current := start
+	for {
+		if ctx.Err() != nil {
+			return nil, ctx.Err()
+		}
+		st, ok := states[current]
+		if !ok {
+			return nil, fmt.Errorf("unknown branch state %q", current)
+		}
+		var err error
+		var choiceNext string
+		switch strings.ToLower(st.Type) {
+		case "task", "":
+			data, err = e.execTask(ctx, st, handlers, data)
+		case "wait":
+			err = e.execWait(ctx, st)
+		case "choice":
+			choiceNext, err = e.execChoice(st, data)
+		case "succeed", "pass":
+		case "fail":
+			return nil, fmt.Errorf("branch state %q failed", st.Name)
+		case "parallel":
+			data, err = e.execParallel(ctx, st, states, handlers, data)
+		default:
+			return nil, fmt.Errorf("unsupported branch state type %q", st.Type)
+		}
+		if err != nil {
+			return nil, err
+		}
+		if strings.EqualFold(st.Type, "choice") {
+			if choiceNext == "" {
+				return data, nil
+			}
+			current = choiceNext
+			continue
+		}
+		if st.End || st.Next == "" {
+			return data, nil
+		}
+		current = st.Next
 	}
 }
 
