@@ -1,10 +1,21 @@
+// Package cqrs provides Command Query Responsibility Segregation patterns.
+//
+// Separates read and write operations with commands, queries, and handlers.
+//
+// Usage:
+//
+//	import "github.com/chris-alexander-pop/system-design-library/pkg/enterprise/cqrs"
+//
+//	bus := cqrs.NewCommandBus()
+//	bus.Register("CreateOrder", &CreateOrderHandler{})
+//	err := bus.Dispatch(ctx, CreateOrderCommand{...})
 package cqrs
 
 import (
 	"context"
-	"fmt"
 	"reflect"
-	"sync"
+
+	"github.com/chris-alexander-pop/system-design-library/pkg/concurrency"
 )
 
 // Command represents a command that mutates state.
@@ -30,13 +41,14 @@ type QueryHandler interface {
 // CommandBus dispatches commands to handlers.
 type CommandBus struct {
 	handlers map[string]CommandHandler
-	mu       sync.RWMutex
+	mu       *concurrency.SmartRWMutex
 }
 
 // NewCommandBus creates a new command bus.
 func NewCommandBus() *CommandBus {
 	return &CommandBus{
 		handlers: make(map[string]CommandHandler),
+		mu:       concurrency.NewSmartRWMutex(concurrency.MutexConfig{Name: "cqrs-command-bus"}),
 	}
 }
 
@@ -54,12 +66,16 @@ func (b *CommandBus) RegisterCommand(cmd Command, handler CommandHandler) {
 
 // Dispatch sends a command to its handler.
 func (b *CommandBus) Dispatch(ctx context.Context, cmd Command) error {
+	if cmd == nil {
+		return ErrInvalidCommand("command is nil", nil)
+	}
+
 	b.mu.RLock()
 	handler, ok := b.handlers[cmd.CommandName()]
 	b.mu.RUnlock()
 
 	if !ok {
-		return fmt.Errorf("no handler registered for command: %s", cmd.CommandName())
+		return ErrCommandHandlerNotFound(cmd.CommandName())
 	}
 
 	return handler.Handle(ctx, cmd)
@@ -68,13 +84,14 @@ func (b *CommandBus) Dispatch(ctx context.Context, cmd Command) error {
 // QueryBus dispatches queries to handlers.
 type QueryBus struct {
 	handlers map[string]QueryHandler
-	mu       sync.RWMutex
+	mu       *concurrency.SmartRWMutex
 }
 
 // NewQueryBus creates a new query bus.
 func NewQueryBus() *QueryBus {
 	return &QueryBus{
 		handlers: make(map[string]QueryHandler),
+		mu:       concurrency.NewSmartRWMutex(concurrency.MutexConfig{Name: "cqrs-query-bus"}),
 	}
 }
 
@@ -92,12 +109,16 @@ func (b *QueryBus) RegisterQuery(query Query, handler QueryHandler) {
 
 // Dispatch sends a query to its handler and returns the result.
 func (b *QueryBus) Dispatch(ctx context.Context, query Query) (interface{}, error) {
+	if query == nil {
+		return nil, ErrInvalidQuery("query is nil", nil)
+	}
+
 	b.mu.RLock()
 	handler, ok := b.handlers[query.QueryName()]
 	b.mu.RUnlock()
 
 	if !ok {
-		return nil, fmt.Errorf("no handler registered for query: %s", query.QueryName())
+		return nil, ErrQueryHandlerNotFound(query.QueryName())
 	}
 
 	return handler.Handle(ctx, query)

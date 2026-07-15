@@ -1,5 +1,5 @@
-// Package ddd provides lightweight Domain-Driven Design base types (entity, aggregate, domain event).
+// Package ddd provides Domain-Driven Design primitives.
 //
-// This is a design stub — not a full DDD toolkit. No instrumented/memory adapter layout or tests yet.
-// See root MISSING_CAPABILITIES.md.
+// Includes base types for entities, value objects, aggregates, domain events,
+// and the specification pattern. Repository methods accept context.Context.
 package ddd
