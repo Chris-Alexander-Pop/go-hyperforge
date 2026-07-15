@@ -1,2 +1,2 @@
-// Package postgres wraps the SQL checkpoint store with PostgreSQL placeholders.
+// Package postgres wraps SQL checkpoint and snapshot stores with PostgreSQL placeholders.
 package postgres

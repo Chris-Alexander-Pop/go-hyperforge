@@ -152,12 +152,24 @@ func (a *BaseEventSourcedAggregate) RecordEvent(eventType string, data interface
 
 // EventRepository provides aggregate persistence through events.
 type EventRepository struct {
-	store EventStore
+	store     EventStore
+	snapshots SnapshotStore
 }
 
-// NewEventRepository creates a new event repository.
+// NewEventRepository creates a new event repository without snapshot support.
 func NewEventRepository(store EventStore) *EventRepository {
 	return &EventRepository{store: store}
+}
+
+// NewEventRepositoryWithSnapshots creates a repository that loads via snapshots
+// when the aggregate implements Snapshottable.
+func NewEventRepositoryWithSnapshots(store EventStore, snapshots SnapshotStore) *EventRepository {
+	return &EventRepository{store: store, snapshots: snapshots}
+}
+
+// SetSnapshotStore attaches or replaces the optional SnapshotStore.
+func (r *EventRepository) SetSnapshotStore(snapshots SnapshotStore) {
+	r.snapshots = snapshots
 }
 
 // Save persists uncommitted events and advances the aggregate version.
@@ -179,20 +191,64 @@ func (r *EventRepository) Save(ctx context.Context, aggregate EventSourcedAggreg
 }
 
 // Load reconstructs an aggregate from its event history and sets its version.
+// When a SnapshotStore is configured and aggregate implements Snapshottable,
+// Load restores from the latest snapshot then applies only later events.
 func (r *EventRepository) Load(ctx context.Context, aggregate EventSourcedAggregate) error {
+	if snapAgg, ok := aggregate.(Snapshottable); ok && r.snapshots != nil {
+		snap, err := r.snapshots.Load(ctx, aggregate.AggregateID())
+		if err != nil {
+			return err
+		}
+		if snap != nil {
+			if err := snapAgg.RestoreSnapshot(snap.Data); err != nil {
+				return err
+			}
+			aggregate.SetVersion(snap.Version)
+			return r.applyFrom(ctx, aggregate, snap.Version+1)
+		}
+	}
+
 	events, err := r.store.Load(ctx, aggregate.AggregateID())
 	if err != nil {
 		return err
 	}
+	return r.applyEvents(aggregate, events)
+}
 
+func (r *EventRepository) applyFrom(ctx context.Context, aggregate EventSourcedAggregate, fromVersion int) error {
+	events, err := r.store.LoadFrom(ctx, aggregate.AggregateID(), fromVersion)
+	if err != nil {
+		return err
+	}
+	return r.applyEvents(aggregate, events)
+}
+
+func (r *EventRepository) applyEvents(aggregate EventSourcedAggregate, events []Event) error {
 	for _, event := range events {
 		if err := aggregate.ApplyEvent(event); err != nil {
 			return err
 		}
 		aggregate.SetVersion(event.Version)
 	}
-
 	return nil
+}
+
+// SaveSnapshot persists the current aggregate state at Version().
+func (r *EventRepository) SaveSnapshot(ctx context.Context, aggregate Snapshottable) error {
+	if r.snapshots == nil {
+		return ErrInvalidArgument("snapshot store is required", nil)
+	}
+	data, err := aggregate.SnapshotData()
+	if err != nil {
+		return err
+	}
+	return r.snapshots.Save(ctx, Snapshot{
+		AggregateID:   aggregate.AggregateID(),
+		AggregateType: aggregate.AggregateType(),
+		Version:       aggregate.Version(),
+		Timestamp:     time.Now().UTC(),
+		Data:          data,
+	})
 }
 
 // Snapshot represents a point-in-time aggregate state.
@@ -210,5 +266,14 @@ type SnapshotStore interface {
 	Save(ctx context.Context, snapshot Snapshot) error
 
 	// Load retrieves the latest snapshot for an aggregate.
+	// Returns nil, nil when no snapshot exists.
 	Load(ctx context.Context, aggregateID string) (*Snapshot, error)
+}
+
+// Snapshottable is an EventSourcedAggregate that can serialize and restore
+// its state for SnapshotStore-backed loads.
+type Snapshottable interface {
+	EventSourcedAggregate
+	RestoreSnapshot(data json.RawMessage) error
+	SnapshotData() (json.RawMessage, error)
 }

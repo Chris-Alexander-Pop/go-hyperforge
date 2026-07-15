@@ -24,3 +24,12 @@ func New(db *sql.DB, cfg Config) (*eventsql.CheckpointStore, error) {
 		Table:   cfg.Table,
 	})
 }
+
+// NewSnapshotStore returns an eventsql.SnapshotStore configured for PostgreSQL.
+// Default table is aggregate_snapshots.
+func NewSnapshotStore(db *sql.DB, cfg Config) (*eventsql.SnapshotStore, error) {
+	return eventsql.NewSnapshotStore(db, eventsql.Config{
+		Dialect: eventsql.DialectPostgres,
+		Table:   cfg.Table,
+	})
+}

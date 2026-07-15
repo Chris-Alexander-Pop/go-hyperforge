@@ -371,6 +371,175 @@ func TestSnapshotStore(t *testing.T) {
 	}
 }
 
+type snapAgg struct {
+	eventsource.BaseEventSourcedAggregate
+	total   int
+	applied []string
+}
+
+type snapState struct {
+	Total int `json:"total"`
+}
+
+func (a *snapAgg) ApplyEvent(event eventsource.Event) error {
+	a.applied = append(a.applied, event.EventType)
+	var payload struct {
+		Amount int `json:"amount"`
+	}
+	if len(event.Data) > 0 {
+		_ = json.Unmarshal(event.Data, &payload)
+	}
+	switch event.EventType {
+	case "Created":
+		a.total = payload.Amount
+	case "Added":
+		a.total += payload.Amount
+	}
+	return nil
+}
+
+func (a *snapAgg) SnapshotData() (json.RawMessage, error) {
+	return json.Marshal(snapState{Total: a.total})
+}
+
+func (a *snapAgg) RestoreSnapshot(data json.RawMessage) error {
+	var st snapState
+	if err := json.Unmarshal(data, &st); err != nil {
+		return err
+	}
+	a.total = st.Total
+	return nil
+}
+
+func TestEventRepositoryLoadFromSnapshot(t *testing.T) {
+	ctx := context.Background()
+	store := memory.NewEventStore()
+	snaps := memory.NewSnapshotStore()
+	repo := eventsource.NewEventRepositoryWithSnapshots(store, snaps)
+
+	agg := &snapAgg{BaseEventSourcedAggregate: eventsource.NewBaseEventSourcedAggregate("o1", "Order")}
+	for _, e := range []struct {
+		typ string
+		amt int
+	}{
+		{"Created", 10},
+		{"Added", 5},
+		{"Added", 3},
+	} {
+		if err := agg.RecordEvent(e.typ, map[string]int{"amount": e.amt}); err != nil {
+			t.Fatalf("RecordEvent: %v", err)
+		}
+		evts := agg.GetUncommittedEvents()
+		last := evts[len(evts)-1]
+		if err := agg.ApplyEvent(last); err != nil {
+			t.Fatalf("ApplyEvent: %v", err)
+		}
+	}
+	if err := repo.Save(ctx, agg); err != nil {
+		t.Fatalf("Save: %v", err)
+	}
+	if agg.Version() != 3 || agg.total != 18 {
+		t.Fatalf("after save version=%d total=%d", agg.Version(), agg.total)
+	}
+
+	// Snapshot at version 2 (Created+Added=15); store still has event v3.
+	if err := snaps.Save(ctx, eventsource.Snapshot{
+		AggregateID:   "o1",
+		AggregateType: "Order",
+		Version:       2,
+		Timestamp:     time.Now().UTC(),
+		Data:          json.RawMessage(`{"total":15}`),
+	}); err != nil {
+		t.Fatalf("Save snapshot: %v", err)
+	}
+
+	loaded := &snapAgg{BaseEventSourcedAggregate: eventsource.NewBaseEventSourcedAggregate("o1", "Order")}
+	if err := repo.Load(ctx, loaded); err != nil {
+		t.Fatalf("Load with snapshot: %v", err)
+	}
+	if loaded.Version() != 3 {
+		t.Fatalf("loaded version want 3 got %d", loaded.Version())
+	}
+	if loaded.total != 18 {
+		t.Fatalf("loaded total want 18 got %d", loaded.total)
+	}
+	// Only events after the snapshot (version 3) should have been applied.
+	if len(loaded.applied) != 1 || loaded.applied[0] != "Added" {
+		t.Fatalf("expected only post-snapshot event applied, got %v", loaded.applied)
+	}
+
+	// SaveSnapshot round-trip at current version.
+	if err := repo.SaveSnapshot(ctx, loaded); err != nil {
+		t.Fatalf("SaveSnapshot: %v", err)
+	}
+	snap, err := snaps.Load(ctx, "o1")
+	if err != nil || snap == nil {
+		t.Fatalf("Load snapshot: %v %v", snap, err)
+	}
+	if snap.Version != 3 || string(snap.Data) != `{"total":18}` {
+		t.Fatalf("snapshot=%+v data=%s", snap, snap.Data)
+	}
+}
+
+func TestEventRepositoryLoadWithoutSnapshotFallsBack(t *testing.T) {
+	ctx := context.Background()
+	store := memory.NewEventStore()
+	repo := eventsource.NewEventRepositoryWithSnapshots(store, memory.NewSnapshotStore())
+
+	agg := &snapAgg{BaseEventSourcedAggregate: eventsource.NewBaseEventSourcedAggregate("o1", "Order")}
+	_ = agg.RecordEvent("Created", map[string]int{"amount": 7})
+	_ = agg.RecordEvent("Added", map[string]int{"amount": 1})
+	if err := repo.Save(ctx, agg); err != nil {
+		t.Fatalf("Save: %v", err)
+	}
+
+	loaded := &snapAgg{BaseEventSourcedAggregate: eventsource.NewBaseEventSourcedAggregate("o1", "Order")}
+	if err := repo.Load(ctx, loaded); err != nil {
+		t.Fatalf("Load: %v", err)
+	}
+	if loaded.Version() != 2 || loaded.total != 8 {
+		t.Fatalf("version=%d total=%d", loaded.Version(), loaded.total)
+	}
+	if len(loaded.applied) != 2 {
+		t.Fatalf("expected full replay, got %v", loaded.applied)
+	}
+}
+
+func TestEventRepositoryPlainAggregateIgnoresSnapshots(t *testing.T) {
+	ctx := context.Background()
+	store := memory.NewEventStore()
+	snaps := memory.NewSnapshotStore()
+	repo := eventsource.NewEventRepositoryWithSnapshots(store, snaps)
+
+	agg := &testAgg{BaseEventSourcedAggregate: eventsource.NewBaseEventSourcedAggregate("o1", "Order")}
+	_ = agg.RecordEvent("Created", map[string]string{})
+	_ = agg.RecordEvent("Paid", map[string]string{})
+	if err := repo.Save(ctx, agg); err != nil {
+		t.Fatalf("Save: %v", err)
+	}
+	_ = snaps.Save(ctx, eventsource.Snapshot{
+		AggregateID: "o1", AggregateType: "Order", Version: 1,
+		Data: json.RawMessage(`{}`),
+	})
+
+	loaded := &testAgg{BaseEventSourcedAggregate: eventsource.NewBaseEventSourcedAggregate("o1", "Order")}
+	if err := repo.Load(ctx, loaded); err != nil {
+		t.Fatalf("Load: %v", err)
+	}
+	if len(loaded.applied) != 2 {
+		t.Fatalf("plain aggregate should full-replay, got %v", loaded.applied)
+	}
+}
+
+func TestSaveSnapshotRequiresStore(t *testing.T) {
+	repo := eventsource.NewEventRepository(memory.NewEventStore())
+	agg := &snapAgg{BaseEventSourcedAggregate: eventsource.NewBaseEventSourcedAggregate("o1", "Order")}
+	err := repo.SaveSnapshot(context.Background(), agg)
+	if err == nil {
+		t.Fatal("expected error without snapshot store")
+	}
+}
+
 func TestAppendRequiresAggregateID(t *testing.T) {
 	err := memory.NewEventStore().Append(context.Background(), "", 0, []eventsource.Event{{EventType: "A"}})
 	if err == nil {

@@ -1,5 +1,5 @@
 /*
-Package sql provides a durable CheckpointStore backed by database/sql.
+Package sql provides durable CheckpointStore and SnapshotStore adapters backed by database/sql.
 
 Supports SQLite (? placeholders) and PostgreSQL ($n). Callers supply an open
 *sql.DB (e.g. modernc.org/sqlite for tests, pgx/stdlib or lib/pq for Postgres).
@@ -10,7 +10,6 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/chris-alexander-pop/go-hyperforge/pkg/enterprise/eventsource"
@@ -57,20 +56,7 @@ func New(db *sql.DB, cfg Config) (*CheckpointStore, error) {
 }
 
 func (s *CheckpointStore) rewrite(query string) string {
-	if s.dialect != DialectPostgres {
-		return query
-	}
-	var b strings.Builder
-	n := 0
-	for i := 0; i < len(query); i++ {
-		if query[i] == '?' {
-			n++
-			fmt.Fprintf(&b, "$%d", n)
-			continue
-		}
-		b.WriteByte(query[i])
-	}
-	return b.String()
+	return rewrite(s.dialect, query)
 }
 
 // Migrate creates the checkpoint table if missing.

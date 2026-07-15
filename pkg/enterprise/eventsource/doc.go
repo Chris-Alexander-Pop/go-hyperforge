@@ -12,4 +12,10 @@
 // Use Run for continuous catch-up with error backoff; ResetCheckpoint to
 // restart from zero; NewInstrumentedProjectionRunner / ProjectionMetrics for
 // observability; Config + NewProjectionFromConfig for env-driven defaults.
+//
+// SnapshotStore persists point-in-time aggregate state (memory.NewSnapshotStore
+// or adapters/sql.NewSnapshotStore / adapters/postgres.NewSnapshotStore).
+// NewEventRepositoryWithSnapshots loads Snapshottable aggregates from a
+// snapshot then applies only subsequent events; SaveSnapshot writes the
+// current state. Plain EventSourcedAggregate Load remains full-stream replay.
 package eventsource
