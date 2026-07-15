@@ -1,11 +1,3 @@
-// Package solana provides a Solana RPC client.
-//
-// Usage:
-//
-//	import "github.com/chris-alexander-pop/system-design-library/pkg/web3/blockchain/solana"
-//
-//	client, err := solana.New(solana.Config{RPCURL: "https://api.mainnet-beta.solana.com"})
-//	balance, err := client.GetBalance(ctx, "...")
 package solana
 
 import (
@@ -81,12 +73,12 @@ func (c *Client) call(ctx context.Context, method string, params interface{}) (j
 
 	body, err := json.Marshal(req)
 	if err != nil {
-		return nil, err
+		return nil, pkgerrors.Internal("failed to marshal RPC request", err)
 	}
 
 	httpReq, err := http.NewRequestWithContext(ctx, "POST", c.rpcURL, bytes.NewReader(body))
 	if err != nil {
-		return nil, err
+		return nil, pkgerrors.Internal("failed to create RPC request", err)
 	}
 	httpReq.Header.Set("Content-Type", "application/json")
 
@@ -98,7 +90,7 @@ func (c *Client) call(ctx context.Context, method string, params interface{}) (j
 
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, err
+		return nil, pkgerrors.Internal("failed to read RPC response", err)
 	}
 
 	var rpcResp rpcResponse

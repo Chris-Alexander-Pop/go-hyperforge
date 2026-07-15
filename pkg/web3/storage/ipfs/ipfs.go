@@ -1,13 +1,3 @@
-// Package ipfs provides an IPFS client for decentralized storage.
-//
-// Supports adding, getting, and pinning content on IPFS.
-//
-// Usage:
-//
-//	import "github.com/chris-alexander-pop/system-design-library/pkg/web3/storage/ipfs"
-//
-//	client, err := ipfs.New(ipfs.Config{APIURL: "http://localhost:5001"})
-//	cid, err := client.Add(ctx, data)
 package ipfs
 
 import (
@@ -128,7 +118,11 @@ func (c *Client) Get(ctx context.Context, cid string) ([]byte, error) {
 		return nil, pkgerrors.NotFound("content not found", nil)
 	}
 
-	return io.ReadAll(resp.Body)
+	data, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, pkgerrors.Internal("failed to read IPFS content", err)
+	}
+	return data, nil
 }
 
 // GetJSON retrieves and parses JSON from IPFS.
@@ -137,7 +131,10 @@ func (c *Client) GetJSON(ctx context.Context, cid string, result interface{}) er
 	if err != nil {
 		return err
 	}
-	return json.Unmarshal(data, result)
+	if err := json.Unmarshal(data, result); err != nil {
+		return pkgerrors.Internal("failed to unmarshal JSON", err)
+	}
+	return nil
 }
 
 // GetURL returns the gateway URL for a CID.

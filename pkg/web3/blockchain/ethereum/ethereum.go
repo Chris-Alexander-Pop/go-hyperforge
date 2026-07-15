@@ -1,18 +1,9 @@
-// Package ethereum provides an Ethereum client wrapper.
-//
-// Supports both regular Ethereum and EVM-compatible chains.
-//
-// Usage:
-//
-//	import "github.com/chris-alexander-pop/system-design-library/pkg/web3/blockchain/ethereum"
-//
-//	client, err := ethereum.New(ethereum.Config{RPCURL: "https://mainnet.infura.io/v3/..."})
-//	balance, err := client.GetBalance(ctx, "0x...")
 package ethereum
 
 import (
 	"context"
 	"crypto/ecdsa"
+	"errors"
 	"math/big"
 
 	pkgerrors "github.com/chris-alexander-pop/system-design-library/pkg/errors"
@@ -206,7 +197,10 @@ func (c *Client) WaitForTransaction(ctx context.Context, txHash string) (*types.
 
 		select {
 		case <-ctx.Done():
-			return nil, ctx.Err()
+			if errors.Is(ctx.Err(), context.DeadlineExceeded) {
+				return nil, pkgerrors.New(pkgerrors.CodeDeadlineExceeded, "timed out waiting for transaction", ctx.Err())
+			}
+			return nil, pkgerrors.New(pkgerrors.CodeCanceled, "context canceled while waiting for transaction", ctx.Err())
 		default:
 			// Continue polling
 		}

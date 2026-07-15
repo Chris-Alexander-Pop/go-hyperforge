@@ -288,9 +288,9 @@
 - [x] ✅ Demoted TODO overclaims
 
 ### `pkg/web3` (~22)
-- [ ] ❌ Interfaces + adapters/memory + instrumented + tests
-- [ ] ❌ WalletConnect / DID resolve or drop claims; race-safe nonces
-- [ ] ❌ SDK isolation under adapters
+- [x] ✅ Interfaces + adapters/memory + instrumented + tests
+- [x] ✅ Softened WalletConnect / DID claims; race-safe SIWE nonces
+- [ ] 🔄 SDK isolation under adapters (ethereum/ipfs still concrete scaffolds)
 
 ---
 

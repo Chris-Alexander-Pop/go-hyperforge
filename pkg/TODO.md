@@ -256,14 +256,16 @@
 
 ## 8. Web3 (`pkg/web3`)
 
-> 🔄 Client scaffolds; missing interfaces/memory adapters/tests. See [`MISSING_CAPABILITIES.md`](../MISSING_CAPABILITIES.md#pkgweb3-22).
+> ✅ Root Client/Store/Verifier interfaces, memory adapters, instrumentation, race-safe SIWE; ethereum/solana/ipfs scaffolds remain SDK-coupled. See [`MISSING_CAPABILITIES.md`](../MISSING_CAPABILITIES.md#pkgweb3-22).
 
 | Package | Status | Enables Services | Description |
 |---------|--------|------------------|-------------|
-| `pkg/web3/blockchain/ethereum` | 🔄 | wallet | Ethereum Client scaffold (geth wrapper) |
-| `pkg/web3/blockchain/solana` | 🔄 | wallet | Solana RPC Client scaffold |
-| `pkg/web3/storage/ipfs` | 🔄 | nft-storage | IPFS Client scaffold |
-| `pkg/web3/identity` | 🔄 | auth-dapp | Wallet Connect / DID (claims incomplete) |
+| `pkg/web3` | ✅ | — | Client/Store/Verifier interfaces, errors, instrumented wrappers |
+| `pkg/web3/adapters/memory` | ✅ | — | In-memory Ethereum, IPFS, SIWE adapters |
+| `pkg/web3/identity` | ✅ | auth-dapp | SIWE crypto verify (race-safe nonces); DID parse/format only |
+| `pkg/web3/blockchain/ethereum` | 🔄 | wallet | geth ethclient wrapper (not yet behind root Client) |
+| `pkg/web3/blockchain/solana` | 🔄 | wallet | Solana JSON-RPC scaffold (no root interface yet) |
+| `pkg/web3/storage/ipfs` | 🔄 | nft-storage | IPFS HTTP API scaffold (not yet behind Store) |
 
 ---
 
