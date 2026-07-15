@@ -318,7 +318,7 @@
 |---------|--------|------------------|-------------|
 | `pkg/enterprise/ddd` | 🔄 | core-business | Domain-Driven Design Primitives (stub) |
 | `pkg/enterprise/cqrs` | 🔄 | reporting | CQRS + ProjectionRunner (depth varies) |
-| `pkg/enterprise/eventsource` | 🔄 | audit-log | Event Sourcing (memory + messaging outbox) |
+| `pkg/enterprise/eventsource` | ✅ | audit-log | Event Sourcing (memory + SQL snapshots/checkpoints + messaging outbox) |
 
 ---
 
