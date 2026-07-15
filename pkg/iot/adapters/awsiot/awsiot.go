@@ -1,11 +1,3 @@
-// Package awsiot provides an AWS IoT Core client.
-//
-// Usage:
-//
-//	import "github.com/chris-alexander-pop/system-design-library/pkg/iot/adapters/awsiot"
-//
-//	client, err := awsiot.New(awsiot.Config{Region: "us-east-1", Endpoint: "xxx.iot.us-east-1.amazonaws.com"})
-//	err = client.Publish(ctx, "device/telemetry", payload)
 package awsiot
 
 import (

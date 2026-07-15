@@ -269,14 +269,16 @@
 
 ## 9. IoT (`pkg/iot`)
 
-> 🔄 Concrete SDKs present; 0 tests; missing interfaces/memory/instrumented layout. See [`MISSING_CAPABILITIES.md`](../MISSING_CAPABILITIES.md#pkgiot-28).
+> 🔄 Root interfaces + memory adapters + tests for MQTT/OTA; AWS adapters still SDK-coupled (not behind root Client). No CoAP/device registry. See [`MISSING_CAPABILITIES.md`](../MISSING_CAPABILITIES.md#pkgiot-28).
 
 | Package | Status | Enables Services | Description |
 |---------|--------|------------------|-------------|
-| `pkg/iot/protocols/mqtt` | 🔄 | vehicle-telemetry| MQTT Client |
-| `pkg/iot/device/ota` | 🔄 | device-manager | Over-the-Air Updates |
-| `pkg/iot/adapters/awsiot` | 🔄 | iot-cloud | AWS IoT Core |
-| `pkg/iot/adapters/greengrass` | 🔄 | edge-compute | AWS Greengrass |
+| `pkg/iot` | ✅ | — | Client/Updater interfaces, errors, instrumented, semver helpers |
+| `pkg/iot/adapters/memory` | ✅ | — | In-memory MQTT + OTA adapters |
+| `pkg/iot/protocols/mqtt` | 🔄 | vehicle-telemetry| Paho MQTT client (timeout handling fixed; not wrapped as root Client) |
+| `pkg/iot/device/ota` | 🔄 | device-manager | HTTP OTA (semver + resilience retry; ApplyUpdate stub) |
+| `pkg/iot/adapters/awsiot` | 🔄 | iot-cloud | AWS IoT Core SDK wrapper (not behind root Client) |
+| `pkg/iot/adapters/greengrass` | 🔄 | edge-compute | AWS Greengrass V2 management SDK wrapper |
 
 ---
 

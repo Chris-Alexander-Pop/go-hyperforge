@@ -278,11 +278,13 @@
 - [ ] ❌ Durable saga; real cron; cloud adapter completeness
 - [ ] ❌ Saga/scheduler instrumented + interfaces
 
-### `pkg/iot` (~28)
-- [ ] ❌ Interfaces + memory adapters + instrumented + tests (0% today)
-- [ ] 🔗 `pkg/resilience` for OTA; `pkg/storage/blob` for firmware; `pkg/concurrency` for MQTT
-- [ ] ❌ CoAP; device registry/certs; fix MQTT timeout + OTA semver
-- [ ] ❌ Demote TODO ✅
+### `pkg/iot` (~28 → improved)
+- [x] ✅ Root Client/Updater interfaces + memory adapters + instrumented + tests
+- [x] 🔗 `pkg/resilience` for OTA downloads; `pkg/concurrency` for MQTT/memory
+- [x] ✅ MQTT WaitTimeout bug fixed; OTA semver via `golang.org/x/mod/semver`
+- [ ] ❌ CoAP; device registry/certs; `pkg/storage/blob` firmware backing
+- [ ] ❌ AWS IoT / Greengrass behind root Client interface
+- [x] ✅ Demoted TODO overclaims
 
 ### `pkg/web3` (~22)
 - [ ] ❌ Interfaces + adapters/memory + instrumented + tests

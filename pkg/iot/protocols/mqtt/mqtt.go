@@ -1,13 +1,3 @@
-// Package mqtt provides an MQTT client for IoT messaging.
-//
-// Supports MQTT 3.1.1 and 5.0 protocols with TLS.
-//
-// Usage:
-//
-//	import "github.com/chris-alexander-pop/system-design-library/pkg/iot/protocols/mqtt"
-//
-//	client, err := mqtt.New(mqtt.Config{Broker: "tcp://localhost:1883"})
-//	err = client.Publish(ctx, "sensors/temp", []byte("25.5"))
 package mqtt
 
 import (
@@ -15,9 +5,9 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"os"
-	"sync"
 	"time"
 
+	"github.com/chris-alexander-pop/system-design-library/pkg/concurrency"
 	pkgerrors "github.com/chris-alexander-pop/system-design-library/pkg/errors"
 	paho "github.com/eclipse/paho.mqtt.golang"
 )
@@ -91,12 +81,13 @@ type Message struct {
 // MessageHandler is called when a message is received.
 type MessageHandler func(msg *Message)
 
-// Client provides MQTT operations.
+// Client provides MQTT operations via Eclipse Paho.
+// Prefer pkg/iot.Client for interface-based consumers; use adapters/memory in tests.
 type Client struct {
 	client   paho.Client
 	config   Config
 	handlers map[string]MessageHandler
-	mu       sync.RWMutex
+	mu       *concurrency.SmartRWMutex
 }
 
 // New creates a new MQTT client.
@@ -142,6 +133,7 @@ func New(cfg Config) (*Client, error) {
 	c := &Client{
 		config:   cfg,
 		handlers: make(map[string]MessageHandler),
+		mu:       concurrency.NewSmartRWMutex(concurrency.MutexConfig{Name: "mqtt-client"}),
 	}
 
 	opts.SetDefaultPublishHandler(c.defaultHandler)
@@ -206,11 +198,11 @@ func (c *Client) onConnect(client paho.Client) {
 
 // Connect establishes connection to the broker.
 func (c *Client) Connect(ctx context.Context) error {
-	token := c.client.Connect()
-	if token.WaitTimeout(c.config.ConnectTimeout) && token.Error() != nil {
-		return pkgerrors.Internal("failed to connect to MQTT broker", token.Error())
+	if err := ctx.Err(); err != nil {
+		return err
 	}
-	return nil
+	token := c.client.Connect()
+	return waitToken(token, c.config.ConnectTimeout, "connect to MQTT broker")
 }
 
 // Disconnect closes the connection.
@@ -230,11 +222,11 @@ func (c *Client) Publish(ctx context.Context, topic string, payload []byte) erro
 
 // PublishWithOptions sends a message with specific QoS and retain settings.
 func (c *Client) PublishWithOptions(ctx context.Context, topic string, payload []byte, qos QoS, retained bool) error {
-	token := c.client.Publish(topic, byte(qos), retained, payload)
-	if token.WaitTimeout(10*time.Second) && token.Error() != nil {
-		return pkgerrors.Internal("failed to publish message", token.Error())
+	if err := ctx.Err(); err != nil {
+		return err
 	}
-	return nil
+	token := c.client.Publish(topic, byte(qos), retained, payload)
+	return waitToken(token, 10*time.Second, "publish message")
 }
 
 // Subscribe registers a handler for a topic.
@@ -248,6 +240,10 @@ func (c *Client) SubscribeWithQoS(ctx context.Context, topic string, qos QoS, ha
 	c.handlers[topic] = handler
 	c.mu.Unlock()
 
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+
 	token := c.client.Subscribe(topic, byte(qos), func(client paho.Client, msg paho.Message) {
 		handler(&Message{
 			Topic:     msg.Topic(),
@@ -258,23 +254,20 @@ func (c *Client) SubscribeWithQoS(ctx context.Context, topic string, qos QoS, ha
 		})
 	})
 
-	if token.WaitTimeout(10*time.Second) && token.Error() != nil {
-		return pkgerrors.Internal("failed to subscribe", token.Error())
-	}
-	return nil
+	return waitToken(token, 10*time.Second, "subscribe")
 }
 
 // Unsubscribe removes a topic subscription.
 func (c *Client) Unsubscribe(ctx context.Context, topic string) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
 	c.mu.Lock()
 	delete(c.handlers, topic)
 	c.mu.Unlock()
 
 	token := c.client.Unsubscribe(topic)
-	if token.WaitTimeout(10*time.Second) && token.Error() != nil {
-		return pkgerrors.Internal("failed to unsubscribe", token.Error())
-	}
-	return nil
+	return waitToken(token, 10*time.Second, "unsubscribe")
 }
 
 // SubscribeMultiple subscribes to multiple topics.
@@ -290,9 +283,10 @@ func (c *Client) SubscribeMultiple(ctx context.Context, topics map[string]Messag
 		filters[topic] = byte(qos)
 	}
 
-	token := c.client.SubscribeMultiple(filters, nil)
-	if token.WaitTimeout(10*time.Second) && token.Error() != nil {
-		return pkgerrors.Internal("failed to subscribe to multiple topics", token.Error())
+	if err := ctx.Err(); err != nil {
+		return err
 	}
-	return nil
+
+	token := c.client.SubscribeMultiple(filters, nil)
+	return waitToken(token, 10*time.Second, "subscribe to multiple topics")
 }
