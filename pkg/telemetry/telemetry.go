@@ -9,8 +9,12 @@ import (
 	"github.com/chris-alexander-pop/system-design-library/pkg/telemetry/adapters/noop"
 	"github.com/chris-alexander-pop/system-design-library/pkg/telemetry/adapters/stdout"
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
+	"go.opentelemetry.io/otel/metric"
+	metricnoop "go.opentelemetry.io/otel/metric/noop"
 	"go.opentelemetry.io/otel/propagation"
+	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/resource"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.17.0"
@@ -24,9 +28,9 @@ const (
 	ProviderStdout = "stdout"
 )
 
-// Config holds configuration for OpenTelemetry.
+// Config holds configuration for OpenTelemetry traces and metrics.
 type Config struct {
-	// ServiceName identifies this service in traces.
+	// ServiceName identifies this service in traces/metrics.
 	ServiceName string `env:"OTEL_SERVICE_NAME" env-default:"unknown-service"`
 
 	// ServiceVersion is the version of this service.
@@ -35,7 +39,7 @@ type Config struct {
 	// Environment is the deployment environment (development, staging, production).
 	Environment string `env:"APP_ENV" env-default:"development"`
 
-	// Endpoint is the OTLP collector endpoint (host:port).
+	// Endpoint is the OTLP collector endpoint (host:port) for traces and metrics.
 	Endpoint string `env:"OTEL_EXPORTER_OTLP_ENDPOINT" env-default:"localhost:4317"`
 
 	// Provider selects the exporter backend: "otlp" (default), "noop", or "stdout".
@@ -45,15 +49,24 @@ type Config struct {
 	// SampleRate is the fraction of traces to sample (0.0–1.0). Default 1.0 samples all.
 	SampleRate float64 `env:"OTEL_SAMPLE_RATE" env-default:"1.0"`
 
-	// Insecure disables TLS for the OTLP gRPC exporter. Prefer false in production.
+	// Insecure disables TLS for the OTLP gRPC exporters. Prefer false in production.
 	Insecure bool `env:"OTEL_EXPORTER_OTLP_INSECURE" env-default:"false"`
+
+	// DisableMetrics skips MeterProvider initialization when true.
+	DisableMetrics bool `env:"OTEL_METRICS_DISABLED" env-default:"false"`
 
 	// StdoutWriter overrides stdout for the stdout provider (tests). Nil uses os.Stdout.
 	StdoutWriter io.Writer `json:"-"`
 }
 
-// Init initializes the OpenTelemetry tracer provider and returns a shutdown function.
+type meterHandle struct {
+	provider metric.MeterProvider
+	shutdown func(context.Context) error
+}
+
+// Init initializes OpenTelemetry tracer and meter providers and returns a shutdown function.
 // Prefer Provider "noop" or "stdout" in unit tests so Init never hangs on a collector.
+// MeterProvider is initialized alongside traces unless DisableMetrics is true.
 func Init(ctx context.Context, cfg Config) (func(context.Context) error, error) {
 	if ctx == nil {
 		ctx = context.Background()
@@ -82,7 +95,7 @@ func Init(ctx context.Context, cfg Config) (func(context.Context) error, error) 
 	case ProviderStdout:
 		tp, err2 = stdout.NewTracerProvider(res, samplerFor(cfg.SampleRate), cfg.StdoutWriter)
 	default: // ProviderOTLP
-		tp, err2 = newOTLPProvider(ctx, cfg, res)
+		tp, err2 = newOTLPTraceProvider(ctx, cfg, res)
 	}
 	if err2 != nil {
 		return nil, err2
@@ -94,12 +107,39 @@ func Init(ctx context.Context, cfg Config) (func(context.Context) error, error) 
 		propagation.Baggage{},
 	))
 
-	return tp.Shutdown, nil
+	var meterShutdown func(context.Context) error
+	if !cfg.DisableMetrics {
+		mh, err := initMeterProvider(ctx, cfg, res)
+		if err != nil {
+			_ = tp.Shutdown(ctx)
+			return nil, err
+		}
+		otel.SetMeterProvider(mh.provider)
+		meterShutdown = mh.shutdown
+	}
+
+	return func(shutdownCtx context.Context) error {
+		var first error
+		if meterShutdown != nil {
+			if err := meterShutdown(shutdownCtx); err != nil && first == nil {
+				first = err
+			}
+		}
+		if err := tp.Shutdown(shutdownCtx); err != nil && first == nil {
+			first = err
+		}
+		return first
+	}, nil
 }
 
 // Tracer returns a named tracer from the global provider.
 func Tracer(name string) trace.Tracer {
 	return otel.Tracer(name)
+}
+
+// Meter returns a named meter from the global MeterProvider.
+func Meter(name string) metric.Meter {
+	return otel.Meter(name)
 }
 
 func normalizeConfig(cfg Config) Config {
@@ -130,7 +170,7 @@ func samplerFor(rate float64) sdktrace.Sampler {
 	}
 }
 
-func newOTLPProvider(ctx context.Context, cfg Config, res *resource.Resource) (*sdktrace.TracerProvider, error) {
+func newOTLPTraceProvider(ctx context.Context, cfg Config, res *resource.Resource) (*sdktrace.TracerProvider, error) {
 	opts := []otlptracegrpc.Option{
 		otlptracegrpc.WithEndpoint(cfg.Endpoint),
 	}
@@ -148,4 +188,44 @@ func newOTLPProvider(ctx context.Context, cfg Config, res *resource.Resource) (*
 		sdktrace.WithResource(res),
 		sdktrace.WithSampler(samplerFor(cfg.SampleRate)),
 	), nil
+}
+
+func initMeterProvider(ctx context.Context, cfg Config, res *resource.Resource) (meterHandle, error) {
+	switch cfg.Provider {
+	case ProviderNoop:
+		return meterHandle{
+			provider: metricnoop.NewMeterProvider(),
+			shutdown: func(context.Context) error { return nil },
+		}, nil
+
+	case ProviderStdout:
+		mp, err := stdout.NewMeterProvider(res, cfg.StdoutWriter)
+		if err != nil {
+			return meterHandle{}, err
+		}
+		return meterHandle{
+			provider: mp,
+			shutdown: mp.Shutdown,
+		}, nil
+
+	default: // ProviderOTLP
+		opts := []otlpmetricgrpc.Option{
+			otlpmetricgrpc.WithEndpoint(cfg.Endpoint),
+		}
+		if cfg.Insecure {
+			opts = append(opts, otlpmetricgrpc.WithInsecure())
+		}
+		exporter, err := otlpmetricgrpc.New(ctx, opts...)
+		if err != nil {
+			return meterHandle{}, errors.Wrap(err, "failed to create metric exporter")
+		}
+		mp := sdkmetric.NewMeterProvider(
+			sdkmetric.WithResource(res),
+			sdkmetric.WithReader(sdkmetric.NewPeriodicReader(exporter)),
+		)
+		return meterHandle{
+			provider: mp,
+			shutdown: mp.Shutdown,
+		}, nil
+	}
 }

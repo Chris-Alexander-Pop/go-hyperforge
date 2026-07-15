@@ -58,6 +58,16 @@ func (a *Adapter) PutRecord(ctx context.Context, streamName string, partitionKey
 	return nil
 }
 
+// PutRecords writes records sequentially via PutRecord.
+func (a *Adapter) PutRecords(ctx context.Context, records []streaming.Record) error {
+	for _, r := range records {
+		if err := a.PutRecord(ctx, r.StreamName, r.PartitionKey, r.Data); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 // Close closes the Event Hubs producer client.
 func (a *Adapter) Close() error {
 	return a.client.Close(context.Background())

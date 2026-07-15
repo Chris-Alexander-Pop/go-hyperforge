@@ -34,9 +34,55 @@ func TestInitNoop(t *testing.T) {
 	_, span := tr.Start(ctx, "noop.span")
 	span.End()
 
+	m := telemetry.Meter("telemetry_test")
+	counter, err := m.Int64Counter("test.requests")
+	if err != nil {
+		t.Fatalf("Int64Counter: %v", err)
+	}
+	counter.Add(ctx, 1)
+
 	if err := shutdown(ctx); err != nil {
 		t.Fatalf("shutdown: %v", err)
 	}
+}
+
+func TestInitStdoutMetrics(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+
+	var buf bytes.Buffer
+	shutdown, err := telemetry.Init(ctx, telemetry.Config{
+		ServiceName:  "test-stdout-metrics",
+		Provider:     telemetry.ProviderStdout,
+		SampleRate:   1.0,
+		StdoutWriter: &buf,
+	})
+	if err != nil {
+		t.Fatalf("Init stdout: %v", err)
+	}
+
+	counter, err := telemetry.Meter("telemetry_test").Int64Counter("stdout.requests")
+	if err != nil {
+		t.Fatalf("counter: %v", err)
+	}
+	counter.Add(ctx, 3)
+
+	if err := shutdown(ctx); err != nil {
+		t.Fatalf("shutdown: %v", err)
+	}
+}
+
+func TestDisableMetrics(t *testing.T) {
+	ctx := context.Background()
+	shutdown, err := telemetry.Init(ctx, telemetry.Config{
+		ServiceName:    "test-no-metrics",
+		Provider:       telemetry.ProviderNoop,
+		DisableMetrics: true,
+	})
+	if err != nil {
+		t.Fatalf("Init: %v", err)
+	}
+	defer shutdown(ctx)
 }
 
 func TestInitStdout(t *testing.T) {

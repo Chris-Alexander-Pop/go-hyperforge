@@ -67,6 +67,12 @@ func (rc *ResilientClient) PutRecord(ctx context.Context, streamName string, par
 	})
 }
 
+func (rc *ResilientClient) PutRecords(ctx context.Context, records []Record) error {
+	return rc.execute(ctx, func(ctx context.Context) error {
+		return rc.client.PutRecords(ctx, records)
+	})
+}
+
 func (rc *ResilientClient) Close() error {
 	return rc.client.Close()
 }

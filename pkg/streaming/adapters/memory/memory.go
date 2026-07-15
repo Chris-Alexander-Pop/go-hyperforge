@@ -8,8 +8,11 @@ import (
 	"github.com/chris-alexander-pop/system-design-library/pkg/streaming"
 )
 
-// Ensure Client implements streaming.Client.
-var _ streaming.Client = (*Client)(nil)
+// Ensure Client implements streaming.Client and can produce a Consumer.
+var (
+	_ streaming.Client   = (*Client)(nil)
+	_ streaming.Consumer = (*Consumer)(nil)
+)
 
 // Record represents a stored streaming record.
 type Record struct {
@@ -58,7 +61,6 @@ func (c *Client) PutRecord(ctx context.Context, streamName string, partitionKey 
 		return streaming.ErrBufferFull
 	}
 
-	// Clone data to avoid race conditions if caller modifies it
 	dataCopy := make([]byte, len(data))
 	copy(dataCopy, data)
 
@@ -67,6 +69,36 @@ func (c *Client) PutRecord(ctx context.Context, streamName string, partitionKey 
 		PartitionKey: partitionKey,
 		Data:         dataCopy,
 	})
+	return nil
+}
+
+func (c *Client) PutRecords(ctx context.Context, records []streaming.Record) error {
+	if err := c.guard(); err != nil {
+		return err
+	}
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	if len(records) == 0 {
+		return nil
+	}
+
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	if c.bufferSize > 0 && len(c.records)+len(records) > c.bufferSize {
+		return streaming.ErrBufferFull
+	}
+
+	for _, r := range records {
+		dataCopy := make([]byte, len(r.Data))
+		copy(dataCopy, r.Data)
+		c.records = append(c.records, Record{
+			StreamName:   r.StreamName,
+			PartitionKey: r.PartitionKey,
+			Data:         dataCopy,
+		})
+	}
 	return nil
 }
 
@@ -91,4 +123,60 @@ func (c *Client) GetRecords() []Record {
 	out := make([]Record, len(c.records))
 	copy(out, c.records)
 	return out
+}
+
+// NewConsumer returns a Consumer that reads from this client's buffer.
+func (c *Client) NewConsumer() *Consumer {
+	return &Consumer{client: c}
+}
+
+// Consumer reads records from an in-memory Client.
+type Consumer struct {
+	client *Client
+	offset int
+	closed atomic.Bool
+}
+
+func (c *Consumer) Consume(ctx context.Context, streamName string, handler streaming.RecordHandler) error {
+	if c.closed.Load() {
+		return streaming.ErrClosed
+	}
+	if handler == nil {
+		return nil
+	}
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+
+	records := c.client.GetRecords()
+	for i := c.offset; i < len(records); i++ {
+		if err := ctx.Err(); err != nil {
+			c.offset = i
+			return err
+		}
+		if c.closed.Load() {
+			c.offset = i
+			return streaming.ErrClosed
+		}
+		r := records[i]
+		if streamName != "" && r.StreamName != streamName {
+			continue
+		}
+		rec := streaming.Record{
+			StreamName:   r.StreamName,
+			PartitionKey: r.PartitionKey,
+			Data:         append([]byte(nil), r.Data...),
+		}
+		if err := handler(ctx, rec); err != nil {
+			c.offset = i
+			return err
+		}
+	}
+	c.offset = len(records)
+	return nil
+}
+
+func (c *Consumer) Close() error {
+	c.closed.Store(true)
+	return nil
 }

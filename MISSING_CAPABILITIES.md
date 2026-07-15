@@ -28,7 +28,11 @@ Landed foundation/reuse/domain hardening (scores above are the *pre-fix* snapsho
 - ✅ `messaging`: NewFromConfig(memory), Publish/Consume options helpers, ErrQueueFull, ResilientConsumer, dedup TOCTOU, wrapper tests
 - ✅ `compute`: root compute.go, SmartRWMutex memory, package sentinels, k8s Create→Get ID fix, container resilient wrapper, honest EC2/Docker stubs docs
 - ✅ `cloud`: scheduler binpack/spread/random, controlplane/provisioning/scheduler memory tests, docs vs pkg/compute
-- ✅ `telemetry`: `Init(ctx,cfg)`, SampleRate/Insecure, noop/stdout providers, RecordError/SetStatus, deterministic tests
+- ✅ `telemetry`: `Init(ctx,cfg)`, SampleRate/Insecure, noop/stdout providers, MeterProvider (OTLP/noop/stdout), RecordError/SetStatus
+- ✅ `resilience`: Hedge/Fallback/ExecuteT + env-tagged Config; CB+retry+timeout+bulkhead
+- ✅ `cache`: Exists/MGet/MSet/Expire/GetTTL, NewFromConfig, miniredis conformance, InvalidatePrefix
+- ✅ `streaming`: PutRecords + optional Consume (memory consumer)
+- ✅ `analytics`: Event Sink + memory sink + WindowedUniqueness
 - ✅ `ai` (critical): LLM `StreamChat` + memory streaming, `errors.go`/instrumented, context-first conversation memory, embedding/image memory adapters; softened dual `ai/llm` vs `genai/llm` ledger; Chat (not Generate) docs
 - ✅ `test`: Suite self-tests + examples; StartPostgres/StartRedis Short-skip + t.Cleanup
 - ✅ `auth` SAML: SP client interface + memory ACS/AuthnRequest stub (XML crypto Unimplemented)
@@ -48,7 +52,7 @@ Landed foundation/reuse/domain hardening (scores above are the *pre-fix* snapsho
 | messaging | 71→82 | Factory/options/ErrQueueFull/ResilientConsumer/tests landed |
 | database | 62→improved | Neo4j+Weaviate adapters; vector filters; ClickHouse sql.SQL; sharding/Cassandra still open |
 | auth | 57→improved | Session/MFA/JWT; OAuth2 AS; SMS/email MFA; Apple social; SAML skeleton |
-| cache | 60 | Core OK; TTL=0 / miss→CB footguns |
+| cache | 60→improved | Exists/MGet/MSet/Expire/TTL; NewFromConfig; miniredis; prefix invalidate |
 | logger | 58 | Widely used; Init/Async/trace bugs |
 | errors | 58 | Foundation usable; codes/Is/Wrap incomplete |
 | datastructures | 58 | Broad catalog; many stubs / low reuse |
@@ -64,15 +68,15 @@ Landed foundation/reuse/domain hardening (scores above are the *pre-fix* snapsho
 | workflow | 38 | Scaffold; no events/messaging/distlock |
 | algorithms | 38 | Many educational stubs |
 | cloud | 38→improved | Memory + real scheduler strategies; no Libvirt/IPMI |
-| telemetry | 36 | OTLP + noop/stdout; SampleRate/Insecure; metrics still open |
+| telemetry | 36→improved | OTLP/noop/stdout traces+metrics MeterProvider |
 | ai | 36→improved | StreamChat/gateway/prompt; multimodal Parts; evals; RAG↔vector/rerank; Textract |
-| analytics | 32 | HLL uniqueness only |
+| analytics | 32→improved | HLL + event Sink + windowed uniqueness |
 | validator | 32 | Thin; config bypasses it |
 | audit | 34→improved | SQL/Postgres + messaging fanout; hash-chain; GDPR/retention |
 | security | 30* → improved | Vault KV v2, AWS KMS, Cloudflare WAF; scanners still open |
 | servicemesh | 25* | Discovery OK; CB/RL reinvent resilience/algorithms |
 | storage | 45* | Blob Store parity + resilience landed; file/block/archive still memory-only |
-| resilience | 75* | CB+retry+timeout+bulkhead; typed Execute / Hedge / Fallback still open |
+| resilience | 75→improved | Hedge/Fallback/ExecuteT + env Config; CB+retry+timeout+bulkhead |
 
 \*Approximate where review used checklist form without a single headline score.
 
@@ -128,21 +132,21 @@ Landed foundation/reuse/domain hardening (scores above are the *pre-fix* snapsho
 - [x] ✅ Adapter-isolated exporters; noop/stdout for tests (`Provider` + `adapters/noop`, `adapters/stdout`)
 - [x] ✅ Configurable sampler (`SampleRate`) + TLS (`Insecure` opt-in; not hard-coded AlwaysSample + Insecure)
 - [x] ✅ `Init(ctx, cfg)`; shared `RecordError` / `SetStatus` helpers
-- [ ] ❌ Metrics pipeline (traces-only for now)
+- [x] ✅ Metrics `MeterProvider` alongside traces (OTLP / noop / stdout); `Meter(name)`; `DisableMetrics`
 - [x] ✅ Deterministic tests (noop/stdout; no hang on collector)
 
 ### `pkg/test` (~45 → improved)
 - [x] ✅ Self-tests + `example_test.go`; StartPostgres/StartRedis skip on `-short` + `t.Cleanup` (idempotent terminate)
 - [ ] ❌ Drive adoption in cache/messaging/events/resilience/logger/api
 
-### `pkg/resilience` (~75)
+### `pkg/resilience` (~75 → improved)
 - [x] ✅ Breaker/Retrier interfaces + `instrumented.go` + `errors.go` (UNAVAILABLE/RESOURCE_EXHAUSTED)
 - [x] ✅ Real Timeout (`WithTimeout`) + semaphore Bulkhead via `pkg/concurrency`
-- [ ] ❌ Hedge / Fallback; typed `(T, error)` Execute; env `Config`
+- [x] ✅ Hedge / Fallback; typed `ExecuteT` / `RetryT` / `HedgeT` / `FallbackT`; env-tagged `Config`
 - [x] ✅ Half-open `MaxRequests` (`ErrTooManyRequests`)
 - [x] 🔗 Single CB source of truth vs `pkg/servicemesh/circuitbreaker` (thin facade)
 - [x] ✅ Map circuit-open → UNAVAILABLE/503; bulkhead/half-open cap → RESOURCE_EXHAUSTED/429
-- [x] ✅ Tests for WithTimeout, ExponentialBackoff, RetryWithCircuitBreaker, Bulkhead, MaxRequests
+- [x] ✅ Tests for WithTimeout, ExponentialBackoff, RetryWithCircuitBreaker, Bulkhead, MaxRequests, Hedge, Fallback, ExecuteT
 
 ### `pkg/concurrency` (~52)
 - [ ] 🔗 Wrap/re-export `x/sync/semaphore` + `errgroup` instead of competing copies
@@ -161,12 +165,13 @@ Landed foundation/reuse/domain hardening (scores above are the *pre-fix* snapsho
 
 ## 2. Data & storage
 
-### `pkg/cache` (~60)
-- [ ] ❌ Fix memory TTL=0 (“no expiration” currently expires immediately)
-- [ ] ❌ ResilientCache / Instrumented: do not treat NotFound as failure
-- [ ] ❌ `errors.go`, `manager.go`, Config parity (pool/TLS/timeouts)
-- [ ] ❌ Exists/MGet/MSet/Expire/invalidation/warming; Redis Cluster
-- [ ] ❌ Redis conformance tests (miniredis already in go.mod)
+### `pkg/cache` (~60 → improved)
+- [x] ✅ Fix memory TTL=0 (“no expiration” persists)
+- [x] ✅ ResilientCache / Instrumented: do not treat NotFound as failure
+- [x] ✅ `errors.go`, `manager.go` (`NewFromConfig` + RegisterDriver), Config pool/TLS/timeouts
+- [x] ✅ Exists/MGet/MSet/Expire/GetTTL; `InvalidatePrefix`; Bloom Warm remains
+- [ ] ❌ Redis Cluster
+- [x] ✅ Redis conformance tests (miniredis)
 
 ### `pkg/database` (~62 → improved)
 - [ ] ❌ Multi-shard manager wiring `pkg/algorithms/consistenthash` into `GetShard`
@@ -191,16 +196,17 @@ Landed foundation/reuse/domain hardening (scores above are the *pre-fix* snapsho
 - [x] ✅ Bigdata `errors.go` + instrumented logging; Spark docs honest (local spark-submit, not Connect)
 - [ ] ❌ Typesense/OpenSearch/Snowflake adapters (still future work)
 
-### `pkg/streaming` (~25)
+### `pkg/streaming` (~25 → improved)
 - [x] ✅ Remove Pub/Sub duplication with `pkg/messaging` (Kinesis/EventHubs + memory only)
 - [x] ✅ `errors.go`; `resilient.go` via `pkg/resilience`; root memory tests; BufferSize honored
 - [x] ✅ Fix README: Kafka and Pub/Sub live under `messaging`, not `streaming`
-- [ ] ❌ Consume/batch APIs (out of current PutRecord-only scope)
+- [x] ✅ `PutRecords` batch API; optional `Consumer` + memory consumer
 
-### `pkg/analytics` (~32)
-- [ ] ❌ Event ingest model + streaming/warehouse sinks (catalog analytics)
+### `pkg/analytics` (~32 → improved)
+- [x] ✅ Event ingest model (`Sink` / `Event`) + memory sink
 - [x] ✅ Redis HLL adapter (PFADD/PFCOUNT/PFMERGE); Merge on Tracker; precision 4–16
-- [ ] ❌ Windows / exact counters (out of uniqueness-only scope today)
+- [x] ✅ Windowed uniqueness helper (`WindowKey` / `WindowedUniqueness`)
+- [ ] ❌ Exact counters / warehouse adapters (still future work)
 - [x] ✅ Fix PACKAGE_STANDARDS §6.11 example (`memory.New` + Close/Merge)
 
 ### `pkg/metering` (~20)

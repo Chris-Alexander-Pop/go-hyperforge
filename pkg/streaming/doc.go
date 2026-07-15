@@ -9,6 +9,9 @@ Supported backends:
 GCP Pub/Sub and Apache Kafka are messaging brokers — use pkg/messaging
 (adapters/gcppubsub and adapters/kafka) instead of this package.
 
+Client supports PutRecord and batch PutRecords. An optional Consumer interface
+is implemented by the memory adapter for local drain/testing.
+
 Usage:
 
 	import "github.com/chris-alexander-pop/system-design-library/pkg/streaming"
@@ -18,5 +21,13 @@ Usage:
 	defer client.Close()
 
 	err := client.PutRecord(ctx, "orders", "user-123", []byte("data"))
+	err = client.PutRecords(ctx, []streaming.Record{{
+		StreamName: "orders", PartitionKey: "user-123", Data: []byte("data"),
+	}})
+
+	consumer := client.NewConsumer()
+	_ = consumer.Consume(ctx, "orders", func(ctx context.Context, r streaming.Record) error {
+		return nil
+	})
 */
 package streaming

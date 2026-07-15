@@ -80,6 +80,44 @@ func (rc *ResilientCache) Delete(ctx context.Context, key string) error {
 	})
 }
 
+func (rc *ResilientCache) Exists(ctx context.Context, key string) (bool, error) {
+	var ok bool
+	err := rc.execute(ctx, func(ctx context.Context) error {
+		var err error
+		ok, err = rc.cache.Exists(ctx, key)
+		return err
+	})
+	return ok, err
+}
+
+func (rc *ResilientCache) MGet(ctx context.Context, keys []string, dest interface{}) error {
+	return rc.execute(ctx, func(ctx context.Context) error {
+		return rc.cache.MGet(ctx, keys, dest)
+	})
+}
+
+func (rc *ResilientCache) MSet(ctx context.Context, items map[string]interface{}, ttl time.Duration) error {
+	return rc.execute(ctx, func(ctx context.Context) error {
+		return rc.cache.MSet(ctx, items, ttl)
+	})
+}
+
+func (rc *ResilientCache) Expire(ctx context.Context, key string, ttl time.Duration) error {
+	return rc.execute(ctx, func(ctx context.Context) error {
+		return rc.cache.Expire(ctx, key, ttl)
+	})
+}
+
+func (rc *ResilientCache) GetTTL(ctx context.Context, key string) (time.Duration, error) {
+	var d time.Duration
+	err := rc.execute(ctx, func(ctx context.Context) error {
+		var err error
+		d, err = rc.cache.GetTTL(ctx, key)
+		return err
+	})
+	return d, err
+}
+
 func (rc *ResilientCache) Incr(ctx context.Context, key string, delta int64) (int64, error) {
 	var result int64
 	err := rc.execute(ctx, func(ctx context.Context) error {

@@ -50,6 +50,23 @@ func (c *InstrumentedClient) PutRecord(ctx context.Context, streamName string, p
 	return nil
 }
 
+func (c *InstrumentedClient) PutRecords(ctx context.Context, records []Record) error {
+	ctx, span := c.tracer.Start(ctx, "streaming.PutRecords", trace.WithAttributes(
+		attribute.Int("record.count", len(records)),
+	))
+	defer span.End()
+
+	err := c.next.PutRecords(ctx, records)
+	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
+		logger.L().ErrorContext(ctx, "failed to put records", "count", len(records), "error", err)
+		return err
+	}
+	span.SetStatus(codes.Ok, "records put")
+	return nil
+}
+
 func (c *InstrumentedClient) Close() error {
 	logger.L().Info("closing streaming client")
 	return c.next.Close()

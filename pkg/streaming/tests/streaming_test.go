@@ -23,6 +23,52 @@ func (s *ClientSuite) SetupTest() {
 	s.Suite.SetupTest()
 }
 
+func (s *ClientSuite) TestPutRecordsAndConsume() {
+	client := memory.New(streaming.Config{BufferSize: 100})
+	defer client.Close()
+
+	recs := []streaming.Record{
+		{StreamName: "orders", PartitionKey: "u1", Data: []byte("a")},
+		{StreamName: "orders", PartitionKey: "u2", Data: []byte("b")},
+		{StreamName: "other", PartitionKey: "u3", Data: []byte("c")},
+	}
+	s.Require().NoError(client.PutRecords(s.Ctx, recs))
+	s.Len(client.GetRecords(), 3)
+
+	consumer := client.NewConsumer()
+	defer consumer.Close()
+
+	var got []streaming.Record
+	s.Require().NoError(consumer.Consume(s.Ctx, "orders", func(ctx context.Context, r streaming.Record) error {
+		got = append(got, r)
+		return nil
+	}))
+	s.Len(got, 2)
+	s.Equal("a", string(got[0].Data))
+	s.Equal("b", string(got[1].Data))
+
+	// Second consume should not redeliver already-consumed offset.
+	got = nil
+	s.Require().NoError(consumer.Consume(s.Ctx, "orders", func(ctx context.Context, r streaming.Record) error {
+		got = append(got, r)
+		return nil
+	}))
+	s.Empty(got)
+}
+
+func (s *ClientSuite) TestPutRecordsBufferFull() {
+	client := memory.New(streaming.Config{BufferSize: 2})
+	defer client.Close()
+
+	err := client.PutRecords(s.Ctx, []streaming.Record{
+		{StreamName: "s", PartitionKey: "k", Data: []byte("1")},
+		{StreamName: "s", PartitionKey: "k", Data: []byte("2")},
+		{StreamName: "s", PartitionKey: "k", Data: []byte("3")},
+	})
+	s.Require().Error(err)
+	s.True(streaming.IsBufferFull(err))
+}
+
 func (s *ClientSuite) TestPutRecord() {
 	client, mem, err := s.newClient()
 	s.Require().NoError(err)
@@ -139,6 +185,7 @@ func TestMemoryClientSuite(t *testing.T) {
 
 func TestCompileTimeAsserts(t *testing.T) {
 	var _ streaming.Client = (*memory.Client)(nil)
+	var _ streaming.Consumer = (*memory.Consumer)(nil)
 	var _ streaming.Client = (*streaming.InstrumentedClient)(nil)
 	var _ streaming.Client = (*streaming.ResilientClient)(nil)
 }

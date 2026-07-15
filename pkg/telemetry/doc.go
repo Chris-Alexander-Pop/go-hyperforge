@@ -1,8 +1,9 @@
 /*
-Package telemetry provides OpenTelemetry tracing initialization.
+Package telemetry provides OpenTelemetry tracing and metrics initialization.
 
 Supports OTLP export plus noop/stdout providers for deterministic tests.
-Traces are correlated with logs via pkg/logger.
+Traces are correlated with logs via pkg/logger. MeterProvider is initialized
+alongside the TracerProvider unless Config.DisableMetrics is set.
 
 Usage:
 
@@ -18,6 +19,9 @@ Usage:
 		log.Fatal(err)
 	}
 	defer shutdown(context.Background())
+
+	counter, _ := telemetry.Meter("my-service").Int64Counter("requests")
+	counter.Add(ctx, 1)
 
 	// Shared helpers for instrumented wrappers:
 	// telemetry.RecordError(span, err)

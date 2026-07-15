@@ -8,6 +8,11 @@ This package implements:
     (package-level Retry helper and Retrier interface via NewRetrier).
   - Timeout: Deadline enforcement via WithTimeout (returns CodeDeadlineExceeded).
   - Bulkhead: Semaphore-bounded concurrency isolation via pkg/concurrency.
+  - Hedge: Speculative retry after a delay (first success wins).
+  - Fallback: Primary-then-secondary execution helpers.
+  - Typed Execute: ExecuteT / RetryT / HedgeT / FallbackT returning (T, error).
+
+Env-tagged Config (RESILIENCE_*) derives CircuitBreaker / Retry / Bulkhead configs.
 
 Error mapping (pkg/errors):
   - ErrCircuitOpen → UNAVAILABLE (HTTP 503)
@@ -26,6 +31,19 @@ Usage:
 	err := cb.Execute(ctx, func(ctx context.Context) error {
 	    return upstream.Call(ctx)
 	})
+
+	// Typed execute
+	val, err := resilience.ExecuteT(ctx, cb, func(ctx context.Context) (string, error) {
+	    return upstream.Fetch(ctx)
+	})
+
+	// Hedge + Fallback
+	err = resilience.Hedge(ctx, 50*time.Millisecond, upstream.Call)
+	err = resilience.Fallback(ctx, primary.Call, secondary.Call)
+
+	// Env-tagged config
+	cfg := resilience.DefaultConfig()
+	cb = resilience.NewCircuitBreaker(cfg.CircuitBreaker())
 
 	// Instrumented (logging + tracing)
 	icb := resilience.NewInstrumentedBreakerFromConfig(resilience.DefaultCircuitBreakerConfig("my-service"))

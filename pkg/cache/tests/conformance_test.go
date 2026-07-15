@@ -80,6 +80,58 @@ func runCacheConformance(t *testing.T, c cache.Cache) {
 			t.Errorf("Expected forever, got %s", res)
 		}
 	})
+
+	t.Run("ExistsMGetMSetExpireTTL", func(t *testing.T) {
+		prefix := "ext-" + t.Name() + ":"
+		if err := c.MSet(ctx, map[string]interface{}{
+			prefix + "a": "1",
+			prefix + "b": "2",
+		}, time.Minute); err != nil {
+			t.Fatalf("MSet: %v", err)
+		}
+
+		ok, err := c.Exists(ctx, prefix+"a")
+		if err != nil || !ok {
+			t.Fatalf("Exists a: ok=%v err=%v", ok, err)
+		}
+		ok, err = c.Exists(ctx, prefix+"missing")
+		if err != nil || ok {
+			t.Fatalf("Exists missing: ok=%v err=%v", ok, err)
+		}
+
+		got := map[string]string{}
+		if err := c.MGet(ctx, []string{prefix + "a", prefix + "missing", prefix + "b"}, &got); err != nil {
+			t.Fatalf("MGet: %v", err)
+		}
+		if got[prefix+"a"] != "1" || got[prefix+"b"] != "2" {
+			t.Fatalf("MGet got %#v", got)
+		}
+		if _, exists := got[prefix+"missing"]; exists {
+			t.Fatal("missing key should be omitted from MGet")
+		}
+
+		if err := c.Expire(ctx, prefix+"a", 2*time.Second); err != nil {
+			t.Fatalf("Expire: %v", err)
+		}
+		ttl, err := c.GetTTL(ctx, prefix+"a")
+		if err != nil {
+			t.Fatalf("GetTTL: %v", err)
+		}
+		if ttl <= 0 || ttl > 2*time.Second {
+			t.Fatalf("unexpected ttl %v", ttl)
+		}
+
+		if err := c.Set(ctx, prefix+"persist", "x", 0); err != nil {
+			t.Fatal(err)
+		}
+		ttl, err = c.GetTTL(ctx, prefix+"persist")
+		if err != nil {
+			t.Fatalf("GetTTL persist: %v", err)
+		}
+		if ttl != -1 {
+			t.Fatalf("expected -1 for no expiry, got %v", ttl)
+		}
+	})
 }
 
 func assertNotFound(t *testing.T, err error) {
