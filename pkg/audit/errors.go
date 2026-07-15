@@ -1,6 +1,8 @@
 package audit
 
 import (
+	"fmt"
+
 	"github.com/chris-alexander-pop/system-design-library/pkg/errors"
 )
 
@@ -11,6 +13,9 @@ const (
 	CodeQueryFailed     = "AUDIT_QUERY_FAILED"
 	CodeNotSupported    = "AUDIT_NOT_SUPPORTED"
 	CodeMarshalFailed   = "AUDIT_MARSHAL_FAILED"
+	CodeChainBroken     = "AUDIT_CHAIN_BROKEN"
+	CodePurgeFailed     = "AUDIT_PURGE_FAILED"
+	CodeEraseFailed     = "AUDIT_ERASE_FAILED"
 )
 
 // ErrNotSupported is returned when an adapter does not support an operation
@@ -44,4 +49,31 @@ func ErrQueryFailed(msg string, err error) *errors.AppError {
 // ErrMarshalFailed wraps a failure encoding an audit event.
 func ErrMarshalFailed(err error) *errors.AppError {
 	return errors.New(CodeMarshalFailed, "failed to marshal audit event", err)
+}
+
+// ErrChainBroken is returned when a tamper-evident hash chain verification fails.
+func ErrChainBroken(index int, detail string) *errors.AppError {
+	msg := "audit hash chain broken"
+	if detail != "" {
+		msg = fmt.Sprintf("%s at index %d: %s", msg, index, detail)
+	} else {
+		msg = fmt.Sprintf("%s at index %d", msg, index)
+	}
+	return errors.New(CodeChainBroken, msg, nil)
+}
+
+// ErrPurgeFailed wraps a retention purge failure.
+func ErrPurgeFailed(msg string, err error) *errors.AppError {
+	if msg == "" {
+		msg = "failed to purge audit events"
+	}
+	return errors.New(CodePurgeFailed, msg, err)
+}
+
+// ErrEraseFailed wraps a GDPR erase failure.
+func ErrEraseFailed(msg string, err error) *errors.AppError {
+	if msg == "" {
+		msg = "failed to erase audit events"
+	}
+	return errors.New(CodeEraseFailed, msg, err)
 }

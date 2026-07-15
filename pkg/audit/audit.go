@@ -41,6 +41,33 @@ type Store interface {
 	Query(ctx context.Context, filter QueryFilter) ([]Event, error)
 }
 
+// RetentionStore extends Store with retention purge.
+type RetentionStore interface {
+	Store
+
+	// Purge deletes events with Timestamp strictly before olderThan.
+	// Returns the number of removed events.
+	Purge(ctx context.Context, olderThan time.Time) (int64, error)
+}
+
+// PrivacyStore extends Store with GDPR-oriented export and erase by actor.
+type PrivacyStore interface {
+	Store
+
+	// ExportByActor returns all events for the given actor ID (subject access).
+	ExportByActor(ctx context.Context, actorID string) ([]Event, error)
+
+	// EraseByActor permanently deletes events for the given actor ID (right to erasure).
+	// Returns the number of removed events.
+	EraseByActor(ctx context.Context, actorID string) (int64, error)
+}
+
+// LifecycleStore combines retention and privacy operations.
+type LifecycleStore interface {
+	RetentionStore
+	PrivacyStore
+}
+
 // Auditor defines the interface for audit logging.
 type Auditor interface {
 	// Log records an audit event after redaction.
@@ -155,6 +182,9 @@ const (
 
 // Event represents a structured audit event.
 type Event struct {
+	// ID uniquely identifies the event (set by hash-chain / durable adapters).
+	ID string `json:"id,omitempty"`
+
 	// Required fields
 	Timestamp time.Time `json:"timestamp"`
 	EventType EventType `json:"event_type"`
@@ -189,6 +219,11 @@ type Event struct {
 	// Error details (for failures)
 	ErrorCode    string `json:"error_code,omitempty"`
 	ErrorMessage string `json:"error_message,omitempty"`
+
+	// Tamper-evident hash chain (optional; populated by chain-enabled stores).
+	// Hash covers the event payload including PrevHash.
+	Hash     string `json:"hash,omitempty"`
+	PrevHash string `json:"prev_hash,omitempty"`
 }
 
 // EventBuilder provides a fluent interface for building audit events.

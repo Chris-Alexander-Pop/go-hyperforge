@@ -2,34 +2,34 @@ package security
 
 // Provider identifiers shared across security subpackages.
 // Concrete adapters live under each subpackage's adapters/ tree.
-// Today most backends are memory-only; cloud/Vault drivers are reserved names.
+// Implemented today: memory, vault (secrets), aws-kms, cloudflare (WAF), recaptcha.
+// Other cloud names remain reserved placeholders.
 const (
 	ProviderMemory = "memory"
 
 	// Captcha providers
-	ProviderRecaptcha = "recaptcha"
-	ProviderHCaptcha  = "hcaptcha"
-	ProviderTurnstile = "turnstile"
+	ProviderRecaptcha = "recaptcha" // adapters/recaptcha
+	ProviderHCaptcha  = "hcaptcha"  // reserved
+	ProviderTurnstile = "turnstile" // reserved
 
-	// Secrets providers (reserved unless an adapter exists)
-	ProviderVault             = "vault"
-	ProviderAWSSecretsManager = "aws-secrets-manager"
-	ProviderGCPSecretManager  = "gcp-secret-manager"
-	ProviderAzureKeyVault     = "azure-key-vault"
+	// Secrets providers
+	ProviderVault             = "vault"               // adapters/vault (KV v2)
+	ProviderAWSSecretsManager = "aws-secrets-manager" // reserved
+	ProviderGCPSecretManager  = "gcp-secret-manager"  // reserved
+	ProviderAzureKeyVault     = "azure-key-vault"     // reserved
 
-	// KMS providers (reserved unless an adapter exists)
-	ProviderAWSKMS   = "aws-kms"
-	ProviderGCPKMS   = "gcp-kms"
-	ProviderAzureKMS = "azure-kms"
+	// KMS providers
+	ProviderAWSKMS   = "aws-kms"   // adapters/awskms
+	ProviderGCPKMS   = "gcp-kms"   // reserved
+	ProviderAzureKMS = "azure-kms" // reserved
 
-	// Fraud / WAF / scanning (reserved)
-	ProviderMaxMind    = "maxmind"
-	ProviderAWSWAF     = "aws-waf"
-	ProviderCloudflare = "cloudflare"
-	ProviderClamAV     = "clamav"
-	ProviderGuardDuty  = "guardduty"
+	// Fraud / WAF / scanning
+	ProviderMaxMind    = "maxmind"    // reserved
+	ProviderAWSWAF     = "aws-waf"    // reserved
+	ProviderCloudflare = "cloudflare" // waf/adapters/cloudflare
+	ProviderClamAV     = "clamav"     // reserved
+	ProviderGuardDuty  = "guardduty"  // reserved
 )
-
 // Domain names for documentation and driver registries.
 const (
 	DomainCaptcha  = "captcha"

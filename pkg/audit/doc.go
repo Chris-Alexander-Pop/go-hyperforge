@@ -5,10 +5,9 @@ This package includes:
   - Structured audit events suitable for shipping to log aggregators or SIEM tools
   - Event types for common authentication, authorization, and data operations
   - PII redaction utilities (pattern-based and sensitive field-name matching)
-  - Store adapters (in-memory for tests; stdout logger sink for local development)
-
-Durable backends (Kafka, Postgres), retention/GDPR export, and tamper-evident
-storage are not provided here; compose a Store adapter for those needs.
+  - Store adapters: memory, stdout logger, durable SQL/Postgres, messaging fanout
+  - Optional tamper-evident hash chaining (Hash / PrevHash)
+  - Retention purge and GDPR Export/Erase-by-actor on LifecycleStore adapters
 
 Usage:
 
@@ -17,7 +16,7 @@ Usage:
 		"github.com/chris-alexander-pop/system-design-library/pkg/audit/adapters/memory"
 	)
 
-	store := memory.NewStore()
+	store := memory.NewChainedStore()
 	auditor := audit.NewInstrumentedAuditor(audit.New(audit.Config{Enabled: true}, store))
 
 	_ = auditor.LogWithBuilder(ctx, audit.EventTypeLogin).

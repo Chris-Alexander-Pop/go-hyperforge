@@ -11,8 +11,8 @@ import (
 // Config configures the Secret Manager.
 type Config struct {
 	// Provider selects the secrets backend.
-	// Implemented today: "memory".
-	// Reserved (no adapter yet): "vault", "aws-secrets-manager",
+	// Implemented: "memory", "vault" (KV v2 HTTP).
+	// Reserved (no adapter yet): "aws-secrets-manager",
 	// "gcp-secret-manager", "azure-key-vault".
 	Provider string `env:"SECURITY_SECRETS_PROVIDER" env-default:"memory" validate:"required"`
 }
