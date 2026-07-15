@@ -2,19 +2,28 @@
 Package audit provides structured audit logging for compliance and security.
 
 This package includes:
-  - Structured audit events (SIEM-ready)
-  - Event types for common operations
-  - PII redaction utilities
+  - Structured audit events suitable for shipping to log aggregators or SIEM tools
+  - Event types for common authentication, authorization, and data operations
+  - PII redaction utilities (pattern-based and sensitive field-name matching)
+  - Store adapters (in-memory for tests; stdout logger sink for local development)
+
+Durable backends (Kafka, Postgres), retention/GDPR export, and tamper-evident
+storage are not provided here; compose a Store adapter for those needs.
 
 Usage:
 
-	import "github.com/chris-alexander-pop/system-design-library/pkg/audit"
+	import (
+		"github.com/chris-alexander-pop/system-design-library/pkg/audit"
+		"github.com/chris-alexander-pop/system-design-library/pkg/audit/adapters/memory"
+	)
 
-	cfg := audit.Config{Enabled: true}
-	auditor := audit.New(cfg)
+	store := memory.NewStore()
+	auditor := audit.NewInstrumentedAuditor(audit.New(audit.Config{Enabled: true}, store))
 
-	auditor.LogWithBuilder(ctx, audit.EventTypeLogin).
+	_ = auditor.LogWithBuilder(ctx, audit.EventTypeLogin).
 		Actor("user-123", "user").
+		SessionID("sess-1").
+		CorrelationID("corr-1").
 		Outcome(audit.OutcomeSuccess).
 		Send()
 */

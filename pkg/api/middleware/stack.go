@@ -6,6 +6,7 @@ import (
 
 	"github.com/chris-alexander-pop/system-design-library/pkg/api/ratelimit"
 	"github.com/chris-alexander-pop/system-design-library/pkg/audit"
+	auditlogger "github.com/chris-alexander-pop/system-design-library/pkg/audit/adapters/logger"
 	"github.com/chris-alexander-pop/system-design-library/pkg/cache"
 	"github.com/chris-alexander-pop/system-design-library/pkg/resilience"
 )
@@ -61,7 +62,7 @@ func SecurityStack(cfg Config) func(http.Handler) http.Handler {
 
 		// Innermost: audit logging
 		if cfg.AuditConfig.Enabled {
-			h = AuditMiddleware(audit.New(cfg.AuditConfig))(h)
+			h = AuditMiddleware(audit.New(cfg.AuditConfig, auditlogger.NewSink()))(h)
 		}
 
 		// Circuit breaker
