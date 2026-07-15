@@ -1,48 +1,44 @@
-// Package config provides environment-based configuration loading and validation.
-//
-// This package reads configuration from environment variables (and .env files)
-// using struct tags, then validates the loaded configuration.
-//
-// Usage:
-//
-//	import "github.com/chris-alexander-pop/system-design-library/pkg/config"
-//
-//	type AppConfig struct {
-//		Port     int    `env:"PORT" env-default:"8080"`
-//		LogLevel string `env:"LOG_LEVEL" env-default:"INFO" validate:"required"`
-//	}
-//
-//	var cfg AppConfig
-//	if err := config.Load(&cfg); err != nil {
-//		log.Fatal(err)
-//	}
 package config
 
 import (
 	"github.com/chris-alexander-pop/system-design-library/pkg/errors"
-	"github.com/go-playground/validator/v10"
+	"github.com/chris-alexander-pop/system-design-library/pkg/validator"
 	"github.com/ilyakaznacheev/cleanenv"
 )
 
-// Load reads configuration from .env file or environment variables and validates it.
+// Load reads configuration from a local ".env" file when present, otherwise from
+// process environment variables, then validates the result with pkg/validator.
+//
+// Load failures are returned as errors.Internal. Validation failures are returned
+// as errors.InvalidArgument.
 func Load[T any](cfg *T) error {
-	// 1. Load from .env if it exists
 	if err := cleanenv.ReadConfig(".env", cfg); err != nil {
-		// If .env doesn't exist or we just want to rely on env vars,
-		// we fallback to ReadEnv to pick up environment variables processing.
-		// cleanenv.ReadConfig already does ReadEnv if file fails?
-		// Actually cleanenv.ReadConfig returns error if file not found.
-		// So we fallback to ReadEnv.
 		if err := cleanenv.ReadEnv(cfg); err != nil {
-			return errors.Wrap(err, "failed to read env config")
+			return errors.Internal("failed to read env config", err)
 		}
 	}
+	return validateConfig(cfg)
+}
 
-	// 2. Validate the struct
-	validate := validator.New()
-	if err := validate.Struct(cfg); err != nil {
-		return errors.Wrap(err, "config validation failed")
+// LoadFrom reads configuration from the file at path (and environment overrides
+// via cleanenv), then validates the result with pkg/validator.
+//
+// Unlike Load, a missing or unreadable file is an error (errors.Internal).
+// Validation failures are returned as errors.InvalidArgument.
+func LoadFrom[T any](path string, cfg *T) error {
+	if path == "" {
+		return errors.InvalidArgument("config path is required", nil)
 	}
+	if err := cleanenv.ReadConfig(path, cfg); err != nil {
+		return errors.Internal("failed to read config", err)
+	}
+	return validateConfig(cfg)
+}
 
+func validateConfig[T any](cfg *T) error {
+	v := validator.New()
+	if err := v.ValidateStruct(cfg); err != nil {
+		return errors.InvalidArgument("config validation failed", err)
+	}
 	return nil
 }
