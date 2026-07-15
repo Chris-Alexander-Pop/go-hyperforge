@@ -33,4 +33,10 @@ var (
 
 	// ErrTargetPoolInUse is returned when deleting a target pool with targets.
 	ErrTargetPoolInUse = errors.Conflict("target pool has registered targets", nil)
+
+	// ErrNoTargetsAvailable is returned when a pool has no targets to select.
+	ErrNoTargetsAvailable = errors.Unavailable("no targets available", nil)
+
+	// ErrUnsupportedAlgorithm is returned when an algorithm is not supported for in-process selection.
+	ErrUnsupportedAlgorithm = errors.InvalidArgument("unsupported load balancing algorithm", nil)
 )
