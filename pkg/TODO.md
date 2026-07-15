@@ -185,9 +185,9 @@
 | Package | Status | Enables Services | Description |
 |---------|--------|------------------|-------------|
 | `pkg/storage/blob` | ✅ | media-store | Object Storage (S3/GCS/Azure/local/memory) |
-| `pkg/storage/file` | 🔄 | shared-fs | Interface + memory only (EFS/NFS not implemented) |
-| `pkg/storage/block` | 🔄 | vm-disk | Interface + memory only (EBS not implemented) |
-| `pkg/storage/archive` | 🔄 | backup | Cold storage interface + memory only (Glacier not implemented) |
+| `pkg/storage/file` | 🔄 | shared-fs | Interface + memory + local FS (EFS/NFS cloud not wired) |
+| `pkg/storage/block` | 🔄 | vm-disk | Interface + memory + local + EBS (SDK waiters; not full EC2 surface) |
+| `pkg/storage/archive` | 🔄 | backup | Cold storage: memory + filesystem + Glacier + Azure/GCS archive |
 
 ### Search
 | Package | Status | Enables Services | Description |
@@ -229,7 +229,7 @@
 | `pkg/auth/webauthn` | ✅ | auth-service | Passkeys / Biometrics |
 
 ### Protection
-> 🔄 Vault KV v2, AWS/GCP/Azure KMS, Cloudflare+AWS WAF adapters landed; scanners/GuardDuty/cloud secret managers still open. See [`MISSING_CAPABILITIES.md`](../MISSING_CAPABILITIES.md#pkgsecurity-30--improved).
+> 🔄 Vault KV v2, AWS/GCP/Azure KMS + secret managers, Cloudflare+AWS WAF, GuardDuty + ClamAV landed; fraud/captcha remain memory-depth. See [`MISSING_CAPABILITIES.md`](../MISSING_CAPABILITIES.md#pkgsecurity-30--improved).
 
 | Package | Status | Enables Services | Description |
 |---------|--------|------------------|-------------|
@@ -237,8 +237,8 @@
 | `pkg/security/captcha` | 🔄 | registration | Bot Protection (memory + reCAPTCHA) |
 | `pkg/security/waf` | 🔄 | edge-security | WAF (memory + Cloudflare + AWS WAFv2 IPSet) |
 | `pkg/security/crypto/kms` | 🔄 | key-management | KMS (memory + AWS/GCP/Azure Encrypt/Decrypt) |
-| `pkg/security/secrets` | 🔄 | vault | Secrets (memory + Vault KV v2 HTTP; cloud SM open) |
-| `pkg/security/scanning` | 🔄 | compliance | Vulnerability Scanning (memory; GuardDuty not wired) |
+| `pkg/security/secrets` | 🔄 | vault | Secrets (memory + Vault KV v2 + AWS/GCP/Azure SM) |
+| `pkg/security/scanning` | 🔄 | compliance | Scanning (memory + GuardDuty findings + ClamAV INSTREAM) |
 
 ---
 
@@ -258,50 +258,53 @@
 | `pkg/network/ip` | 🔄 | geo-blocking | IP Intelligence + Memory (MaxMind/etc. reserved) |
 
 ### Compute
-> 🔄 VM has memory + EC2/GCE/Azure scaffolds; container/serverless have cloud adapters. See [`MISSING_CAPABILITIES.md`](../MISSING_CAPABILITIES.md#pkgcompute-52).
+> 🔄 VM: memory + EC2/GCE; Azure VM is Unimplemented scaffold. Serverless: memory + Lambda/GCF; Azure Functions HTTP Invoke + ARM CRUD Unimplemented. See [`MISSING_CAPABILITIES.md`](../MISSING_CAPABILITIES.md#pkgcompute-52).
 
 | Package | Status | Enables Services | Description |
 |---------|--------|------------------|-------------|
-| `pkg/compute/vm` | 🔄 | iaas | VM interface + memory + EC2/GCE/Azure adapters (depth varies) |
+| `pkg/compute/vm` | 🔄 | iaas | VM interface + memory + EC2/GCE; Azure VM Unimplemented scaffold |
 | `pkg/compute/container` | ✅ | paas | Container Runtime + memory + resilient wrapper |
 | `pkg/compute/serverless` | ✅ | faas | Serverless Runtime Interface + Memory Adapter |
 | `pkg/compute/serverless/adapters/lambda` | ✅ | faas | AWS Lambda Management |
 | `pkg/compute/serverless/adapters/gcf` | ✅ | faas | Google Cloud Functions |
-| `pkg/compute/container/adapters/k8s` | 🔄 | paas | Kubernetes (Create ID = pod name; Exec SPDY; Stats partial) |
+| `pkg/compute/serverless/adapters/azurefunctions` | 🔄 | faas | Azure Functions (HTTP Invoke; ARM CRUD Unimplemented) |
+| `pkg/compute/container/adapters/k8s` | 🔄 | paas | Kubernetes (Create ID = pod name; Exec SPDY; Stats Unimplemented without metrics-server) |
 | `pkg/compute/container/adapters/fargate` | ✅ | paas | AWS Fargate |
 
 ---
 
 ## 8. Web3 (`pkg/web3`)
 
-> ✅ Root Client/Store/Verifier + memory; geth/kubo adapters implement root interfaces; ethereum/ipfs are thin re-exports; solana remains scaffold. See [`MISSING_CAPABILITIES.md`](../MISSING_CAPABILITIES.md#pkgweb3-22).
+> ✅ Root Client/Store/Verifier/SolanaClient + memory; geth/kubo/solana adapters; ethereum/ipfs/solana thin re-exports; WalletConnect is session stub (no relay). See [`MISSING_CAPABILITIES.md`](../MISSING_CAPABILITIES.md#pkgweb3-22).
 
 | Package | Status | Enables Services | Description |
 |---------|--------|------------------|-------------|
-| `pkg/web3` | ✅ | — | Client/Store/Verifier interfaces, errors, instrumented wrappers |
-| `pkg/web3/adapters/memory` | ✅ | — | In-memory Ethereum, IPFS, SIWE adapters |
+| `pkg/web3` | ✅ | — | Client/Store/Verifier/SolanaClient interfaces, errors, instrumented wrappers |
+| `pkg/web3/adapters/memory` | ✅ | — | In-memory Ethereum, IPFS, SIWE, Solana, WalletConnect stubs |
 | `pkg/web3/adapters/geth` | ✅ | wallet | go-ethereum ethclient behind web3.Client |
 | `pkg/web3/adapters/kubo` | ✅ | nft-storage | Kubo HTTP API behind web3.Store |
-| `pkg/web3/identity` | ✅ | auth-dapp | SIWE crypto verify (race-safe nonces); DID parse/format only |
+| `pkg/web3/adapters/solana` | ✅ | wallet | Solana JSON-RPC behind web3.SolanaClient |
+| `pkg/web3/identity` | ✅ | auth-dapp | SIWE verify; DID parse/format + memory ethr/web resolvers |
 | `pkg/web3/blockchain/ethereum` | ✅ | wallet | Thin wrapper → adapters/geth |
-| `pkg/web3/blockchain/solana` | 🔄 | wallet | Solana JSON-RPC scaffold (no root interface yet) |
+| `pkg/web3/blockchain/solana` | ✅ | wallet | Thin wrapper → adapters/solana |
 | `pkg/web3/storage/ipfs` | ✅ | nft-storage | Thin wrapper → adapters/kubo |
 
 ---
 
 ## 9. IoT (`pkg/iot`)
 
-> 🔄 Root interfaces + memory; awsiot/greengrass behind root Client; CoAP + device registry + device cert helpers. MQTT Paho not wrapped as root Client. See [`MISSING_CAPABILITIES.md`](../MISSING_CAPABILITIES.md#pkgiot-28).
+> 🔄 Root interfaces + memory; awsiot/greengrass/mqtt behind root Client; CoAP UDP + device registry + cert helpers. See [`MISSING_CAPABILITIES.md`](../MISSING_CAPABILITIES.md#pkgiot-28).
 
 | Package | Status | Enables Services | Description |
 |---------|--------|------------------|-------------|
 | `pkg/iot` | ✅ | — | Client/Updater interfaces, errors, instrumented, semver helpers |
 | `pkg/iot/adapters/memory` | ✅ | — | In-memory MQTT + OTA adapters |
-| `pkg/iot/protocols/mqtt` | 🔄 | vehicle-telemetry| Paho MQTT client (not wrapped as root Client) |
-| `pkg/iot/protocols/coap` | 🔄 | edge | CoAP stub (in-process; no UDP/DTLS yet) |
-| `pkg/iot/device/ota` | 🔄 | device-manager | HTTP OTA + blob-backed updater (ApplyUpdate stub) |
+| `pkg/iot/adapters/mqtt` | ✅ | vehicle-telemetry| Paho MQTT behind root `iot.Client` |
+| `pkg/iot/protocols/mqtt` | 🔄 | vehicle-telemetry| Paho MQTT protocol client (prefer adapters/mqtt for root Client) |
+| `pkg/iot/protocols/coap` | 🔄 | edge | CoAP Memory stub + UDP datagram (Observe/DTLS still limited) |
+| `pkg/iot/device/ota` | 🔄 | device-manager | HTTP OTA + blob-backed updater (ApplyUpdate platform stub) |
 | `pkg/iot/device/registry` | ✅ | device-manager | DeviceRegistry interface + memory |
-| `pkg/iot/device/cert` | ✅ | device-manager | Device cert types + memory CertificateProvider |
+| `pkg/iot/device/cert` | ✅ | device-manager | Device cert types + memory + awsiot CertificateProvider |
 | `pkg/iot/adapters/awsiot` | ✅ | iot-cloud | AWS IoT + NewAdapter behind root Client |
 | `pkg/iot/adapters/greengrass` | ✅ | edge-compute | Greengrass V2 management + NewAdapter behind root Client |
 
@@ -330,11 +333,11 @@
 | **Compute** | `pkg/cloud/hypervisor` | 🔄 | VM Management + memory + remote libvirt / Firecracker |
 | **Compute** | `pkg/cloud/provisioning` | 🔄 | Bare Metal + memory + PXE HTTP / Redfish/IPMI |
 | **Compute** | `pkg/cloud/scheduler` | ✅ | Placement: binpack / spread / random (memory) |
-| **Network** | `pkg/network/sdn` | 🔄 | Software Defined Networking (VPC/Overlay) — scaffold |
-| **Network** | `pkg/network/dhcp` | 🔄 | IP Address Management System (IPAM) — scaffold |
-| **Network** | `pkg/network/firewall` | 🔄 | Distributed Firewall / Security Groups — scaffold |
+| **Network** | `pkg/network/sdn` | 🔄 | SDN (VPC/Overlay) — interface + memory only (vxlan/calico reserved) |
+| **Network** | `pkg/network/dhcp` | 🔄 | IPAM — interface + memory only (phpipam/netbox reserved) |
+| **Network** | `pkg/network/firewall` | 🔄 | Distributed firewall / SG — interface + memory only (iptables/nftables reserved) |
 | **Storage** | `pkg/storage/controller` | ✅ | Volume Controller (memory + LVM + Ceph RBD-shaped + CSI-shaped) |
-| **Identity** | `pkg/security/iam/provider` | 🔄 | Identity Provider Server (OIDC/SAML issuer) — scaffold |
+| **Identity** | `pkg/security/iam/provider` | 🔄 | IdP server scaffold (memory only; no Dex/Keycloak; prefer pkg/auth) |
 | **Billing** | `pkg/metering` | 🔄 | Usage Metering & Rating + Prometheus exporter |
 | **Control** | `pkg/cloud/controlplane` | 🔄 | API Server & State Manager (memory + etcd HTTP) |
 

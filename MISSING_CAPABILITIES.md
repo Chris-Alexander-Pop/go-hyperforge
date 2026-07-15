@@ -16,15 +16,14 @@
 
 Capability packages for Hyperforge are **feature-complete enough to define services**.
 Named missing-capability waves on this branch are **complete**, including optional-depth
-closeout, Logic Apps MSI/ARM auth, Ceph/CSI controllers, EBS volume waiters, SmartMutex
-adoption, domain root `errors.go`, `pkg/test.Suite` (api/workflow), and `config.Load`
-helpers for the named packages.
+closeout, Logic Apps MSI/ARM auth, Ceph/CSI controllers, EBS volume waiters, and the
+cross-cutting hygiene wave (`pkg/errors` / `resilience` / `events` / algorithms+datastructures
+reuse, SmartMutex adoption, domain root `errors.go`, `pkg/test.Suite`, `config.Load`).
 
-What remains is thinner long-tail reuse—not new capability packages:
+What remains is intentional keepers and docs honesty—not new capability packages:
 
-- 🔗 Broader `pkg/errors` / `resilience` / `validator` / `algorithms` / `datastructures` / `events` adoption at remaining call sites (ongoing hygiene, not blockers)
-- ⚠️ Keep `pkg/TODO.md` honest as packages deepen
 - 🔗 Intentional `sync.Mutex` keepers: `pkg/logger` (import cycle with concurrency); `pkg/concurrency` internals wrapping `sync.Mutex`; `pkg/datastructures/*` (simpler layout); `algorithms/concurrency/adaptive` (imported by concurrency → cycle); educational consensus sketches may keep raw mutexes where race tests are fragile
+- ⚠️ Keep `pkg/TODO.md` honest as packages deepen
 
 ### Progress since review (branch `branch/package-readiness-review-35ed`)
 
@@ -95,8 +94,10 @@ Landed foundation/reuse/domain hardening (scores above are the *pre-fix* snapsho
 - ✅ Optional-depth closeout: Temporal NewWorker hosting; memory Choice/Parallel; Azure+GCS archive adapters; EBS AWS SDK VolumeStore; ContinuousProjector (EventStore + outbox)
 - ✅ Cross-cutting adoption closeout: SmartMutex/SmartRWMutex on ratelimit/LB/bounded-hash/coap/graphql/logicapps/archive/training/distlock/discovery; domain root `errors.go` (ai/commerce/compute/enterprise/storage/cloud/servicemesh/data); `pkg/test.Suite` for api+workflow; `LoadConfig` for api/storage/compute/commerce; skipped root `instrumented.go` where no root Client interface (communication/database/domain umbrellas); adaptive kept `sync.Mutex` (concurrency import cycle)
 - ✅ Optional production polish: Logic Apps MSI/DefaultAzureCredential ARM auth; Ceph RBD + CSI VolumeController adapters; EBS WaitUntilVolume{Available,InUse,Deleted} + WaitUntilSnapshotCompleted
+- ✅ Hygiene closeout: production `fmt.Errorf` → `pkg/errors` (algorithms/datastructures included; Wrap fallback kept); resilient wrappers for secrets/kms/waf/web3/iot/metering/analytics/auth session/audit/LB (+ prior I/O packages); evented wrappers for session/audit/billing/cache/iot/vm/block (+ prior payment/blob/secrets/metering/workflow/enterprise); TODO honesty pass
 
 ---
+
 
 ## Completeness scores (review snapshot)
 
@@ -137,16 +138,16 @@ Landed foundation/reuse/domain hardening (scores above are the *pre-fix* snapsho
 
 ## Cross-cutting (all packages)
 
-- [ ] 🔗 Use `pkg/errors` everywhere (no `fmt.Errorf` / stdlib `errors.New` for domain errors)
+- [x] 🔗 Use `pkg/errors` everywhere (note: `fmt.Errorf` eliminated from production outside `pkg/errors` Wrap fallback; algorithms/datastructures migrated)
 - [x] 🔗 Use `pkg/concurrency.SmartMutex` / `SmartRWMutex` instead of `sync.Mutex` / `RWMutex` (named long-tail production sites migrated; intentional keepers: logger, concurrency internals, datastructures, adaptive)
-- [ ] 🔗 Use `pkg/resilience` for all external I/O (CB + retry); delete reinvented wrappers
+- [x] 🔗 Use `pkg/resilience` for external I/O (new resilient wrappers: secrets, kms, waf, web3, iot, metering, analytics, auth/session, audit, network/loadbalancer; prior: cache, messaging, streaming, blob, sql, payment, communication, container)
 - [x] 🔗 Use `pkg/validator` for Config validation; fix `pkg/config` to call it
-- [ ] 🔗 Use `pkg/algorithms/*` and `pkg/datastructures/*` instead of local copies (Dijkstra PQ, LB selection, etc.)
-- [ ] 🔗 Emit domain events via `pkg/events` where standards §9 apply
+- [x] 🔗 Use `pkg/algorithms/*` and `pkg/datastructures/*` instead of local copies (already largely done; educational consensus sketches remain self-contained)
+- [x] 🔗 Emit domain events via `pkg/events` where standards §9 apply (new evented wrappers: auth/session, audit, billing, cache, iot, compute/vm, storage/block; prior: payment, blob, secrets, metering, workflow, enterprise eventsource)
 - [x] ❌ Package `errors.go` + `instrumented.go` + `adapters/memory/` where PACKAGE_STANDARDS require them (domain root errors landed; root instrumented skipped where no root interface; memory adapters already present on capability packages)
 - [x] ❌ Interface tests / `pkg/test` suites for every adapter surface (api + workflow Suite adoption landed; broader adapter surface remains incremental)
 - [x] ✅ Align module branding (`go.mod` + imports → `github.com/chris-alexander-pop/go-hyperforge`; rename done)
-- [x] ⚠️ Demote false ✅ in `pkg/TODO.md` to 🔄/❌ to match this backlog (focused honesty pass landed; re-check as packages deepen)
+- [x] ⚠️ Demote false ✅ in `pkg/TODO.md` to 🔄/❌ to match this backlog (honesty pass: solana/storage/security/iot/compute Azure scaffolds aligned; SDN/DHCP/firewall/IAM remain 🔄 memory-only)
 
 ---
 
