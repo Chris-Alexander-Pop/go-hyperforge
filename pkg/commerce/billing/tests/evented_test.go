@@ -58,8 +58,8 @@ func TestEventedService_SubscriptionAndInvoice(t *testing.T) {
 	}
 
 	want := map[string]bool{
-		billing.EventTypeSubscriptionCreated: true,
-		billing.EventTypeInvoiceCreated:      true,
+		billing.EventTypeSubscriptionCreated:  true,
+		billing.EventTypeInvoiceCreated:       true,
 		billing.EventTypeSubscriptionCanceled: true,
 	}
 	for _, typ := range types {
