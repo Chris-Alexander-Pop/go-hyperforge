@@ -30,7 +30,10 @@ Landed foundation/reuse/domain hardening (scores above are the *pre-fix* snapsho
 - ✅ `cloud`: scheduler binpack/spread/random, controlplane/provisioning/scheduler memory tests, docs vs pkg/compute
 - ✅ `telemetry`: `Init(ctx,cfg)`, SampleRate/Insecure, noop/stdout providers, RecordError/SetStatus, deterministic tests
 - ✅ `ai` (critical): LLM `StreamChat` + memory streaming, `errors.go`/instrumented, context-first conversation memory, embedding/image memory adapters; softened dual `ai/llm` vs `genai/llm` ledger; Chat (not Generate) docs
-- 🔄 Remaining large gaps still listed below (TaxJar/Avalara/live FX, AI gateway/multimodal/evals, cloud IaaS adapters, security Vault/cloud KMS/WAF, etc.)
+- ✅ `test`: Suite self-tests + examples; StartPostgres/StartRedis Short-skip + t.Cleanup
+- ✅ `auth` SAML: SP client interface + memory ACS/AuthnRequest stub (XML crypto Unimplemented)
+- ✅ `ai` gateway + prompt: multi-provider `genai/gateway` fallback router; versioned `genai/prompt` template stub
+- 🔄 Remaining large gaps still listed below (TaxJar/Avalara/live FX, AI multimodal/evals, cloud IaaS adapters, security Vault/cloud KMS/WAF, etc.)
 
 ---
 
@@ -40,7 +43,7 @@ Landed foundation/reuse/domain hardening (scores above are the *pre-fix* snapsho
 |---------|------:|-------|
 | messaging | 71→82 | Factory/options/ErrQueueFull/ResilientConsumer/tests landed |
 | database | 62 | Broad skeleton; sharding/resilience/tests thin |
-| auth | 57→improved | Session/MFA/JWT; OAuth2 AS; SMS/email MFA; Apple social |
+| auth | 57→improved | Session/MFA/JWT; OAuth2 AS; SMS/email MFA; Apple social; SAML skeleton |
 | cache | 60 | Core OK; TTL=0 / miss→CB footguns |
 | logger | 58 | Widely used; Init/Async/trace bugs |
 | errors | 58 | Foundation usable; codes/Is/Wrap incomplete |
@@ -51,14 +54,14 @@ Landed foundation/reuse/domain hardening (scores above are the *pre-fix* snapsho
 | concurrency | 58 | SmartMutex strong; distlock retry + honest Redis docs |
 | network | 50* | LB/DNS/CDN/APIGW/IP instrumented; cloud adapters reserved |
 | api | 48 | Broad surface; GraphQL stub; standards weak |
-| test | 45 | Thin Suite; low adoption; dead containers |
+| test | 45→improved | Suite self-tests/examples; containers Short-skip + Cleanup |
 | commerce | 42→68 | Money + payment depth; billing plans; tax multi-jurisdiction; FX still memory |
 | events | 42 | Skeleton bus; unsafe async |
 | workflow | 38 | Scaffold; no events/messaging/distlock |
 | algorithms | 38 | Many educational stubs |
 | cloud | 38→improved | Memory + real scheduler strategies; no Libvirt/IPMI |
 | telemetry | 36 | OTLP + noop/stdout; SampleRate/Insecure; metrics still open |
-| ai | 36 | StreamChat + memory adapters landed; gateway/multimodal/evals open |
+| ai | 36→improved | StreamChat + memory; gateway fallback + prompt versioning; multimodal/evals open |
 | analytics | 32 | HLL uniqueness only |
 | validator | 32 | Thin; config bypasses it |
 | audit | 34 | Stdout + redact; no store/query |
@@ -130,8 +133,8 @@ Landed foundation/reuse/domain hardening (scores above are the *pre-fix* snapsho
 - [ ] ❌ Metrics pipeline (traces-only for now)
 - [x] ✅ Deterministic tests (noop/stdout; no hang on collector)
 
-### `pkg/test` (~45)
-- [ ] ❌ Self-tests + examples; split/remove unused testcontainers helpers
+### `pkg/test` (~45 → improved)
+- [x] ✅ Self-tests + `example_test.go`; StartPostgres/StartRedis skip on `-short` + `t.Cleanup` (idempotent terminate)
 - [ ] ❌ Drive adoption in cache/messaging/events/resilience/logger/api
 
 ### `pkg/resilience` (~75)
@@ -244,7 +247,7 @@ Landed foundation/reuse/domain hardening (scores above are the *pre-fix* snapsho
 - [x] ✅ Cognito/Entra Verify via OIDC JWKS; GCP Login via Identity Toolkit REST; OIDC code exchange + memory exchanger
 - [x] ✅ SMS/email MFA ChannelProvider (`mfa/adapters/sms|email|channel`) via `pkg/communication` Sender; Twilio/SendGrid path documented
 - [x] ✅ Apple social provider (`endpoints.Apple` + id_token claims); client-secret JWT minting remains caller-owned
-- [ ] ❌ SAML client
+- [x] ✅ SAML SP client skeleton (`pkg/auth/saml`) + memory ACS/AuthnRequest adapter; `ValidateXMLSignature` → Unimplemented (full SSO crypto reserved)
 - [x] ✅ Root `errors.go` sentinels; cloud vs root IdP adapters remain dual surfaces (documented)
 - [x] ✅ EncryptionKey wired for session/MFA memory+redis; WebAuthn memory is a usable challenge-tracking test double (library adapter remains production path)
 
@@ -343,7 +346,9 @@ Landed foundation/reuse/domain hardening (scores above are the *pre-fix* snapsho
 - [x] ✅ `instrumented.go` + `errors.go` for genai/llm; context-first conversation `memory` APIs
 - [x] ✅ Memory adapters for embedding + image generation
 - [x] ✅ Softened dual `ai/llm` vs `genai/llm` ledger in `pkg/TODO.md`; fixed Generate vs Chat docs
-- [ ] ❌ Multimodal, gateway, prompt engine, evals
+- [x] ✅ `genai/gateway` multi-provider `llm.Client` router with ordered fallback + memory tests
+- [x] ✅ `genai/prompt` versioned template store stub (`{{key}}` render) + memory adapter
+- [ ] ❌ Multimodal, fuller prompt engine, evals
 - [ ] 🔗 RAG ↔ `pkg/database/vector` + `pkg/database/rerank`
 - [ ] ❌ OCR/vision/speech cloud adapters beyond stubs
 - [ ] ❌ instrumented/errors/memory for *all* remaining AI capabilities (ml/perception depth)

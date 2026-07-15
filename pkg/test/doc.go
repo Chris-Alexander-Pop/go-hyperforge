@@ -1,9 +1,10 @@
 /*
-Package test provides testing utilities for the system-design-library.
+Package test provides testing utilities for Hyperforge packages.
 
 This package includes:
   - Suite: Base test suite with context and testify integration
-  - Postgres/Redis helpers for integration testing
+  - StartPostgres / StartRedis: optional testcontainers helpers (skipped in -short;
+    terminate via t.Cleanup). Prefer memory adapters for unit tests.
 
 Usage:
 
