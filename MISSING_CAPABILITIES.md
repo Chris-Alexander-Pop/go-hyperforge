@@ -26,8 +26,8 @@ Landed foundation/reuse/domain hardening (scores above are the *pre-fix* snapsho
 - ✅ `auth`: OAuth2 AS + IdP verify/login; SMS/email MFA via communication; Apple social; WebAuthn memory test path; EncryptionKey; root errors
 - ✅ `commerce`: root Money, payment webhooks/auth-capture/idempotency/events/resilience, billing plans+proration+dunning, TaxJar/Avalara, live FX
 - ✅ `messaging`: NewFromConfig(memory), Publish/Consume options helpers, ErrQueueFull, ResilientConsumer, dedup TOCTOU, wrapper tests
-- ✅ `compute`: root compute.go, SmartRWMutex memory, package sentinels, k8s Create→Get ID fix, container resilient wrapper, honest EC2/Docker stubs docs
-- ✅ `cloud`: scheduler binpack/spread/random, controlplane/provisioning/scheduler memory tests, docs vs pkg/compute
+- ✅ `compute`: EC2/GCE/Docker adapters, k8s SPDY Exec + Stats Unimplemented, Azure Functions/VM scaffolds
+- ✅ `cloud`: remote libvirt, Firecracker, Redfish/IPMI, controlplane instance create/bind APIs
 - ✅ `telemetry`: `Init(ctx,cfg)`, SampleRate/Insecure, noop/stdout providers, MeterProvider (OTLP/noop/stdout), RecordError/SetStatus
 - ✅ `resilience`: Hedge/Fallback/ExecuteT + env-tagged Config; CB+retry+timeout+bulkhead
 - ✅ `cache`: Exists/MGet/MSet/Expire/GetTTL, NewFromConfig, miniredis conformance, InvalidatePrefix
@@ -58,7 +58,7 @@ Landed foundation/reuse/domain hardening (scores above are the *pre-fix* snapsho
 | datastructures | 58 | Broad catalog; many stubs / low reuse |
 | communication | 58 | Ready: root drivers/errors/resilience, html/text templates, adapter tests |
 | data | 62 | Search+Suggest; bigdata errors/instrumented; etl/processing planned |
-| compute | 52→improved | Root + sentinels + k8s ID fix; EC2/Docker still reserved |
+| compute | 52→78 | EC2/GCE/Docker + k8s Exec; Azure VM/Functions scaffolds |
 | concurrency | 58 | SmartMutex strong; distlock retry + honest Redis docs |
 | network | 50* | LB/DNS/CDN/APIGW/IP instrumented; cloud adapters reserved |
 | api | 48 | Broad surface; GraphQL stub; standards weak |
@@ -67,7 +67,7 @@ Landed foundation/reuse/domain hardening (scores above are the *pre-fix* snapsho
 | events | 42 | Skeleton bus; unsafe async |
 | workflow | 38 | Scaffold; no events/messaging/distlock |
 | algorithms | 38 | Many educational stubs |
-| cloud | 38→improved | Memory + real scheduler strategies; no Libvirt/IPMI |
+| cloud | 38→72 | Libvirt/Firecracker/Redfish/IPMI + instance bind APIs |
 | telemetry | 36→improved | OTLP/noop/stdout traces+metrics MeterProvider |
 | ai | 36→improved | StreamChat/gateway/prompt; multimodal Parts; evals; RAG↔vector/rerank; Textract |
 | analytics | 32→improved | HLL + event Sink + windowed uniqueness |
@@ -288,20 +288,22 @@ Landed foundation/reuse/domain hardening (scores above are the *pre-fix* snapsho
 - [x] 🔗 `pkg/concurrency.SmartRWMutex` in all memory adapters (cdn/apigateway/ip)
 - [x] ✅ Memory adapter tests for cdn/apigateway/ip
 
-### `pkg/compute` (~52 → improved)
-- [ ] ❌ VM adapters EC2/GCE/Azure; Docker; Azure Functions (docs demoted to reserved)
+### `pkg/compute` (~52 → 78)
+- [x] ✅ VM adapters EC2 + GCE; Azure VM scaffold (Unimplemented); Docker Engine adapter
 - [x] ✅ Fix k8s ID/name bug (Create returns pod name usable with Get); UID legacy fallback
-- [ ] ❌ Real Exec/Stats on k8s (still stubs)
+- [x] ✅ k8s Exec via SPDY remotecommand; Stats returns clear Unimplemented (needs metrics-server)
+- [x] ✅ Azure Functions scaffold (HTTP Invoke + ARM CRUD Unimplemented)
 - [x] ✅ Optional `container.ResilientRuntime` via `pkg/resilience`
 - [x] 🔗 `pkg/concurrency.SmartRWMutex` in memory adapters; package sentinels
 - [x] ✅ Root `compute.go`; docs clarify vs `pkg/cloud`
 
-### `pkg/cloud` (~38 → improved)
-- [ ] ❌ Libvirt/Firecracker/IPMI/PXE/etcd adapters (docs demoted; memory-only)
-- [ ] ❌ Control-plane instance APIs (host inventory only today)
+### `pkg/cloud` (~38 → 72)
+- [x] ✅ Remote libvirt JSON/HTTP (pure Go, no CGO); Firecracker unix/HTTP API; Redfish + IPMI BMC power
+- [x] ✅ Control-plane instance APIs (create/bind/unbind/list + capacity reservation)
+- [ ] ❌ PXE imaging + etcd/postgres controlplane drivers still open
 - [x] ✅ Real scheduler strategies: binpack / spread / random (memory adapter)
 - [x] ✅ Shared vocabulary note vs `pkg/compute` in docs
-- [x] ✅ Tests for controlplane / provisioning / scheduler memory adapters
+- [x] ✅ Tests for controlplane / provisioning / scheduler memory adapters + new adapters
 
 ### `pkg/servicemesh` (~25)
 - [ ] 🔗 **Delete or thin-wrap** circuitbreaker → `pkg/resilience`

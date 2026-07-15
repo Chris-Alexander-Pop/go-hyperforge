@@ -1,13 +1,10 @@
-// Package cloud provides interfaces and memory adapters for a private-cloud (IaaS) control plane.
+// Package cloud provides interfaces and adapters for a private-cloud (IaaS) control plane.
 //
-// Domains covered (scaffold / memory-only today — production hypervisors and bare-metal
-// backends are not wired; see root MISSING_CAPABILITIES.md):
-//   - Hypervisor: VM lifecycle interface (+ memory adapter)
-//   - Provisioning: bare-metal lifecycle interface (+ memory adapter)
+// Domains:
+//   - Hypervisor: memory, remote libvirt (JSON/HTTP), Firecracker (unix/HTTP API)
+//   - Provisioning: memory, Redfish BMC, IPMI HTTP gateway
 //   - Scheduler: placement with binpack / spread / random strategies (+ memory adapter)
-//   - Control Plane: host inventory interface (+ memory adapter)
-//
-// Treat this package as a design surface for IaaS, not a ready Libvirt/QEMU/Firecracker stack.
+//   - Control Plane: host inventory + instance create/bind APIs (+ memory adapter)
 //
 // Relation to pkg/compute:
 //

@@ -14,26 +14,26 @@ const (
 	DriverMemory = "memory"
 )
 
-// VM drivers. Only memory ships today; cloud names are reserved placeholders.
+// VM drivers.
 const (
-	DriverEC2     = "ec2"      // reserved — not implemented
-	DriverGCE     = "gce"      // reserved — not implemented
-	DriverAzureVM = "azure-vm" // reserved — not implemented
+	DriverEC2     = "ec2"
+	DriverGCE     = "gce"
+	DriverAzureVM = "azure-vm" // scaffold — Unimplemented until ARM Compute is wired
 )
 
-// Container drivers. Memory, k8s, and fargate ship; Docker/ECS/GKE/AKS names are reserved.
+// Container drivers.
 const (
-	DriverDocker  = "docker" // reserved — not implemented
-	DriverECS     = "ecs"    // reserved — use fargate adapter for AWS ECS/Fargate
-	DriverGKE     = "gke"    // reserved — use k8s adapter with a GKE kubeconfig
-	DriverAKS     = "aks"    // reserved — use k8s adapter with an AKS kubeconfig
+	DriverDocker  = "docker"
+	DriverECS     = "ecs" // reserved — use fargate adapter for AWS ECS/Fargate
+	DriverGKE     = "gke" // reserved — use k8s adapter with a GKE kubeconfig
+	DriverAKS     = "aks" // reserved — use k8s adapter with an AKS kubeconfig
 	DriverK8s     = "k8s"
 	DriverFargate = "fargate"
 )
 
-// Serverless drivers. Memory, lambda, and gcf ship; Azure Functions is reserved.
+// Serverless drivers.
 const (
 	DriverLambda         = "lambda"
 	DriverGCF            = "gcf"
-	DriverAzureFunctions = "azure-functions" // reserved — not implemented
+	DriverAzureFunctions = "azure-functions" // Invoke via HTTP trigger URL; ARM CRUD scaffold
 )

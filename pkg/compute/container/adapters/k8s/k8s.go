@@ -19,8 +19,10 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/client-go/tools/remotecommand"
 )
 
 const uidLabel = "hyperforge.io/uid"
@@ -39,9 +41,10 @@ type Config struct {
 
 // Runtime implements container.ContainerRuntime for Kubernetes.
 type Runtime struct {
-	client    *kubernetes.Clientset
-	config    Config
-	namespace string
+	client     *kubernetes.Clientset
+	restConfig *rest.Config
+	config     Config
+	namespace  string
 }
 
 // New creates a new K8s container runtime.
@@ -69,9 +72,10 @@ func New(cfg Config) (*Runtime, error) {
 	}
 
 	return &Runtime{
-		client:    clientset,
-		config:    cfg,
-		namespace: namespace,
+		client:     clientset,
+		restConfig: k8sConfig,
+		config:     cfg,
+		namespace:  namespace,
 	}, nil
 }
 
@@ -308,14 +312,70 @@ func (r *Runtime) Logs(ctx context.Context, containerID string, follow bool) (io
 }
 
 func (r *Runtime) Exec(ctx context.Context, containerID string, opts container.ExecOptions) (*container.ExecResult, error) {
-	if _, err := r.resolvePodName(ctx, containerID); err != nil {
+	name, err := r.resolvePodName(ctx, containerID)
+	if err != nil {
 		return nil, err
 	}
-	// Full SPDY exec is not wired; return a stub success for interface conformance.
+	if len(opts.Command) == 0 {
+		return nil, pkgerrors.InvalidArgument("command is required", nil)
+	}
+	if r.restConfig == nil {
+		return nil, pkgerrors.Unimplemented("k8s exec requires a REST config (use New)", nil)
+	}
+
+	pod, err := r.client.CoreV1().Pods(r.namespace).Get(ctx, name, metav1.GetOptions{})
+	if err != nil {
+		if apierrors.IsNotFound(err) {
+			return nil, container.ErrContainerNotFound
+		}
+		return nil, pkgerrors.Internal("failed to get pod for exec", err)
+	}
+	containerName := name
+	if len(pod.Spec.Containers) > 0 {
+		containerName = pod.Spec.Containers[0].Name
+	}
+
+	req := r.client.CoreV1().RESTClient().Post().
+		Resource("pods").
+		Name(name).
+		Namespace(r.namespace).
+		SubResource("exec")
+	req.VersionedParams(&corev1.PodExecOptions{
+		Container: containerName,
+		Command:   opts.Command,
+		Stdout:    true,
+		Stderr:    true,
+		TTY:       opts.Tty,
+	}, scheme.ParameterCodec)
+
+	executor, err := remotecommand.NewSPDYExecutor(r.restConfig, "POST", req.URL())
+	if err != nil {
+		return nil, pkgerrors.Internal("failed to create SPDY executor", err)
+	}
+
+	var stdout, stderr strings.Builder
+	err = executor.StreamWithContext(ctx, remotecommand.StreamOptions{
+		Stdout: &stdout,
+		Stderr: &stderr,
+		Tty:    opts.Tty,
+	})
+	exitCode := 0
+	if err != nil {
+		exitCode = 1
+		if ee, ok := err.(interface{ ExitStatus() int }); ok {
+			exitCode = ee.ExitStatus()
+		} else if !strings.Contains(err.Error(), "command terminated with exit code") {
+			return &container.ExecResult{
+				ExitCode: exitCode,
+				Stdout:   stdout.String(),
+				Stderr:   stderr.String(),
+			}, pkgerrors.Internal("pod exec failed", err)
+		}
+	}
 	return &container.ExecResult{
-		ExitCode: 0,
-		Stdout:   "",
-		Stderr:   "",
+		ExitCode: exitCode,
+		Stdout:   stdout.String(),
+		Stderr:   stderr.String(),
 	}, nil
 }
 
@@ -353,9 +413,9 @@ func (r *Runtime) Stats(ctx context.Context, containerID string) (*container.Con
 	if _, err := r.resolvePodName(ctx, containerID); err != nil {
 		return nil, err
 	}
-	return &container.ContainerStats{
-		Timestamp: time.Now(),
-	}, nil
+	// Metrics require metrics.k8s.io (metrics-server). Return a clear Unimplemented
+	// rather than an empty stub that looks successful.
+	return nil, pkgerrors.Unimplemented("k8s container Stats requires metrics-server (metrics.k8s.io); not wired", nil)
 }
 
 var _ container.ContainerRuntime = (*Runtime)(nil)

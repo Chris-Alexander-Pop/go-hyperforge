@@ -4,7 +4,5 @@
 //   - Memory: in-memory runtime for tests
 //   - Lambda: AWS Lambda
 //   - GCF: Google Cloud Functions
-//
-// Reserved (not implemented):
-//   - Azure Functions
+//   - Azure Functions: HTTP Invoke when InvokeBaseURL is set; ARM CRUD Unimplemented
 package serverless

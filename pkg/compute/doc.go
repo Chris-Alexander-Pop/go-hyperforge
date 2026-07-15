@@ -3,9 +3,9 @@ Package compute provides public-cloud / workload compute abstractions.
 
 Subpackages:
 
-  - vm: Virtual machine lifecycle (memory adapter only; EC2/GCE/Azure reserved)
-  - container: Container runtime (memory, Kubernetes, Fargate; Docker reserved)
-  - serverless: FaaS (memory, Lambda, Cloud Functions; Azure Functions reserved)
+  - vm: Virtual machine lifecycle (memory, EC2, GCE; Azure VM scaffold)
+  - container: Container runtime (memory, Docker, Kubernetes, Fargate)
+  - serverless: FaaS (memory, Lambda, Cloud Functions, Azure Functions scaffold)
 
 Relation to pkg/cloud:
 

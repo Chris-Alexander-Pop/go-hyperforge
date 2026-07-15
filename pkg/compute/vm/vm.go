@@ -6,12 +6,11 @@ import (
 )
 
 // Driver constants for VM backends.
-// Only DriverMemory ships; EC2/GCE/AzureVM are reserved placeholders.
 const (
 	DriverMemory  = "memory"
-	DriverEC2     = "ec2"      // reserved — not implemented
-	DriverGCE     = "gce"      // reserved — not implemented
-	DriverAzureVM = "azure-vm" // reserved — not implemented
+	DriverEC2     = "ec2"
+	DriverGCE     = "gce"
+	DriverAzureVM = "azure-vm" // scaffold
 )
 
 // InstanceState represents the state of a VM instance.

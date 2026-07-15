@@ -61,8 +61,10 @@ type Host struct {
 
 // Driver definitions for cloud components.
 const (
-	DriverMemory  = "memory"
-	DriverLibvirt = "libvirt"
-	DriverIPMI    = "ipmi"
-	DriverPXE     = "pxe"
+	DriverMemory      = "memory"
+	DriverLibvirt     = "libvirt"     // remote JSON/HTTP gateway (pure Go)
+	DriverFirecracker = "firecracker" // HTTP over unix socket
+	DriverIPMI        = "ipmi"
+	DriverRedfish     = "redfish"
+	DriverPXE         = "pxe" // reserved
 )

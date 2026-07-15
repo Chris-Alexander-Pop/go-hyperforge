@@ -113,3 +113,109 @@ func (c *InstrumentedControlPlane) ListHosts(ctx context.Context) ([]cloud.Host,
 	span.SetAttributes(attribute.Int("host.count", len(hosts)))
 	return hosts, nil
 }
+
+func (c *InstrumentedControlPlane) CreateInstance(ctx context.Context, req CreateInstanceRequest) (*Instance, error) {
+	ctx, span := c.tracer.Start(ctx, "controlplane.CreateInstance", trace.WithAttributes(
+		attribute.String("instance.name", req.Name),
+		attribute.String("host.id", req.HostID),
+	))
+	defer span.End()
+
+	inst, err := c.next.CreateInstance(ctx, req)
+	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
+		return nil, err
+	}
+	span.SetAttributes(attribute.String("instance.id", inst.ID))
+	return inst, nil
+}
+
+func (c *InstrumentedControlPlane) BindInstance(ctx context.Context, instanceID, hostID string) error {
+	ctx, span := c.tracer.Start(ctx, "controlplane.BindInstance", trace.WithAttributes(
+		attribute.String("instance.id", instanceID),
+		attribute.String("host.id", hostID),
+	))
+	defer span.End()
+
+	err := c.next.BindInstance(ctx, instanceID, hostID)
+	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
+	}
+	return err
+}
+
+func (c *InstrumentedControlPlane) UnbindInstance(ctx context.Context, instanceID string) error {
+	ctx, span := c.tracer.Start(ctx, "controlplane.UnbindInstance", trace.WithAttributes(
+		attribute.String("instance.id", instanceID),
+	))
+	defer span.End()
+
+	err := c.next.UnbindInstance(ctx, instanceID)
+	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
+	}
+	return err
+}
+
+func (c *InstrumentedControlPlane) GetInstance(ctx context.Context, instanceID string) (*Instance, error) {
+	ctx, span := c.tracer.Start(ctx, "controlplane.GetInstance", trace.WithAttributes(
+		attribute.String("instance.id", instanceID),
+	))
+	defer span.End()
+
+	inst, err := c.next.GetInstance(ctx, instanceID)
+	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
+		return nil, err
+	}
+	return inst, nil
+}
+
+func (c *InstrumentedControlPlane) ListInstances(ctx context.Context, opts ListInstancesOptions) ([]Instance, error) {
+	ctx, span := c.tracer.Start(ctx, "controlplane.ListInstances")
+	defer span.End()
+
+	list, err := c.next.ListInstances(ctx, opts)
+	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
+		return nil, err
+	}
+	span.SetAttributes(attribute.Int("instance.count", len(list)))
+	return list, nil
+}
+
+func (c *InstrumentedControlPlane) DeleteInstance(ctx context.Context, instanceID string) error {
+	ctx, span := c.tracer.Start(ctx, "controlplane.DeleteInstance", trace.WithAttributes(
+		attribute.String("instance.id", instanceID),
+	))
+	defer span.End()
+
+	err := c.next.DeleteInstance(ctx, instanceID)
+	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
+	}
+	return err
+}
+
+func (c *InstrumentedControlPlane) UpdateInstanceStatus(ctx context.Context, instanceID string, status cloud.InstanceStatus) error {
+	ctx, span := c.tracer.Start(ctx, "controlplane.UpdateInstanceStatus", trace.WithAttributes(
+		attribute.String("instance.id", instanceID),
+		attribute.String("instance.status", string(status)),
+	))
+	defer span.End()
+
+	err := c.next.UpdateInstanceStatus(ctx, instanceID, status)
+	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
+	}
+	return err
+}
+
+var _ ControlPlane = (*InstrumentedControlPlane)(nil)

@@ -6,12 +6,11 @@ import (
 )
 
 // Driver constants for serverless backends.
-// Memory, Lambda, and GCF ship; Azure Functions is reserved.
 const (
 	DriverMemory         = "memory"
 	DriverLambda         = "lambda"
 	DriverGCF            = "gcf"
-	DriverAzureFunctions = "azure-functions" // reserved — not implemented
+	DriverAzureFunctions = "azure-functions" // HTTP Invoke; ARM CRUD Unimplemented
 )
 
 // Runtime represents the function runtime.

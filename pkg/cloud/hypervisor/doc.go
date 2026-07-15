@@ -1,7 +1,11 @@
 // Package hypervisor provides interfaces and adapters for managing Virtual Machines.
 //
-// Shipping: memory adapter only. Libvirt/QEMU/Firecracker drivers are reserved
-// placeholders — not wired. For public-cloud VMs (EC2/GCE/Azure), see pkg/compute/vm.
+// Shipping:
+//   - memory adapter
+//   - remote libvirt JSON/HTTP gateway (adapters/libvirt) — pure Go, no CGO
+//   - Firecracker HTTP API over unix socket / BaseURL (adapters/firecracker)
+//
+// For public-cloud VMs (EC2/GCE/Azure), see pkg/compute/vm.
 //
 // Basic usage:
 //

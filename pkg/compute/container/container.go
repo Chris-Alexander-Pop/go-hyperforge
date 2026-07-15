@@ -7,14 +7,12 @@ import (
 )
 
 // Driver constants for container backends.
-// Memory ships here; k8s and fargate live under adapters/. Docker/ECS/GKE/AKS
-// names are reserved placeholders.
 const (
 	DriverMemory  = "memory"
-	DriverDocker  = "docker" // reserved — not implemented
-	DriverECS     = "ecs"    // reserved — prefer adapters/fargate
-	DriverGKE     = "gke"    // reserved — prefer adapters/k8s + GKE kubeconfig
-	DriverAKS     = "aks"    // reserved — prefer adapters/k8s + AKS kubeconfig
+	DriverDocker  = "docker"
+	DriverECS     = "ecs" // reserved — prefer adapters/fargate
+	DriverGKE     = "gke" // reserved — prefer adapters/k8s + GKE kubeconfig
+	DriverAKS     = "aks" // reserved — prefer adapters/k8s + AKS kubeconfig
 	DriverK8s     = "k8s"
 	DriverFargate = "fargate"
 )

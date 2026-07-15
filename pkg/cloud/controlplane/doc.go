@@ -1,5 +1,5 @@
 // Package controlplane provides the central management API for the private cloud.
 //
-// Shipping: memory adapter for host inventory only. etcd/postgres drivers and
-// instance-lifecycle APIs are not wired (see MISSING_CAPABILITIES.md).
+// Shipping: memory adapter with host inventory and instance create/bind/unbind APIs.
+// etcd/postgres drivers remain future work (see MISSING_CAPABILITIES.md).
 package controlplane

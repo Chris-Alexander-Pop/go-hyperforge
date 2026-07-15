@@ -2,10 +2,10 @@
 //
 // Shipping backends:
 //   - Memory: in-memory runtime for tests
-//   - Kubernetes: client-go pod adapter
+//   - Docker: Engine API client (adapters/docker)
+//   - Kubernetes: client-go pod adapter (SPDY Exec; Stats → Unimplemented without metrics-server)
 //   - Fargate: AWS ECS/Fargate adapter
 //
-// Reserved (not implemented — driver constants exist for future adapters):
-//   - Docker Engine, raw ECS/GKE/AKS drivers (use k8s with the right kubeconfig
-//     for GKE/AKS)
+// Reserved driver names:
+//   - raw ECS/GKE/AKS (use fargate or k8s with the right kubeconfig)
 package container
