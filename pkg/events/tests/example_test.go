@@ -10,21 +10,19 @@ import (
 )
 
 func Example() {
-	// Create an in-memory event bus
-	bus := memory.New()
+	bus := memory.New(events.Config{})
 	defer bus.Close()
 
 	ctx := context.Background()
 
-	// Subscribe to events
 	handler := func(ctx context.Context, event events.Event) error {
 		fmt.Printf("Received: %s\n", event.Type)
 		return nil
 	}
 
-	_ = bus.Subscribe(ctx, "users", handler)
+	sub, _ := bus.Subscribe(ctx, "users", handler)
+	defer bus.Unsubscribe(ctx, sub)
 
-	// Publish an event
 	event := events.Event{
 		ID:        "evt-123",
 		Type:      "user.created",
@@ -34,14 +32,10 @@ func Example() {
 	}
 
 	_ = bus.Publish(ctx, "users", event)
-
-	// Give the handler time to process
-	time.Sleep(10 * time.Millisecond)
 	// Output: Received: user.created
 }
 
 func ExampleEvent() {
-	// Create a well-structured event
 	event := events.Event{
 		ID:        "evt-456",
 		Type:      "order.placed",
