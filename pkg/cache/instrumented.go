@@ -33,9 +33,14 @@ func (c *InstrumentedCache) Get(ctx context.Context, key string, dest interface{
 
 	err := c.next.Get(ctx, key, dest)
 	if err != nil {
+		// Cache miss is expected — log at debug, do not mark the span as error.
+		if IsNotFound(err) {
+			logger.L().DebugContext(ctx, "cache miss", "key", key)
+			return err
+		}
 		span.RecordError(err)
 		span.SetStatus(codes.Error, err.Error())
-		logger.L().DebugContext(ctx, "cache miss", "key", key, "error", err)
+		logger.L().ErrorContext(ctx, "cache get failed", "key", key, "error", err)
 		return err
 	}
 

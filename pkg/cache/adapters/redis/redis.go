@@ -32,7 +32,7 @@ func New(cfg cache.Config) (cache.Cache, error) {
 func (r *RedisCache) Get(ctx context.Context, key string, dest interface{}) error {
 	val, err := r.client.Get(ctx, key).Bytes()
 	if err == redis.Nil {
-		return errors.New(errors.CodeNotFound, "key not found", nil)
+		return cache.ErrKeyNotFound
 	}
 	if err != nil {
 		return errors.Wrap(err, "failed to get from redis")

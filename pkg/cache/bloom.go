@@ -99,12 +99,3 @@ func (bc *BloomCache) Warm(keys []string) {
 		bc.bloom.AddString(bc.prefix + key)
 	}
 }
-
-// ErrKeyNotFound is returned when a key is definitely not in the cache.
-var ErrKeyNotFound = &keyNotFoundError{}
-
-type keyNotFoundError struct{}
-
-func (e *keyNotFoundError) Error() string {
-	return "key not found"
-}

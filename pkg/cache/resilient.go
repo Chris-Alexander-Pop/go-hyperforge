@@ -9,6 +9,9 @@ import (
 
 // ResilientCache wraps a Cache with circuit breaker and retry support.
 // This prevents cache failures from cascading and provides automatic recovery.
+//
+// Cache misses (NotFound) are expected outcomes: they are not retried and do
+// not count toward the circuit breaker failure threshold.
 type ResilientCache struct {
 	cache    Cache
 	cb       *resilience.CircuitBreaker
@@ -49,6 +52,10 @@ func NewResilientCache(cache Cache, cfg ResilientConfig) *ResilientCache {
 			InitialBackoff: cfg.RetryBackoff,
 			MaxBackoff:     time.Second,
 			Multiplier:     2.0,
+			RetryIf: func(err error) bool {
+				// Cache misses are expected; do not retry.
+				return err != nil && !IsNotFound(err)
+			},
 		}
 	}
 
@@ -90,11 +97,24 @@ func (rc *ResilientCache) Close() error {
 func (rc *ResilientCache) execute(ctx context.Context, fn resilience.Executor) error {
 	operation := fn
 
-	// Wrap with circuit breaker if enabled
+	// Wrap with circuit breaker if enabled.
+	// NotFound is returned to the caller but recorded as success so misses
+	// do not open the circuit.
 	if rc.cb != nil {
 		cbFn := operation
 		operation = func(ctx context.Context) error {
-			return rc.cb.Execute(ctx, cbFn)
+			var opErr error
+			cbErr := rc.cb.Execute(ctx, func(ctx context.Context) error {
+				opErr = cbFn(ctx)
+				if IsNotFound(opErr) {
+					return nil
+				}
+				return opErr
+			})
+			if cbErr != nil {
+				return cbErr
+			}
+			return opErr
 		}
 	}
 

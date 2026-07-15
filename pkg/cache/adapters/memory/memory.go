@@ -12,7 +12,11 @@ import (
 
 type item struct {
 	value     []byte
-	expiresAt time.Time
+	expiresAt time.Time // zero means no expiration
+}
+
+func (it item) expired() bool {
+	return !it.expiresAt.IsZero() && time.Now().After(it.expiresAt)
 }
 
 type MemoryCache struct {
@@ -33,11 +37,11 @@ func (m *MemoryCache) Get(ctx context.Context, key string, dest interface{}) err
 
 	it, ok := m.items[key]
 	if !ok {
-		return errors.New(errors.CodeNotFound, "key not found", nil)
+		return cache.ErrKeyNotFound
 	}
 
-	if time.Now().After(it.expiresAt) {
-		return errors.New(errors.CodeNotFound, "key expired", nil)
+	if it.expired() {
+		return cache.ErrKeyExpired
 	}
 
 	return json.Unmarshal(it.value, dest)
@@ -52,9 +56,14 @@ func (m *MemoryCache) Set(ctx context.Context, key string, value interface{}, tt
 		return errors.Wrap(err, "failed to marshal")
 	}
 
+	var expiresAt time.Time
+	if ttl > 0 {
+		expiresAt = time.Now().Add(ttl)
+	}
+
 	m.items[key] = item{
 		value:     data,
-		expiresAt: time.Now().Add(ttl),
+		expiresAt: expiresAt,
 	}
 	return nil
 }
@@ -74,7 +83,7 @@ func (m *MemoryCache) Incr(ctx context.Context, key string, delta int64) (int64,
 	var val int64
 
 	if ok {
-		if time.Now().After(it.expiresAt) {
+		if it.expired() {
 			val = 0
 		} else {
 			_ = json.Unmarshal(it.value, &val)
@@ -89,8 +98,8 @@ func (m *MemoryCache) Incr(ctx context.Context, key string, delta int64) (int64,
 	}
 
 	expiry := time.Now().Add(24 * time.Hour)
-	if ok && time.Now().Before(it.expiresAt) {
-		expiry = it.expiresAt
+	if ok && !it.expired() {
+		expiry = it.expiresAt // preserves zero = no expiration
 	}
 
 	m.items[key] = item{
