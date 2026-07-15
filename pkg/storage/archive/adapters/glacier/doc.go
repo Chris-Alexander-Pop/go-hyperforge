@@ -1,6 +1,8 @@
-// Package glacier provides a thin archive.ArchiveStore over S3 Glacier-style APIs.
+// Package glacier provides an S3 Glacier / DEEP_ARCHIVE archive.ArchiveStore adapter.
 //
-// It uses PutObject with GLACIER/DEEP_ARCHIVE storage class and RestoreObject for
-// restores. Inject ObjectAPI via NewFromAPI for tests; New builds the AWS SDK client.
-// Restore completion is best-effort / simulated when using a fake API.
+// Shipped: Archive/Delete/List/GetObject via S3; RestoreObject + job tracking;
+// Download after completed restore; InstantRestore / CompleteRestore for tests.
+//
+// Remaining gaps (honest): no multipart upload, inventory/job polling against
+// real Glacier API, or Azure/GCS archive backends.
 package glacier

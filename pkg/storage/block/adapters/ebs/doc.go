@@ -1,6 +1,8 @@
-// Package ebs provides a file-like AWS EBS stub implementing block.VolumeStore.
+// Package ebs provides a file-backed AWS EBS-shaped block.VolumeStore.
 //
-// Volume/snapshot metadata is persisted as JSON under a root directory with
-// vol-/snap- style IDs. This is not a real EC2/EBS API client — use it for
-// local/dev and unit tests. Inject a custom Root via Config.
+// Shipped: Create/Get/List/Delete/Resize volumes; Attach/Detach; Create/Get/Delete/List
+// snapshots; CreateVolume from SnapshotID. IDs use vol-/snap- prefixes.
+//
+// Remaining gaps (honest): not a real EC2/EBS API client — no AWS SDK calls,
+// encryption/KMS, multi-attach, or AZ capacity checks.
 package ebs

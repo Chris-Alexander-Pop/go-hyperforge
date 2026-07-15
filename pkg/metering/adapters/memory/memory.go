@@ -18,17 +18,19 @@ var (
 
 // MemoryMetering implements both Meter and Rater interfaces in-memory.
 type MemoryMetering struct {
-	usage  []metering.UsageEvent
-	rates  map[string]metering.RateCard
-	mu     *concurrency.SmartRWMutex
-	closed atomic.Bool
+	usage   []metering.UsageEvent
+	rates   map[string]metering.RateCard
+	history []metering.RateRevision
+	mu      *concurrency.SmartRWMutex
+	closed  atomic.Bool
 }
 
 // New creates a new MemoryMetering adapter with seeded default rates.
 func New() *MemoryMetering {
 	m := &MemoryMetering{
-		usage: make([]metering.UsageEvent, 0),
-		rates: make(map[string]metering.RateCard),
+		usage:   make([]metering.UsageEvent, 0),
+		rates:   make(map[string]metering.RateCard),
+		history: make([]metering.RateRevision, 0),
 		mu: concurrency.NewSmartRWMutex(concurrency.MutexConfig{
 			Name: "memory-metering",
 		}),
@@ -144,6 +146,46 @@ func (m *MemoryMetering) SetRate(ctx context.Context, rate metering.RateCard) er
 	defer m.mu.Unlock()
 
 	m.rates[rate.ResourceType] = rate
+	m.appendHistoryLocked(rate, metering.RateOpSet)
+	return nil
+}
+
+func (m *MemoryMetering) UpdateRate(ctx context.Context, rate metering.RateCard) error {
+	if err := m.checkClosed(); err != nil {
+		return err
+	}
+	if err := metering.ValidateRateCard(rate); err != nil {
+		return err
+	}
+
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	if _, ok := m.rates[rate.ResourceType]; !ok {
+		return metering.ErrRateNotFound
+	}
+	m.rates[rate.ResourceType] = rate
+	m.appendHistoryLocked(rate, metering.RateOpUpdate)
+	return nil
+}
+
+func (m *MemoryMetering) DeleteRate(ctx context.Context, resourceType string) error {
+	if err := m.checkClosed(); err != nil {
+		return err
+	}
+	if resourceType == "" {
+		return metering.ErrInvalidUsage
+	}
+
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	rate, ok := m.rates[resourceType]
+	if !ok {
+		return metering.ErrRateNotFound
+	}
+	delete(m.rates, resourceType)
+	m.appendHistoryLocked(rate, metering.RateOpDelete)
 	return nil
 }
 
@@ -160,6 +202,35 @@ func (m *MemoryMetering) ListRates(ctx context.Context) ([]metering.RateCard, er
 		out = append(out, rate)
 	}
 	return out, nil
+}
+
+func (m *MemoryMetering) ListRateHistory(ctx context.Context, resourceType string) ([]metering.RateRevision, error) {
+	if err := m.checkClosed(); err != nil {
+		return nil, err
+	}
+
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+
+	out := make([]metering.RateRevision, 0, len(m.history))
+	for _, rev := range m.history {
+		if resourceType != "" && rev.ResourceType != resourceType {
+			continue
+		}
+		out = append(out, rev)
+	}
+	return out, nil
+}
+
+func (m *MemoryMetering) appendHistoryLocked(rate metering.RateCard, op metering.RateOp) {
+	m.history = append(m.history, metering.RateRevision{
+		ResourceType: rate.ResourceType,
+		Op:           op,
+		PricePerUnit: rate.PricePerUnit,
+		Currency:     rate.Currency,
+		Unit:         rate.Unit,
+		ChangedAt:    time.Now().UTC(),
+	})
 }
 
 func (m *MemoryMetering) CalculateCost(ctx context.Context, usage metering.UsageEvent) (float64, error) {

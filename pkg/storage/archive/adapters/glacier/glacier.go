@@ -40,6 +40,8 @@ type Config struct {
 	AWSAccessKeyID     string
 	AWSSecretAccessKey string
 	Endpoint           string
+	// InstantRestore marks all restores completed immediately (useful for LocalStack / tests).
+	InstantRestore bool
 }
 
 // Store implements archive.ArchiveStore via S3 Glacier storage classes.
@@ -210,16 +212,34 @@ func (s *Store) Restore(ctx context.Context, key string, opts archive.RestoreOpt
 	job := &archive.RestoreJob{
 		ID:          uuid.NewString(),
 		Key:         key,
-		Status:      archive.RestoreStatusCompleted, // thin adapter: treat success as completed
+		Status:      archive.RestoreStatusInProgress,
 		Tier:        tier,
 		RequestedAt: now,
-		CompletedAt: now,
 		ExpiresAt:   now.Add(ttl),
+	}
+	// Thin async model: expedited completes immediately; others stay in-progress
+	// until CompleteRestore is called (tests) or GetRestoreStatus after InstantRestore.
+	if tier == archive.RestoreTierExpedited || s.cfg.InstantRestore {
+		job.Status = archive.RestoreStatusCompleted
+		job.CompletedAt = now
 	}
 	s.mu.Lock()
 	s.jobs[key] = job
 	s.mu.Unlock()
 	return job, nil
+}
+
+// CompleteRestore marks an in-progress restore as completed (test / operator hook).
+func (s *Store) CompleteRestore(key string) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	job, ok := s.jobs[key]
+	if !ok {
+		return errors.NotFound("no restore job for object", nil)
+	}
+	job.Status = archive.RestoreStatusCompleted
+	job.CompletedAt = time.Now().UTC()
+	return nil
 }
 
 func (s *Store) GetRestoreStatus(ctx context.Context, key string) (*archive.RestoreJob, error) {

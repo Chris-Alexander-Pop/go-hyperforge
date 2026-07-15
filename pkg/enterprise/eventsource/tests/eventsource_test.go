@@ -454,6 +454,118 @@ func TestProjectionRunnerCatchUpAndCheckpoint(t *testing.T) {
 	}
 }
 
+type recordingMetrics struct {
+	batches int
+	errors  int
+	idle    int
+}
+
+func (m *recordingMetrics) OnBatch(name string, applied int, advanced int64) { m.batches++ }
+func (m *recordingMetrics) OnError(name string, err error)                   { m.errors++ }
+func (m *recordingMetrics) OnCatchUpIdle(name string)                        { m.idle++ }
+
+type failOnceProjector struct {
+	types   []string
+	calls   int
+	failAt  int
+	seen    []string
+}
+
+func (p *failOnceProjector) EventTypes() []string { return p.types }
+func (p *failOnceProjector) Project(ctx context.Context, event interface{}) error {
+	p.calls++
+	ev := event.(eventsource.Event)
+	if p.calls == p.failAt {
+		return errors.New("boom")
+	}
+	p.seen = append(p.seen, ev.EventType)
+	return nil
+}
+
+func TestProjectionRunnerResetAndInstrumented(t *testing.T) {
+	ctx := context.Background()
+	store := memory.NewEventStore()
+	_ = store.Append(ctx, "o1", 0, []eventsource.Event{
+		{EventType: "order.created", AggregateType: "Order"},
+	})
+	metrics := &recordingMetrics{}
+	proj := &countingProjector{types: []string{"order.created"}}
+	cps := memory.NewCheckpointStore()
+	runner := eventsource.NewProjectionRunner(store, cps, proj, eventsource.ProjectionConfig{
+		Name: "rm", Metrics: metrics,
+	})
+	inst := eventsource.NewInstrumentedProjectionRunner(runner)
+
+	if err := inst.RunOnce(ctx); err != nil {
+		t.Fatal(err)
+	}
+	if metrics.batches != 1 {
+		t.Fatalf("batches=%d", metrics.batches)
+	}
+	if err := inst.ResetCheckpoint(ctx); err != nil {
+		t.Fatal(err)
+	}
+	cp, err := inst.Checkpoint(ctx)
+	if err != nil || cp.Position != 0 {
+		t.Fatalf("checkpoint after reset: %+v err=%v", cp, err)
+	}
+	if err := inst.RunOnce(ctx); err != nil {
+		t.Fatal(err)
+	}
+	if len(proj.seen) != 2 {
+		t.Fatalf("expected re-projection after reset, got %v", proj.seen)
+	}
+}
+
+func TestProjectionRunnerRunBackoffAndConfig(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	store := memory.NewEventStore()
+	_ = store.Append(ctx, "o1", 0, []eventsource.Event{
+		{EventType: "order.created", AggregateType: "Order"},
+	})
+	metrics := &recordingMetrics{}
+	proj := &failOnceProjector{types: []string{"order.created"}, failAt: 1}
+	cps := memory.NewCheckpointStore()
+
+	runner, err := eventsource.NewProjectionFromConfig(eventsource.Config{
+		ProjectionName: "cfg-rm",
+		PollInterval:   5 * time.Millisecond,
+		InitialBackoff: 5 * time.Millisecond,
+		MaxBackoff:     20 * time.Millisecond,
+	}, eventsource.ProjectionParts{Store: store, Checkpoints: cps, Projector: proj})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if runner.Name() != "cfg-rm" {
+		t.Fatalf("name=%s", runner.Name())
+	}
+	// Rebuild with metrics hooks for the continuous Run backoff assertion.
+	runner = eventsource.NewProjectionRunner(store, cps, proj, eventsource.ProjectionConfig{
+		Name: "cfg-rm", PollInterval: 5 * time.Millisecond,
+		InitialBackoff: 5 * time.Millisecond, MaxBackoff: 20 * time.Millisecond,
+		Metrics: metrics,
+	})
+
+	done := make(chan error, 1)
+	go func() { done <- runner.Run(ctx) }()
+
+	deadline := time.After(2 * time.Second)
+	for {
+		select {
+		case <-deadline:
+			t.Fatal("timeout waiting for successful projection after backoff")
+		case <-time.After(10 * time.Millisecond):
+			if len(proj.seen) >= 1 && metrics.errors >= 1 {
+				cancel()
+				<-done
+				return
+			}
+		}
+	}
+}
+
 func TestEventedStoreWithOutbox(t *testing.T) {
 	ctx := context.Background()
 	broker := msgmemory.New(msgmemory.Config{BufferSize: 8})

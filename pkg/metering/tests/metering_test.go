@@ -269,6 +269,51 @@ func (s *MeteringTestSuite) TestEventedMeterSkipsPublishOnError() {
 	s.Equal(0, count)
 }
 
+func (s *MeteringTestSuite) TestRateCardCRUDAndHistory() {
+	card := metering.RateCard{
+		ResourceType: "gpu.a100",
+		PricePerUnit: 3.5,
+		Currency:     "USD",
+		Unit:         "hour",
+	}
+	s.NoError(s.rater.SetRate(s.Ctx, card))
+
+	err := s.rater.UpdateRate(s.Ctx, metering.RateCard{
+		ResourceType: "missing.res",
+		PricePerUnit: 1,
+		Currency:     "USD",
+		Unit:         "hour",
+	})
+	s.True(errors.Is(err, metering.ErrRateNotFound))
+
+	s.NoError(s.rater.UpdateRate(s.Ctx, metering.RateCard{
+		ResourceType: "gpu.a100",
+		PricePerUnit: 4.0,
+		Currency:     "USD",
+		Unit:         "hour",
+	}))
+	rate, err := s.rater.GetRate(s.Ctx, "gpu.a100")
+	s.NoError(err)
+	s.Equal(4.0, rate.PricePerUnit)
+
+	hist, err := s.rater.ListRateHistory(s.Ctx, "gpu.a100")
+	s.NoError(err)
+	s.GreaterOrEqual(len(hist), 2)
+	s.Equal(metering.RateOpSet, hist[0].Op)
+	s.Equal(metering.RateOpUpdate, hist[1].Op)
+
+	s.NoError(s.rater.DeleteRate(s.Ctx, "gpu.a100"))
+	_, err = s.rater.GetRate(s.Ctx, "gpu.a100")
+	s.True(errors.Is(err, metering.ErrRateNotFound))
+
+	hist, err = s.rater.ListRateHistory(s.Ctx, "gpu.a100")
+	s.NoError(err)
+	s.Equal(metering.RateOpDelete, hist[len(hist)-1].Op)
+
+	err = s.rater.DeleteRate(s.Ctx, "gpu.a100")
+	s.True(errors.Is(err, metering.ErrRateNotFound))
+}
+
 func (s *MeteringTestSuite) TestSummarizeAndPeriodAggregate() {
 	base := time.Date(2026, 7, 15, 10, 0, 0, 0, time.UTC)
 	events := []metering.UsageEvent{

@@ -8,6 +8,7 @@
 //
 //	engine, err := logicapps.New(logicapps.Config{SubscriptionID: "...", ResourceGroup: "..."})
 //	exec, err := engine.Start(ctx, workflow.StartOptions{WorkflowID: "my-logic-app", Input: data})
+//	defer engine.Close()
 package logicapps
 
 import (
@@ -17,6 +18,8 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
+	"sync"
 	"time"
 
 	pkgerrors "github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
@@ -43,6 +46,18 @@ type Config struct {
 
 	// Location is the Azure region.
 	Location string
+
+	// HTTPClient optionally overrides the HTTP client (tests / custom transport).
+	HTTPClient *http.Client
+
+	// SkipAuth skips Azure AD token fetch (for httptest with injected HTTPClient).
+	SkipAuth bool
+
+	// ManagementBase overrides the ARM base URL (default https://management.azure.com).
+	ManagementBase string
+
+	// LoginBase overrides the AAD login base (default https://login.microsoftonline.com).
+	LoginBase string
 }
 
 // Engine implements workflow.WorkflowEngine for Azure Logic Apps.
@@ -50,8 +65,10 @@ type Engine struct {
 	config     Config
 	httpClient *http.Client
 	token      string
+	mu         sync.RWMutex
 	workflows  map[string]*workflow.WorkflowDefinition
 	executions map[string]*workflow.Execution
+	closed     bool
 }
 
 // New creates a new Logic Apps engine.
@@ -59,25 +76,55 @@ func New(cfg Config) (*Engine, error) {
 	if cfg.Location == "" {
 		cfg.Location = "eastus"
 	}
+	if cfg.ManagementBase == "" {
+		cfg.ManagementBase = "https://management.azure.com"
+	}
+	if cfg.LoginBase == "" {
+		cfg.LoginBase = "https://login.microsoftonline.com"
+	}
+	hc := cfg.HTTPClient
+	if hc == nil {
+		hc = &http.Client{Timeout: 30 * time.Second}
+	}
 
 	engine := &Engine{
 		config:     cfg,
-		httpClient: &http.Client{Timeout: 30 * time.Second},
+		httpClient: hc,
 		workflows:  make(map[string]*workflow.WorkflowDefinition),
 		executions: make(map[string]*workflow.Execution),
 	}
 
-	// Authenticate and get token
-	if err := engine.authenticate(); err != nil {
-		return nil, err
+	if !cfg.SkipAuth {
+		if err := engine.authenticate(); err != nil {
+			return nil, err
+		}
 	}
 
 	return engine, nil
 }
 
+// Close releases local caches. Safe to call multiple times.
+func (e *Engine) Close() error {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	e.closed = true
+	e.executions = nil
+	e.workflows = nil
+	e.token = ""
+	return nil
+}
+
+func (e *Engine) checkClosed() error {
+	e.mu.RLock()
+	defer e.mu.RUnlock()
+	if e.closed {
+		return pkgerrors.FailedPrecondition("logicapps engine is closed", nil)
+	}
+	return nil
+}
+
 func (e *Engine) authenticate() error {
-	// OAuth2 token request to Azure AD
-	tokenURL := fmt.Sprintf("https://login.microsoftonline.com/%s/oauth2/v2.0/token", e.config.TenantID)
+	tokenURL := fmt.Sprintf("%s/%s/oauth2/v2.0/token", e.config.LoginBase, e.config.TenantID)
 
 	data := fmt.Sprintf(
 		"client_id=%s&client_secret=%s&scope=https://management.azure.com/.default&grant_type=client_credentials",
@@ -108,8 +155,8 @@ func (e *Engine) authenticate() error {
 
 func (e *Engine) apiURL(path string) string {
 	return fmt.Sprintf(
-		"https://management.azure.com/subscriptions/%s/resourceGroups/%s/providers/Microsoft.Logic%s?api-version=2019-05-01",
-		e.config.SubscriptionID, e.config.ResourceGroup, path,
+		"%s/subscriptions/%s/resourceGroups/%s/providers/Microsoft.Logic%s?api-version=2019-05-01",
+		e.config.ManagementBase, e.config.SubscriptionID, e.config.ResourceGroup, path,
 	)
 }
 
@@ -128,25 +175,38 @@ func (e *Engine) doRequest(ctx context.Context, method, url string, body interfa
 		return nil, err
 	}
 
-	req.Header.Set("Authorization", "Bearer "+e.token)
+	if e.token != "" {
+		req.Header.Set("Authorization", "Bearer "+e.token)
+	}
 	req.Header.Set("Content-Type", "application/json")
 
 	return e.httpClient.Do(req)
 }
 
 func (e *Engine) RegisterWorkflow(ctx context.Context, def workflow.WorkflowDefinition) error {
-	// Store workflow definition locally
-	// Actual Logic App creation requires ARM template deployment
-	e.workflows[def.ID] = &def
+	if err := e.checkClosed(); err != nil {
+		return err
+	}
+	_ = ctx
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	cp := def
+	e.workflows[def.ID] = &cp
 	return nil
 }
 
 func (e *Engine) GetWorkflow(ctx context.Context, workflowID string) (*workflow.WorkflowDefinition, error) {
-	if def, ok := e.workflows[workflowID]; ok {
-		return def, nil
+	if err := e.checkClosed(); err != nil {
+		return nil, err
 	}
+	e.mu.RLock()
+	if def, ok := e.workflows[workflowID]; ok {
+		cp := *def
+		e.mu.RUnlock()
+		return &cp, nil
+	}
+	e.mu.RUnlock()
 
-	// Try to get from Azure
 	url := e.apiURL("/workflows/" + workflowID)
 	resp, err := e.doRequest(ctx, "GET", url, nil)
 	if err != nil {
@@ -156,6 +216,10 @@ func (e *Engine) GetWorkflow(ctx context.Context, workflowID string) (*workflow.
 
 	if resp.StatusCode == http.StatusNotFound {
 		return nil, pkgerrors.NotFound("workflow not found", nil)
+	}
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return nil, pkgerrors.Internal("get workflow failed: "+string(body), nil)
 	}
 
 	var result struct {
@@ -177,7 +241,9 @@ func (e *Engine) GetWorkflow(ctx context.Context, workflowID string) (*workflow.
 }
 
 func (e *Engine) Start(ctx context.Context, opts workflow.StartOptions) (*workflow.Execution, error) {
-	// Trigger the Logic App via HTTP trigger
+	if err := e.checkClosed(); err != nil {
+		return nil, err
+	}
 	triggerURL := e.apiURL(fmt.Sprintf("/workflows/%s/triggers/manual/run", opts.WorkflowID))
 
 	resp, err := e.doRequest(ctx, "POST", triggerURL, opts.Input)
@@ -186,42 +252,153 @@ func (e *Engine) Start(ctx context.Context, opts workflow.StartOptions) (*workfl
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusAccepted {
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusAccepted && resp.StatusCode != http.StatusCreated {
 		body, _ := io.ReadAll(resp.Body)
 		return nil, pkgerrors.Internal("trigger failed: "+string(body), nil)
 	}
 
-	execID := uuid.NewString()
+	execID := resp.Header.Get("x-ms-workflow-run-id")
+	if execID == "" {
+		execID = resp.Header.Get("x-ms-client-tracking-id")
+	}
+	if execID == "" {
+		if loc := resp.Header.Get("Location"); loc != "" {
+			execID = extractRunID(loc)
+		}
+	}
+	if execID == "" {
+		execID = uuid.NewString()
+	}
+
 	exec := &workflow.Execution{
 		ID:         execID,
 		WorkflowID: opts.WorkflowID,
 		Status:     workflow.StatusRunning,
 		Input:      opts.Input,
-		StartedAt:  time.Now(),
+		StartedAt:  time.Now().UTC(),
 	}
 
+	e.mu.Lock()
 	e.executions[execID] = exec
+	e.mu.Unlock()
 	return exec, nil
 }
 
+func extractRunID(location string) string {
+	// .../workflows/{name}/runs/{runId}
+	const marker = "/runs/"
+	i := strings.LastIndex(location, marker)
+	if i < 0 {
+		return ""
+	}
+	rest := location[i+len(marker):]
+	if j := strings.IndexAny(rest, "?/"); j >= 0 {
+		rest = rest[:j]
+	}
+	return rest
+}
+
 func (e *Engine) GetExecution(ctx context.Context, executionID string) (*workflow.Execution, error) {
-	if exec, ok := e.executions[executionID]; ok {
-		return exec, nil
+	if err := e.checkClosed(); err != nil {
+		return nil, err
+	}
+
+	e.mu.RLock()
+	local, ok := e.executions[executionID]
+	var workflowID string
+	if ok {
+		workflowID = local.WorkflowID
+	}
+	e.mu.RUnlock()
+
+	if workflowID != "" {
+		if remote, err := e.fetchRun(ctx, workflowID, executionID); err == nil {
+			e.mu.Lock()
+			e.executions[executionID] = remote
+			e.mu.Unlock()
+			return remote, nil
+		}
+	}
+
+	// Try listing known workflows' runs when we only have a run id.
+	e.mu.RLock()
+	wfs := make([]string, 0, len(e.workflows))
+	for id := range e.workflows {
+		wfs = append(wfs, id)
+	}
+	e.mu.RUnlock()
+	for _, wf := range wfs {
+		if remote, err := e.fetchRun(ctx, wf, executionID); err == nil {
+			e.mu.Lock()
+			e.executions[executionID] = remote
+			e.mu.Unlock()
+			return remote, nil
+		}
+	}
+
+	if ok {
+		cp := *local
+		return &cp, nil
 	}
 	return nil, pkgerrors.NotFound("execution not found", nil)
 }
 
+func (e *Engine) fetchRun(ctx context.Context, workflowID, runID string) (*workflow.Execution, error) {
+	url := e.apiURL(fmt.Sprintf("/workflows/%s/runs/%s", workflowID, runID))
+	resp, err := e.doRequest(ctx, "GET", url, nil)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode == http.StatusNotFound {
+		return nil, pkgerrors.NotFound("run not found", nil)
+	}
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return nil, pkgerrors.Internal("get run failed: "+string(body), nil)
+	}
+	var run struct {
+		Name       string `json:"name"`
+		Properties struct {
+			StartTime time.Time `json:"startTime"`
+			EndTime   time.Time `json:"endTime"`
+			Status    string    `json:"status"`
+			Error     *struct {
+				Message string `json:"message"`
+			} `json:"error"`
+		} `json:"properties"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&run); err != nil {
+		return nil, pkgerrors.Internal("failed to parse run", err)
+	}
+	exec := &workflow.Execution{
+		ID:          run.Name,
+		WorkflowID:  workflowID,
+		Status:      mapAzureStatus(run.Properties.Status),
+		StartedAt:   run.Properties.StartTime,
+		CompletedAt: run.Properties.EndTime,
+	}
+	if run.Properties.Error != nil {
+		exec.Error = run.Properties.Error.Message
+	}
+	return exec, nil
+}
+
 func (e *Engine) ListExecutions(ctx context.Context, opts workflow.ListOptions) (*workflow.ListResult, error) {
+	if err := e.checkClosed(); err != nil {
+		return nil, err
+	}
 	if opts.WorkflowID == "" {
-		// List all executions
-		result := &workflow.ListResult{Executions: make([]*workflow.Execution, 0)}
+		e.mu.RLock()
+		defer e.mu.RUnlock()
+		result := &workflow.ListResult{Executions: make([]*workflow.Execution, 0, len(e.executions))}
 		for _, exec := range e.executions {
-			result.Executions = append(result.Executions, exec)
+			cp := *exec
+			result.Executions = append(result.Executions, &cp)
 		}
 		return result, nil
 	}
 
-	// Get run history from Azure
 	url := e.apiURL(fmt.Sprintf("/workflows/%s/runs", opts.WorkflowID))
 	resp, err := e.doRequest(ctx, "GET", url, nil)
 	if err != nil {
@@ -267,7 +444,7 @@ func mapAzureStatus(status string) workflow.ExecutionStatus {
 		return workflow.StatusCompleted
 	case "Failed":
 		return workflow.StatusFailed
-	case "Cancelled", "Aborted":
+	case "Cancelled", "Aborted", "Canceled":
 		return workflow.StatusCancelled
 	case "TimedOut":
 		return workflow.StatusTimedOut
@@ -277,17 +454,50 @@ func mapAzureStatus(status string) workflow.ExecutionStatus {
 }
 
 func (e *Engine) Cancel(ctx context.Context, executionID string) error {
+	if err := e.checkClosed(); err != nil {
+		return err
+	}
+	e.mu.RLock()
+	exec, ok := e.executions[executionID]
+	workflowID := ""
+	if ok {
+		workflowID = exec.WorkflowID
+	}
+	e.mu.RUnlock()
+
+	if workflowID != "" {
+		url := e.apiURL(fmt.Sprintf("/workflows/%s/runs/%s/cancel", workflowID, executionID))
+		resp, err := e.doRequest(ctx, "POST", url, nil)
+		if err == nil {
+			defer resp.Body.Close()
+			if resp.StatusCode == http.StatusOK || resp.StatusCode == http.StatusAccepted {
+				e.mu.Lock()
+				if exec, ok := e.executions[executionID]; ok {
+					exec.Status = workflow.StatusCancelled
+					exec.CompletedAt = time.Now().UTC()
+				}
+				e.mu.Unlock()
+				return nil
+			}
+		}
+	}
+
+	e.mu.Lock()
+	defer e.mu.Unlock()
 	if exec, ok := e.executions[executionID]; ok {
 		exec.Status = workflow.StatusCancelled
-		exec.CompletedAt = time.Now()
+		exec.CompletedAt = time.Now().UTC()
 		return nil
 	}
 	return pkgerrors.NotFound("execution not found", nil)
 }
 
 func (e *Engine) Signal(ctx context.Context, executionID string, signalName string, data interface{}) error {
-	// Logic Apps doesn't natively support callbacks like Temporal
-	return pkgerrors.Internal("signals not supported for Logic Apps", nil)
+	_ = ctx
+	_ = executionID
+	_ = signalName
+	_ = data
+	return pkgerrors.Unimplemented("signals not supported for Logic Apps (use HTTP webhook actions)", nil)
 }
 
 func (e *Engine) Wait(ctx context.Context, executionID string) (*workflow.Execution, error) {

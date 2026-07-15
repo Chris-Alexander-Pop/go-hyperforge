@@ -57,6 +57,40 @@ func TestMeteringPostgres_RecordAndRate(t *testing.T) {
 	require.Error(t, err)
 }
 
+func TestMeteringPostgres_RateCRUDHistory(t *testing.T) {
+	db, err := sql.Open("sqlite", "file:meter_rate_crud?mode=memory&cache=shared")
+	require.NoError(t, err)
+	t.Cleanup(func() { _ = db.Close() })
+
+	store, err := mpg.New(db, mpg.Config{Dialect: mpg.DialectSQLite})
+	require.NoError(t, err)
+	ctx := context.Background()
+	require.NoError(t, store.Migrate(ctx))
+
+	require.NoError(t, store.SetRate(ctx, metering.RateCard{
+		ResourceType: "gpu", PricePerUnit: 1, Currency: "USD", Unit: "hour",
+	}))
+	require.NoError(t, store.UpdateRate(ctx, metering.RateCard{
+		ResourceType: "gpu", PricePerUnit: 2, Currency: "USD", Unit: "hour",
+	}))
+	require.ErrorIs(t, store.UpdateRate(ctx, metering.RateCard{
+		ResourceType: "missing", PricePerUnit: 1, Currency: "USD", Unit: "hour",
+	}), metering.ErrRateNotFound)
+
+	hist, err := store.ListRateHistory(ctx, "gpu")
+	require.NoError(t, err)
+	require.Len(t, hist, 2)
+	assert.Equal(t, metering.RateOpSet, hist[0].Op)
+	assert.Equal(t, metering.RateOpUpdate, hist[1].Op)
+
+	require.NoError(t, store.DeleteRate(ctx, "gpu"))
+	_, err = store.GetRate(ctx, "gpu")
+	require.ErrorIs(t, err, metering.ErrRateNotFound)
+	hist, err = store.ListRateHistory(ctx, "gpu")
+	require.NoError(t, err)
+	require.Equal(t, metering.RateOpDelete, hist[len(hist)-1].Op)
+}
+
 func TestNew_RequiresDB(t *testing.T) {
 	_, err := mpg.New(nil, mpg.Config{})
 	require.Error(t, err)

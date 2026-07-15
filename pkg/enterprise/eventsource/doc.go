@@ -9,4 +9,7 @@
 //
 // ProjectionRunner catch-up-projects LoadAll events onto a cqrs.Projector with
 // a durable CheckpointStore (memory or adapters/sql / adapters/postgres).
+// Use Run for continuous catch-up with error backoff; ResetCheckpoint to
+// restart from zero; NewInstrumentedProjectionRunner / ProjectionMetrics for
+// observability; Config + NewProjectionFromConfig for env-driven defaults.
 package eventsource

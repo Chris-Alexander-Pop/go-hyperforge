@@ -14,7 +14,7 @@
 
 ### Still open (truly remaining)
 
-After sibling domain agents land (iot/web3/ai depth; workflow/metering/storage; consensus/GraphQL/datastructures reuse), the residual backlog is **cross-cutting adoption debt** only:
+After sibling domain agents land, residual backlog is mostly **cross-cutting adoption debt**, plus a few honest adapter gaps:
 
 - 🔗 Adopt `pkg/errors` (no raw `fmt.Errorf` / stdlib `errors.New` for domain errors) at remaining call sites
 - 🔗 Adopt `pkg/concurrency.SmartMutex` / `SmartRWMutex` instead of bare `sync.Mutex` / `RWMutex` (high-traffic packages partially done; datastructures + long tail remain)
@@ -24,6 +24,9 @@ After sibling domain agents land (iot/web3/ai depth; workflow/metering/storage; 
 - ❌ Broader `pkg/test.Suite` / interface conformance tests beyond the packages already migrated
 - ❌ Broader `config.Load` adoption beyond search/web3/iot/starter
 - ⚠️ Keep `pkg/TODO.md` honest as packages deepen (demote false ✅ when scaffolding is discovered)
+- 🔄 `pkg/workflow`: Temporal worker hosting; full ASL Choice/Parallel; Logic Apps ARM deploy + MSI
+- 🔄 `pkg/storage`: real EC2/EBS SDK; Azure/GCS archive; Ceph/CSI
+- 🔄 `pkg/enterprise`: snapshot store + outbox-driven continuous projections beyond catch-up Run
 
 ### Progress since review (branch `branch/package-readiness-review-35ed`)
 
@@ -80,6 +83,7 @@ Landed foundation/reuse/domain hardening (scores above are the *pre-fix* snapsho
 - ✅ `security`: CIRCL ML-DSA (Dilithium) Signer/Verifier; Azure Key Vault secrets Get/Set/Delete; ClamAV INSTREAM scanner
 - ✅ Sibling domain wave (assumed landed): iot/web3/ai depth; workflow/metering/storage cloud depth; consensus sketches polish + GraphQL DX + datastructures reuse into algorithms/cache/workflow
 - ✅ Cross-cutting cleanup: TODO scaffolding demotions; messaging+resilience `pkg/test.Suite`; SmartRWMutex batch (LB/discovery/auth/sql shard/ai ml/coap/ratelimit; logger kept `sync.RWMutex` to avoid concurrency↔logger import cycle); logger Init bootstrap examples marked shipped
+- ✅ Workflow/metering/storage/enterprise polish: Temporal SDK status enums + ListWorkflow visibility + Close; Step Functions RoleArn + waitForTaskToken Signal; Logic Apps remote run fetch + Close; metering UpdateRate/DeleteRate/ListRateHistory; EBS from-snapshot + ListSnapshots; Glacier in-progress restore; controller LVM local sparse adapter; ProjectionRunner Run/ResetCheckpoint/backoff/metrics + Config + InstrumentedProjectionRunner
 
 ---
 
@@ -231,7 +235,10 @@ Landed foundation/reuse/domain hardening (scores above are the *pre-fix* snapsho
 - [x] ✅ Local/NFS-shaped `file` adapter (`file/adapters/local` real FS)
 - [x] ✅ Local file-backed `block` adapter (`block/adapters/local` JSON metadata)
 - [x] ✅ Filesystem cold-dir `archive` adapter (`archive/adapters/filesystem`)
-- [x] ✅ Production cloud adapters for block/archive/controller (sibling storage wave)
+- [x] ✅ EBS file stub: attach/detach/snapshot + CreateVolume from SnapshotID + ListSnapshots (not a real EC2 client)
+- [x] ✅ Glacier: RestoreObject + in-progress/complete job model; InstantRestore/CompleteRestore
+- [x] ✅ Controller `adapters/lvm` local sparse-file VolumeController for tests
+- [ ] ❌ Real EC2/EBS SDK client; Azure/GCS archive tiers; Ceph/CSI production controllers
 
 ### `pkg/data` (~56 → improved)
 - [x] ✅ Docs: top-level `etl` / `processing` marked planned-only (`data/doc.go`, `pkg/README`)
@@ -259,7 +266,8 @@ Landed foundation/reuse/domain hardening (scores above are the *pre-fix* snapsho
 - [x] ✅ Tests; `InstrumentedRater`; memory + Prometheus exporter adapters
 - [x] 🔗 Wire to `pkg/events` (`EventedMeter`) + `pkg/commerce.Money` via `CalculateCostMoney`
 - [x] ✅ Postgres Meter/Rater adapter (`adapters/postgres` via database/sql)
-- [x] ✅ Period aggregation (`PeriodAggregate` / `SummarizeUsage`); rate-card mutation APIs assumed landed with metering sibling
+- [x] ✅ Period aggregation (`PeriodAggregate` / `SummarizeUsage`)
+- [x] ✅ Rate-card CRUD: SetRate/UpdateRate/DeleteRate/ListRates + ListRateHistory (memory + postgres)
 
 ---
 
@@ -387,15 +395,17 @@ Landed foundation/reuse/domain hardening (scores above are the *pre-fix* snapsho
 ### `pkg/enterprise` (~24 → improved)
 - [x] ✅ Standards skeleton: instrumented, adapters/memory, errors, eventsource tests
 - [x] 🔗 Bridge eventsource → `pkg/events` (`evented.go`); messaging noted in docs
-- [x] ✅ ProjectionRunner + CheckpointStore (sql/postgres) + EventedStore messaging outbox
-- [x] ⚠️ Demote TODO ✅ → 🔄 where still overclaiming (enterprise + workflow + ML honesty pass)
+- [x] ✅ ProjectionRunner: RunOnce/Run with error backoff, ResetCheckpoint, ProjectionMetrics, Config + InstrumentedProjectionRunner
+- [x] ✅ Durable CheckpointStore (memory + sql/postgres) + EventedStore messaging outbox
+- [ ] ❌ Snapshot store + outbox-driven continuous projection beyond catch-up Run
 
 ### `pkg/workflow` (~38 → improved)
 - [x] ✅ Memory engine Task/Wait state-machine execution + IdempotencyKey; timeout still honored on empty/legacy path
 - [x] 🔗 Scheduler + `pkg/concurrency/distlock`; saga + `pkg/events`/`messaging`
 - [x] ✅ Durable saga (`StateStore` memory + file/json; `DurableExecutor.Resume` / `ResumeAll`)
 - [x] ✅ Real cron via robfig/cron (`scheduler/cron.go`); instrumented durable saga executor + instrumented scheduler
-- [x] ✅ Cloud adapter completeness (Temporal/StepFunctions/LogicApps depth — sibling workflow wave)
+- [x] ✅ Temporal: SDK status enums, ListWorkflow visibility, Close; Step Functions RoleArn + callback Signal; Logic Apps remote run status + Close
+- [ ] ❌ Temporal worker hosting; full ASL Choice/Parallel; Logic Apps ARM deploy + MSI auth
 
 ### `pkg/iot` (~28 → improved)
 - [x] ✅ Root Client/Updater interfaces + memory adapters + instrumented + tests

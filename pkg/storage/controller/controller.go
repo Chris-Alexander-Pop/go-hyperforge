@@ -64,6 +64,12 @@ const (
 
 // Config holds configuration for the storage controller.
 type Config struct {
-	// Driver specifies the storage backend: "memory", "ceph", "lvm".
+	// Driver specifies the storage backend: "memory", "lvm", "local".
 	Driver string `env:"STORAGE_DRIVER" env-default:"memory"`
+
+	// Root is used by lvm/local file-backed controllers.
+	Root string `env:"STORAGE_CONTROLLER_ROOT" env-default:"./lvmstore"`
+
+	// VolumeGroup is cosmetic for the lvm adapter.
+	VolumeGroup string `env:"STORAGE_LVM_VG" env-default:"hyperforge"`
 }

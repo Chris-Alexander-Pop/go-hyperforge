@@ -143,6 +143,24 @@ func (s *Store) CreateVolume(ctx context.Context, opts block.CreateVolumeOptions
 	_ = ctx
 	s.mu.Lock()
 	defer s.mu.Unlock()
+
+	tags := opts.Tags
+	if tags == nil {
+		tags = map[string]string{}
+	}
+	if opts.SnapshotID != "" {
+		snap, err := s.readSnap(opts.SnapshotID)
+		if err != nil {
+			return nil, err
+		}
+		if opts.SizeGB <= 0 {
+			opts.SizeGB = snap.SizeGB
+		}
+		if opts.SizeGB < snap.SizeGB {
+			return nil, block.ErrSizeTooSmall
+		}
+		tags["ebs.amazonaws.com/source-snapshot"] = opts.SnapshotID
+	}
 	if opts.SizeGB <= 0 {
 		return nil, block.ErrInvalidSize
 	}
@@ -153,10 +171,6 @@ func (s *Store) CreateVolume(ctx context.Context, opts block.CreateVolumeOptions
 	az := opts.AvailabilityZone
 	if az == "" {
 		az = s.cfg.AvailabilityZone
-	}
-	tags := opts.Tags
-	if tags == nil {
-		tags = map[string]string{}
 	}
 	tags["ebs.amazonaws.com/region"] = s.cfg.Region
 	vol := &block.Volume{
@@ -377,4 +391,28 @@ func (s *Store) DeleteSnapshot(ctx context.Context, snapshotID string) error {
 		return errors.Internal("delete snapshot", err)
 	}
 	return nil
+}
+
+// ListSnapshots returns snapshots under the store root (optional convenience beyond VolumeStore).
+func (s *Store) ListSnapshots(ctx context.Context) ([]*block.Snapshot, error) {
+	_ = ctx
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	entries, err := os.ReadDir(filepath.Join(s.root, "snapshots"))
+	if err != nil {
+		return nil, errors.Internal("list snapshots", err)
+	}
+	out := make([]*block.Snapshot, 0, len(entries))
+	for _, e := range entries {
+		if e.IsDir() || filepath.Ext(e.Name()) != ".json" {
+			continue
+		}
+		id := strings.TrimSuffix(e.Name(), ".json")
+		snap, err := s.readSnap(id)
+		if err != nil {
+			continue
+		}
+		out = append(out, snap)
+	}
+	return out, nil
 }

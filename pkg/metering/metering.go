@@ -131,6 +131,8 @@ func DefaultSummarizeUsage(ctx context.Context, m Meter, filter UsageFilter) (*U
 }
 
 // Rater defines the interface for calculating costs and managing rate cards.
+// Full rate-card CRUD: SetRate (upsert), UpdateRate (existing only), DeleteRate,
+// ListRates, plus ListRateHistory for audit of mutations.
 type Rater interface {
 	// GetRate returns the price for a specific resource type.
 	// Returns ErrRateNotFound when no rate card exists.
@@ -140,8 +142,18 @@ type Rater interface {
 	// Returns ErrInvalidUsage when the rate card is malformed.
 	SetRate(ctx context.Context, rate RateCard) error
 
+	// UpdateRate updates an existing rate card. Returns ErrRateNotFound when missing.
+	UpdateRate(ctx context.Context, rate RateCard) error
+
+	// DeleteRate removes a rate card. Returns ErrRateNotFound when missing.
+	DeleteRate(ctx context.Context, resourceType string) error
+
 	// ListRates returns all configured rate cards.
 	ListRates(ctx context.Context) ([]RateCard, error)
+
+	// ListRateHistory returns mutation history for a resource type (oldest first).
+	// An empty resourceType returns history across all types.
+	ListRateHistory(ctx context.Context, resourceType string) ([]RateRevision, error)
 
 	// CalculateCost estimates the cost for a given usage.
 	CalculateCost(ctx context.Context, usage UsageEvent) (float64, error)
@@ -149,6 +161,25 @@ type Rater interface {
 	// Close releases resources held by the rater.
 	// The rater should not be used after calling Close.
 	Close() error
+}
+
+// RateOp is a rate-card mutation kind recorded in history.
+type RateOp string
+
+const (
+	RateOpSet    RateOp = "set"
+	RateOpUpdate RateOp = "update"
+	RateOpDelete RateOp = "delete"
+)
+
+// RateRevision is one entry in rate-card mutation history.
+type RateRevision struct {
+	ResourceType string    `json:"resource_type"`
+	Op           RateOp    `json:"op"`
+	PricePerUnit float64   `json:"price_per_unit"`
+	Currency     string    `json:"currency"`
+	Unit         string    `json:"unit"`
+	ChangedAt    time.Time `json:"changed_at"`
 }
 
 // UsageEvent represents a single consumption record.

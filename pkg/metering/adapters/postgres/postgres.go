@@ -67,6 +67,10 @@ func (s *Store) rewrite(query string) string {
 
 // Migrate creates metering tables.
 func (s *Store) Migrate(ctx context.Context) error {
+	historyID := `id INTEGER PRIMARY KEY AUTOINCREMENT`
+	if s.dialect == DialectPostgres {
+		historyID = `id BIGSERIAL PRIMARY KEY`
+	}
 	stmts := []string{
 		`CREATE TABLE IF NOT EXISTS metering_usage (
 			id TEXT PRIMARY KEY,
@@ -85,6 +89,16 @@ func (s *Store) Migrate(ctx context.Context) error {
 			currency TEXT NOT NULL,
 			unit TEXT NOT NULL
 		)`,
+		`CREATE TABLE IF NOT EXISTS metering_rate_history (
+			` + historyID + `,
+			resource_type TEXT NOT NULL,
+			op TEXT NOT NULL,
+			price_per_unit REAL NOT NULL,
+			currency TEXT NOT NULL,
+			unit TEXT NOT NULL,
+			changed_at TIMESTAMP NOT NULL
+		)`,
+		`CREATE INDEX IF NOT EXISTS idx_metering_rate_history_type ON metering_rate_history(resource_type)`,
 	}
 	for _, stmt := range stmts {
 		if _, err := s.db.ExecContext(ctx, stmt); err != nil {
@@ -208,7 +222,90 @@ ON CONFLICT(resource_type) DO UPDATE SET price_per_unit = excluded.price_per_uni
 	if err != nil {
 		return pkgerrors.Internal("failed to set rate", err)
 	}
+	return s.appendHistory(ctx, rate, metering.RateOpSet)
+}
+
+// UpdateRate updates an existing rate card.
+func (s *Store) UpdateRate(ctx context.Context, rate metering.RateCard) error {
+	if err := s.checkClosed(); err != nil {
+		return err
+	}
+	if err := metering.ValidateRateCard(rate); err != nil {
+		return err
+	}
+	res, err := s.db.ExecContext(ctx, s.rewrite(`
+UPDATE metering_rates SET price_per_unit = ?, currency = ?, unit = ? WHERE resource_type = ?
+`), rate.PricePerUnit, rate.Currency, rate.Unit, rate.ResourceType)
+	if err != nil {
+		return pkgerrors.Internal("failed to update rate", err)
+	}
+	n, _ := res.RowsAffected()
+	if n == 0 {
+		return metering.ErrRateNotFound
+	}
+	return s.appendHistory(ctx, rate, metering.RateOpUpdate)
+}
+
+// DeleteRate removes a rate card.
+func (s *Store) DeleteRate(ctx context.Context, resourceType string) error {
+	if err := s.checkClosed(); err != nil {
+		return err
+	}
+	if resourceType == "" {
+		return metering.ErrInvalidUsage
+	}
+	rate, err := s.GetRate(ctx, resourceType)
+	if err != nil {
+		return err
+	}
+	res, err := s.db.ExecContext(ctx, s.rewrite(`DELETE FROM metering_rates WHERE resource_type = ?`), resourceType)
+	if err != nil {
+		return pkgerrors.Internal("failed to delete rate", err)
+	}
+	n, _ := res.RowsAffected()
+	if n == 0 {
+		return metering.ErrRateNotFound
+	}
+	return s.appendHistory(ctx, *rate, metering.RateOpDelete)
+}
+
+func (s *Store) appendHistory(ctx context.Context, rate metering.RateCard, op metering.RateOp) error {
+	_, err := s.db.ExecContext(ctx, s.rewrite(`
+INSERT INTO metering_rate_history (resource_type, op, price_per_unit, currency, unit, changed_at)
+VALUES (?, ?, ?, ?, ?, ?)
+`), rate.ResourceType, string(op), rate.PricePerUnit, rate.Currency, rate.Unit, time.Now().UTC())
+	if err != nil {
+		return pkgerrors.Internal("failed to append rate history", err)
+	}
 	return nil
+}
+
+// ListRateHistory returns mutation history for a resource type (or all when empty).
+func (s *Store) ListRateHistory(ctx context.Context, resourceType string) ([]metering.RateRevision, error) {
+	if err := s.checkClosed(); err != nil {
+		return nil, err
+	}
+	rows, err := s.db.QueryContext(ctx, `SELECT resource_type, op, price_per_unit, currency, unit, changed_at FROM metering_rate_history ORDER BY id ASC`)
+	if err != nil {
+		return nil, pkgerrors.Internal("failed to list rate history", err)
+	}
+	defer rows.Close()
+	out := make([]metering.RateRevision, 0)
+	for rows.Next() {
+		var rev metering.RateRevision
+		var op string
+		var ts time.Time
+		if err := rows.Scan(&rev.ResourceType, &op, &rev.PricePerUnit, &rev.Currency, &rev.Unit, &ts); err != nil {
+			return nil, pkgerrors.Internal("failed to scan rate history", err)
+		}
+		rev.Op = metering.RateOp(op)
+		rev.ChangedAt = ts
+		if resourceType != "" && rev.ResourceType != resourceType {
+			continue
+		}
+		out = append(out, rev)
+	}
+	return out, rows.Err()
 }
 
 // ListRates returns all rate cards.

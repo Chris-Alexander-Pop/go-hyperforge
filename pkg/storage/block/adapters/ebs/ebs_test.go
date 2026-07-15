@@ -54,3 +54,26 @@ func TestEBSStub_VolumeLifecycle(t *testing.T) {
 	_, err = os.Stat(filepath.Join(root, "volumes", vol.ID+".json"))
 	require.True(t, os.IsNotExist(err))
 }
+
+func TestEBSStub_FromSnapshotAndList(t *testing.T) {
+	root := t.TempDir()
+	store, err := ebs.New(ebs.Config{Root: root})
+	require.NoError(t, err)
+	ctx := context.Background()
+
+	vol, err := store.CreateVolume(ctx, block.CreateVolumeOptions{Name: "src", SizeGB: 50})
+	require.NoError(t, err)
+	snap, err := store.CreateSnapshot(ctx, block.CreateSnapshotOptions{VolumeID: vol.ID})
+	require.NoError(t, err)
+
+	cloned, err := store.CreateVolume(ctx, block.CreateVolumeOptions{
+		Name: "from-snap", SnapshotID: snap.ID,
+	})
+	require.NoError(t, err)
+	require.Equal(t, int64(50), cloned.SizeGB)
+	require.Equal(t, snap.ID, cloned.Tags["ebs.amazonaws.com/source-snapshot"])
+
+	snaps, err := store.ListSnapshots(ctx)
+	require.NoError(t, err)
+	require.Len(t, snaps, 1)
+}

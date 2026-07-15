@@ -244,6 +244,38 @@ func (r *InstrumentedRater) SetRate(ctx context.Context, rate RateCard) error {
 	return nil
 }
 
+func (r *InstrumentedRater) UpdateRate(ctx context.Context, rate RateCard) error {
+	ctx, span := r.tracer.Start(ctx, "metering.UpdateRate", trace.WithAttributes(
+		attribute.String("resource.type", rate.ResourceType),
+	))
+	defer span.End()
+	err := r.next.UpdateRate(ctx, rate)
+	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
+		logger.L().ErrorContext(ctx, "failed to update rate", "resource_type", rate.ResourceType, "error", err)
+		return err
+	}
+	logger.L().InfoContext(ctx, "updated rate", "resource_type", rate.ResourceType, "price_per_unit", rate.PricePerUnit)
+	return nil
+}
+
+func (r *InstrumentedRater) DeleteRate(ctx context.Context, resourceType string) error {
+	ctx, span := r.tracer.Start(ctx, "metering.DeleteRate", trace.WithAttributes(
+		attribute.String("resource.type", resourceType),
+	))
+	defer span.End()
+	err := r.next.DeleteRate(ctx, resourceType)
+	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
+		logger.L().ErrorContext(ctx, "failed to delete rate", "resource_type", resourceType, "error", err)
+		return err
+	}
+	logger.L().InfoContext(ctx, "deleted rate", "resource_type", resourceType)
+	return nil
+}
+
 func (r *InstrumentedRater) ListRates(ctx context.Context) ([]RateCard, error) {
 	ctx, span := r.tracer.Start(ctx, "metering.ListRates")
 	defer span.End()
@@ -270,6 +302,21 @@ func (r *InstrumentedRater) ListRates(ctx context.Context) ([]RateCard, error) {
 		"duration_ms", duration.Milliseconds(),
 	)
 	return rates, nil
+}
+
+func (r *InstrumentedRater) ListRateHistory(ctx context.Context, resourceType string) ([]RateRevision, error) {
+	ctx, span := r.tracer.Start(ctx, "metering.ListRateHistory", trace.WithAttributes(
+		attribute.String("resource.type", resourceType),
+	))
+	defer span.End()
+	revs, err := r.next.ListRateHistory(ctx, resourceType)
+	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
+		return nil, err
+	}
+	span.SetAttributes(attribute.Int("result.count", len(revs)))
+	return revs, nil
 }
 
 func (r *InstrumentedRater) CalculateCost(ctx context.Context, usage UsageEvent) (float64, error) {

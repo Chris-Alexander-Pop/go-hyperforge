@@ -7,6 +7,7 @@ import (
 	"github.com/chris-alexander-pop/go-hyperforge/pkg/enterprise/cqrs"
 	"github.com/chris-alexander-pop/go-hyperforge/pkg/events"
 	"github.com/chris-alexander-pop/go-hyperforge/pkg/messaging"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/resilience"
 )
 
 // Checkpoint records how far a projector has processed the event store.
@@ -35,6 +36,16 @@ type CheckpointStore interface {
 	Save(ctx context.Context, cp Checkpoint) error
 }
 
+// ProjectionMetrics receives optional instrumentation hooks from ProjectionRunner.
+type ProjectionMetrics interface {
+	// OnBatch records events applied in a RunOnce batch (matched + advanced).
+	OnBatch(name string, applied int, advanced int64)
+	// OnError records a projection failure (before backoff/retry).
+	OnError(name string, err error)
+	// OnCatchUpIdle is called when RunOnce finds nothing new to project.
+	OnCatchUpIdle(name string)
+}
+
 // ProjectionConfig configures a ProjectionRunner.
 type ProjectionConfig struct {
 	// Name is the checkpoint key (defaults to first EventTypes entry or "default").
@@ -42,6 +53,28 @@ type ProjectionConfig struct {
 
 	// BatchCheckpoints saves the checkpoint every N events (default 1).
 	BatchCheckpoints int
+
+	// PollInterval is the delay between successful RunOnce calls in Run (default 1s).
+	PollInterval time.Duration
+
+	// InitialBackoff is the first delay after a RunOnce error (default 200ms).
+	InitialBackoff time.Duration
+
+	// MaxBackoff caps exponential backoff after errors (default 30s).
+	MaxBackoff time.Duration
+
+	// Metrics optional hooks (nil-safe).
+	Metrics ProjectionMetrics
+}
+
+// DefaultProjectionConfig returns sensible continuous-run defaults.
+func DefaultProjectionConfig() ProjectionConfig {
+	return ProjectionConfig{
+		BatchCheckpoints: 1,
+		PollInterval:     time.Second,
+		InitialBackoff:   200 * time.Millisecond,
+		MaxBackoff:       30 * time.Second,
+	}
 }
 
 // ProjectionRunner catch-up projects events from an EventStore onto a
@@ -56,8 +89,18 @@ type ProjectionRunner struct {
 
 // NewProjectionRunner wires store + checkpoints + projector.
 func NewProjectionRunner(store EventStore, checkpoints CheckpointStore, projector cqrs.Projector, cfg ProjectionConfig) *ProjectionRunner {
+	def := DefaultProjectionConfig()
 	if cfg.BatchCheckpoints <= 0 {
-		cfg.BatchCheckpoints = 1
+		cfg.BatchCheckpoints = def.BatchCheckpoints
+	}
+	if cfg.PollInterval <= 0 {
+		cfg.PollInterval = def.PollInterval
+	}
+	if cfg.InitialBackoff <= 0 {
+		cfg.InitialBackoff = def.InitialBackoff
+	}
+	if cfg.MaxBackoff <= 0 {
+		cfg.MaxBackoff = def.MaxBackoff
 	}
 	if cfg.Name == "" {
 		if types := projector.EventTypes(); len(types) > 0 {
@@ -67,8 +110,10 @@ func NewProjectionRunner(store EventStore, checkpoints CheckpointStore, projecto
 		}
 	}
 	typeSet := make(map[string]struct{})
-	for _, t := range projector.EventTypes() {
-		typeSet[t] = struct{}{}
+	if projector != nil {
+		for _, t := range projector.EventTypes() {
+			typeSet[t] = struct{}{}
+		}
 	}
 	return &ProjectionRunner{
 		store:       store,
@@ -79,10 +124,32 @@ func NewProjectionRunner(store EventStore, checkpoints CheckpointStore, projecto
 	}
 }
 
+// Name returns the checkpoint / projection name.
+func (r *ProjectionRunner) Name() string { return r.cfg.Name }
+
+// Checkpoint returns the current durable checkpoint.
+func (r *ProjectionRunner) Checkpoint(ctx context.Context) (Checkpoint, error) {
+	if r.checkpoints == nil {
+		return Checkpoint{}, ErrInvalidArgument("checkpoint store is required", nil)
+	}
+	return r.checkpoints.Load(ctx, r.cfg.Name)
+}
+
+// ResetCheckpoint forces the runner to restart from position 0 on the next RunOnce.
+func (r *ProjectionRunner) ResetCheckpoint(ctx context.Context) error {
+	if r.checkpoints == nil {
+		return ErrInvalidArgument("checkpoint store is required", nil)
+	}
+	return r.checkpoints.Save(ctx, Checkpoint{
+		Name:      r.cfg.Name,
+		Position:  0,
+		UpdatedAt: time.Now().UTC(),
+	})
+}
+
 // RunOnce loads all events after the checkpoint, applies matching ones to the
 // projector, and advances the checkpoint. It is safe to call repeatedly for
-// catch-up; callers that need continuous projection should loop or subscribe
-// via EventedStore / messaging outbox.
+// catch-up; callers that need continuous projection should use Run.
 func (r *ProjectionRunner) RunOnce(ctx context.Context) error {
 	if err := ctx.Err(); err != nil {
 		return err
@@ -117,6 +184,14 @@ func (r *ProjectionRunner) RunOnce(ctx context.Context) error {
 		cp.Position = 0
 	}
 
+	if start >= len(all) {
+		if r.cfg.Metrics != nil {
+			r.cfg.Metrics.OnCatchUpIdle(r.cfg.Name)
+		}
+		return nil
+	}
+
+	applied := 0
 	sinceLastSave := 0
 	for i := start; i < len(all); i++ {
 		if err := ctx.Err(); err != nil {
@@ -125,8 +200,12 @@ func (r *ProjectionRunner) RunOnce(ctx context.Context) error {
 		ev := all[i]
 		if r.shouldProject(ev.EventType) {
 			if err := r.projector.Project(ctx, ev); err != nil {
+				if r.cfg.Metrics != nil {
+					r.cfg.Metrics.OnError(r.cfg.Name, err)
+				}
 				return ErrApplyFailed("projection failed for "+ev.EventType, err)
 			}
+			applied++
 		}
 		cp.Position = int64(i + 1)
 		cp.Name = r.cfg.Name
@@ -140,7 +219,42 @@ func (r *ProjectionRunner) RunOnce(ctx context.Context) error {
 			sinceLastSave = 0
 		}
 	}
+	if r.cfg.Metrics != nil {
+		r.cfg.Metrics.OnBatch(r.cfg.Name, applied, cp.Position)
+	}
 	return nil
+}
+
+// Run continuously catch-up projects until ctx is cancelled.
+// On success it waits PollInterval; on error it exponential-backoffs up to MaxBackoff
+// then retries from the durable checkpoint (restart-safe).
+func (r *ProjectionRunner) Run(ctx context.Context) error {
+	attempt := 0
+	for {
+		if err := ctx.Err(); err != nil {
+			return err
+		}
+		err := r.RunOnce(ctx)
+		if err == nil {
+			attempt = 0
+			select {
+			case <-ctx.Done():
+				return ctx.Err()
+			case <-time.After(r.cfg.PollInterval):
+			}
+			continue
+		}
+		if r.cfg.Metrics != nil {
+			r.cfg.Metrics.OnError(r.cfg.Name, err)
+		}
+		delay := resilience.ExponentialBackoff(attempt, r.cfg.InitialBackoff, r.cfg.MaxBackoff, 0.1)
+		attempt++
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-time.After(delay):
+		}
+	}
 }
 
 func (r *ProjectionRunner) shouldProject(eventType string) bool {
