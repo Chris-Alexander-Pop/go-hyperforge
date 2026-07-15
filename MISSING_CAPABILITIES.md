@@ -15,9 +15,17 @@
 ### Still open (truly remaining)
 
 - Cross-cutting: adopt `pkg/errors` / `SmartMutex` / `resilience` / `validator` / `algorithms` / `events` everywhere; PACKAGE_STANDARDS skeletons & interface tests; demote false ✅ in `pkg/TODO.md`
-- `pkg/security`: real CIRCL/liboqs PQC finish (ML-KEM experimental path may exist; Dilithium/ML-DSA and production hardening still open)
-- `pkg/algorithms`: finish educational consensus beyond Raft log append/replicate (Paxos/Chord/SWIM/Louvain remain stubs)
-- `pkg/api`: GraphQL polish (complexity/depth/OTel may land elsewhere; schema tooling and DX still open)
+- `pkg/security`: Dilithium/ML-DSA signatures still absent (CIRCL ML-KEM **shipped**); Azure Key Vault secrets; ClamAV scanner
+- `pkg/algorithms`: Paxos/Chord/SWIM/Louvain remain educational sketches (Raft deepened with log append/replicate; sticky LB **shipped**)
+- `pkg/api`: GraphQL schema tooling / DX polish (complexity/depth/OTel **shipped**)
+- `pkg/iot`: cloud device-cert SDK wiring; MQTT Paho behind root Client; CoAP UDP
+- `pkg/web3`: Solana behind root interface; WalletConnect/DID resolver
+- `pkg/ai`: remaining ML depth; speech cloud polish
+- `pkg/datastructures`: drive reuse into algorithms/cache/workflow
+- `pkg/workflow`: cloud adapter completeness (Temporal/StepFunctions/LogicApps depth)
+- `pkg/enterprise`: fuller ProjectionRunner polish
+- `pkg/metering`: rate-card mutation APIs
+- `pkg/storage`: remaining cloud adapter depth beyond EBS/Glacier thin stubs
 
 ### Progress since review (branch `branch/package-readiness-review-35ed`)
 
