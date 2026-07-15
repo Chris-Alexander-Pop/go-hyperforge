@@ -46,9 +46,9 @@ Landed foundation/reuse/domain hardening (scores above are the *pre-fix* snapsho
 | errors | 58 | Foundation usable; codes/Is/Wrap incomplete |
 | datastructures | 58 | Broad catalog; many stubs / low reuse |
 | communication | 58 | Ready: root drivers/errors/resilience, html/text templates, adapter tests |
-| data | 56 | Search strong; bigdata/docs overclaim |
+| data | 62 | Search+Suggest; bigdata errors/instrumented; etl/processing planned |
 | compute | 52→improved | Root + sentinels + k8s ID fix; EC2/Docker still reserved |
-| concurrency | 52 | SmartMutex strong; rest experimental |
+| concurrency | 58 | SmartMutex strong; distlock retry + honest Redis docs |
 | network | 50* | LB/DNS OK; CDN/APIGW/IP thin; no algo reuse |
 | api | 48 | Broad surface; GraphQL stub; standards weak |
 | test | 45 | Thin Suite; low adoption; dead containers |
