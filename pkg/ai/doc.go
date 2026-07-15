@@ -8,16 +8,21 @@ This package organizes AI functionality into the following subdomains:
   - nlp: Natural Language Processing (embeddings, RAG)
   - perception: Computer vision, speech, OCR
 
+# LLM Chat
+
+Use genai/llm for conversational Chat and StreamChat (not a separate Generate API):
+
+	import "github.com/chris-alexander-pop/system-design-library/pkg/ai/genai/llm"
+	resp, err := client.Chat(ctx, messages)
+	chunks, err := client.StreamChat(ctx, messages)
+
 # Embedding Generation
 
-For text embeddings, use nlp/embedding for focused embedding tasks:
+For text embeddings, use nlp/embedding:
 
 	import "github.com/chris-alexander-pop/system-design-library/pkg/ai/nlp/embedding"
 	vectors, err := embedder.Embed(ctx, texts)
 
-For LLM chat/generation with optional embedding capabilities, use genai/llm:
-
-	import "github.com/chris-alexander-pop/system-design-library/pkg/ai/genai/llm"
-	resp, err := client.Chat(ctx, messages)
+Note: historical references to pkg/ai/llm are superseded by pkg/ai/genai/llm.
 */
 package ai

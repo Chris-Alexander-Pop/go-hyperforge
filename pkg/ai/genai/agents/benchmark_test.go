@@ -36,6 +36,10 @@ func (m MockClient) Chat(ctx context.Context, history []llm.Message, opts ...llm
 	}, nil
 }
 
+func (m MockClient) StreamChat(ctx context.Context, history []llm.Message, opts ...llm.GenerateOption) (<-chan llm.GenerationChunk, error) {
+	return llm.StreamFromChat(ctx, m.Chat, history, opts...)
+}
+
 func BenchmarkBuildSystemPrompt(b *testing.B) {
 	numTools := 100
 	tools := make([]Tool, numTools)

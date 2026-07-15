@@ -5,7 +5,12 @@
 //	import "github.com/chris-alexander-pop/system-design-library/pkg/ai/genai/llm"
 //
 //	client, err := openai.New("key")
-//	resp, err := client.Generate(ctx, "Hello world")
+//	resp, err := client.Chat(ctx, []llm.Message{{Role: llm.RoleUser, Content: "Hello"}})
+//
+// For token streaming, use StreamChat (required on Client; adapters may buffer a full Chat
+// response into a single chunk when native streaming is unavailable):
+//
+//	chunks, err := client.StreamChat(ctx, messages)
 package llm
 
 import "context"
@@ -51,6 +56,18 @@ type Generation struct {
 	Usage        Usage   `json:"usage"`
 }
 
+// GenerationChunk is one piece of a streamed Chat response.
+type GenerationChunk struct {
+	// Delta is the incremental assistant text for this chunk.
+	Delta string `json:"delta,omitempty"`
+	// FinishReason is set on the final chunk (stop, length, tool_calls, …).
+	FinishReason string `json:"finish_reason,omitempty"`
+	// Usage is optionally set on the final chunk.
+	Usage *Usage `json:"usage,omitempty"`
+	// Err is a terminal stream error (channel closes after an error chunk).
+	Err error `json:"-"`
+}
+
 // Usage tracks token consumption.
 type Usage struct {
 	PromptTokens     int `json:"prompt_tokens"`
@@ -81,12 +98,14 @@ type ToolFunction struct {
 }
 
 // Client is the interface for LLM providers.
+// Chat returns a complete response; StreamChat yields incremental GenerationChunks.
 type Client interface {
-	// Chat sends a conversation history and gets a response.
+	// Chat sends a conversation history and gets a complete response.
 	Chat(ctx context.Context, messages []Message, opts ...GenerateOption) (*Generation, error)
 
-	// StreamChat streams the response (implementation optional).
-	// StreamChat(ctx context.Context, messages []Message, opts ...GenerateOption) (<-chan GenerationChunk, error)
+	// StreamChat streams the assistant response as GenerationChunks.
+	// The returned channel is closed when the stream ends (or after an error chunk).
+	StreamChat(ctx context.Context, messages []Message, opts ...GenerateOption) (<-chan GenerationChunk, error)
 }
 
 // GenerateOption is a functional option.
@@ -102,4 +121,56 @@ func WithTemperature(temp float64) GenerateOption {
 
 func WithTools(tools []Tool) GenerateOption {
 	return func(o *GenerateOptions) { o.Tools = tools }
+}
+
+func WithMaxTokens(n int) GenerateOption {
+	return func(o *GenerateOptions) { o.MaxTokens = n }
+}
+
+// ApplyOptions builds GenerateOptions from functional options.
+func ApplyOptions(opts ...GenerateOption) GenerateOptions {
+	o := GenerateOptions{}
+	for _, opt := range opts {
+		if opt != nil {
+			opt(&o)
+		}
+	}
+	return o
+}
+
+// StreamFromChat adapts a non-streaming Chat call into a single-chunk StreamChat channel.
+// Useful for cloud adapters that have not yet wired native HTTP/SSE streaming.
+func StreamFromChat(ctx context.Context, chat func(context.Context, []Message, ...GenerateOption) (*Generation, error), messages []Message, opts ...GenerateOption) (<-chan GenerationChunk, error) {
+	if chat == nil {
+		return nil, ErrNilClient
+	}
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
+	if len(messages) == 0 {
+		return nil, ErrEmptyMessages
+	}
+
+	ch := make(chan GenerationChunk, 1)
+	go func() {
+		defer close(ch)
+		gen, err := chat(ctx, messages, opts...)
+		if err != nil {
+			select {
+			case ch <- GenerationChunk{Err: err}:
+			case <-ctx.Done():
+			}
+			return
+		}
+		usage := gen.Usage
+		select {
+		case ch <- GenerationChunk{
+			Delta:        gen.Message.Content,
+			FinishReason: gen.FinishReason,
+			Usage:        &usage,
+		}:
+		case <-ctx.Done():
+		}
+	}()
+	return ch, nil
 }

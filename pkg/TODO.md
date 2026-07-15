@@ -30,19 +30,25 @@
 
 ## 1. AI & Machine Learning (`pkg/ai`)
 
-### LLM Core (`pkg/ai/llm`)
+> **Path note:** There is no separate `pkg/ai/llm` tree. LLM APIs live under
+> `pkg/ai/genai/llm` (and embeddings under `pkg/ai/nlp/embedding`). Rows below that
+> still say `pkg/ai/llm/...` are a historical ledger alias — treat them as pointing
+> at the corresponding `pkg/ai/genai/llm/...` packages. Do not create a dual tree.
+
+### LLM Core (`pkg/ai/genai/llm` — formerly listed as `pkg/ai/llm`)
 | Package | Status | Enables Services | Description |
 |---------|--------|------------------|-------------|
-| `pkg/ai/llm/adapters/openai` | ❌ | llm-gateway | OpenAI Adapter |
-| `pkg/ai/llm/adapters/anthropic` | ❌ | llm-gateway | Anthropic Adapter |
-| `pkg/ai/llm/adapters/gemini` | ❌ | llm-gateway | Google Gemini Adapter |
-| `pkg/ai/llm/adapters/ollama` | ❌ | llm-gateway | Ollama Adapter (Local LLM) |
-| `pkg/ai/llm/adapters/memory` | ❌ | testing | In-memory Mock |
-| `pkg/ai/llm/chains` | ❌ | agent-orchestrator | LangChain-style chains |
-| `pkg/ai/llm/memory` | ❌ | context-manager | Conversation History |
-| `pkg/ai/llm/rag` | ❌ | rag-service | Retrieval Augmented Generation |
-| `pkg/ai/llm/tools` | ❌ | agent-runtime | Function Calling/Tool Registry |
-| `pkg/ai/llm/embeddings` | ❌ | embedding-service | Embedding Generation |
+| `pkg/ai/genai/llm` | ✅ | llm-gateway / llm-core | LLM Client (`Chat` + `StreamChat`) |
+| `pkg/ai/genai/llm/adapters/openai` | ✅ | llm-gateway | OpenAI Adapter |
+| `pkg/ai/genai/llm/adapters/anthropic` | ✅ | llm-gateway | Anthropic Adapter |
+| `pkg/ai/genai/llm/adapters/gemini` | ✅ | llm-gateway | Google Gemini Adapter |
+| `pkg/ai/genai/llm/adapters/ollama` | ✅ | llm-gateway | Ollama Adapter (Local LLM) |
+| `pkg/ai/genai/llm/adapters/memory` | ✅ | testing | In-memory Mock (+ streaming) |
+| `pkg/ai/genai/llm/chains` | ✅ | agent-orchestrator | LangChain-style chains |
+| `pkg/ai/genai/llm/memory` | ✅ | context-manager | Conversation History (context-first) |
+| `pkg/ai/nlp/rag` | ✅ | rag-service | Retrieval Augmented Generation |
+| `pkg/ai/genai/llm/tools` | ✅ | agent-runtime | Function Calling/Tool Registry |
+| `pkg/ai/nlp/embedding` | ✅ | embedding-service | Embedding Generation |
 
 ### Machine Learning (`pkg/ai/ml`)
 | Package | Status | Enables Services | Description |
@@ -72,23 +78,26 @@
 | `pkg/ai/nlp/embedding` | ✅ | semantic-search | Text Embeddings Interface |
 | `pkg/ai/nlp/embedding/adapters/openai` | ✅ | semantic-search | OpenAI Embeddings |
 | `pkg/ai/nlp/embedding/adapters/huggingface` | ✅ | semantic-search | HF Inference Embeddings |
+| `pkg/ai/nlp/embedding/adapters/memory` | ✅ | testing | In-memory Embeddings |
 | `pkg/ai/nlp/rag` | ✅ | knowledge-bot | RAG Orchestrator |
 
 ### Generative AI (`pkg/ai/genai`)
 | Package | Status | Enables Services | Description |
 |---------|--------|------------------|-------------|
-| `pkg/ai/genai/llm` | ✅ | llm-core | LLM Client Interface |
+| `pkg/ai/genai/llm` | ✅ | llm-core | LLM Client (`Chat` + `StreamChat`) + errors/instrumented |
 | `pkg/ai/genai/llm/adapters/openai` | ✅ | llm-core | OpenAI Adapter |
 | `pkg/ai/genai/llm/adapters/anthropic` | ✅ | llm-core | Anthropic Adapter |
 | `pkg/ai/genai/llm/adapters/gemini` | ✅ | llm-core | Google Gemini Adapter |
 | `pkg/ai/genai/llm/adapters/ollama` | ✅ | llm-core | Ollama Adapter (Local LLM) |
-| `pkg/ai/genai/llm/embeddings` | ✅ | embedding-service | Embedding Generation |
-| `pkg/ai/genai/llm/rag` | ✅ | rag-service | Retrieval Augmented Generation |
-| `pkg/ai/genai/llm/memory` | ✅ | context-manager | Conversation History |
+| `pkg/ai/genai/llm/adapters/memory` | ✅ | testing | In-memory Mock (+ streaming) |
+| `pkg/ai/nlp/embedding` | ✅ | embedding-service | Embedding Generation (canonical; not under genai/llm) |
+| `pkg/ai/nlp/rag` | ✅ | rag-service | Retrieval Augmented Generation (canonical) |
+| `pkg/ai/genai/llm/memory` | ✅ | context-manager | Conversation History (context-first) |
 | `pkg/ai/genai/llm/chains` | ✅ | agent-orchestrator | LangChain-style chains |
 | `pkg/ai/genai/llm/tools` | ✅ | agent-runtime | Function Calling/Tool Registry |
 | `pkg/ai/genai/image` | ✅ | creative-tools | Image Generation Interface |
 | `pkg/ai/genai/image/adapters/openai` | ✅ | creative-tools | DALL-E Adapter |
+| `pkg/ai/genai/image/adapters/memory` | ✅ | testing | In-memory Image Generation |
 | `pkg/ai/genai/agents` | ✅ | autonomous-tasks| ReAct Agent Framework |
 
 ---
@@ -135,7 +144,7 @@
 |---------|--------|------------------|-------------|
 | `pkg/data/bigdata/formats/avro` | ✅ | data-ingestion | Avro Format Support |
 | `pkg/data/bigdata/formats/parquet` | ✅ | data-ingestion | Parquet Format Support |
-| `pkg/data/bigdata/compute/spark` | ✅ | big-data-job | Spark Connect Client |
+| `pkg/data/bigdata/compute/spark` | 🔄 | big-data-job | Local spark-submit wrapper (Spark Connect planned) |
 | `pkg/data/bigdata/compute/mapreduce` | ✅ | big-data-job | MapReduce Implementation |
 | `pkg/data/bigdata/olap/duckdb` | ✅ | analytics | Embedded OLAP (DuckDB) |
 | `pkg/data/bigdata/adapters/bigquery` | ✅ | analytics | GCP BigQuery Adapter |

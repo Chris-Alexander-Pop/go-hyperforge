@@ -25,6 +25,7 @@ Landed foundation/reuse/domain hardening (scores above are the *pre-fix* snapsho
 - ✅ `security`: root/errors, crypto harden + memory KeyProvider, secrets Rotate/events, reCAPTCHA adapter, honest docs + auth bridge
 - 🔄 `auth`: OAuth2 AS interfaces + memory; Cognito/Entra/GCP Verify/Login; OIDC exchange; EncryptionKey; root errors.go
 - ✅ `commerce`: root Money, payment webhooks/auth-capture/idempotency/events/resilience, billing plans+past_due, tax multi-jurisdiction, FX formatting
+- ✅ `messaging`: NewFromConfig(memory), Publish/Consume options helpers, ErrQueueFull, ResilientConsumer, dedup TOCTOU, wrapper tests
 - 🔄 Remaining large gaps still listed below (TaxJar/Avalara/live FX, AI gateway, cloud IaaS adapters, security Vault/cloud KMS/WAF, etc.)
 
 ---
@@ -33,7 +34,7 @@ Landed foundation/reuse/domain hardening (scores above are the *pre-fix* snapsho
 
 | Package | Score | Notes |
 |---------|------:|-------|
-| messaging | 71 | Strong adapters; factory/tests/options gaps |
+| messaging | 71→82 | Factory/options/ErrQueueFull/ResilientConsumer/tests landed |
 | database | 62 | Broad skeleton; sharding/resilience/tests thin |
 | auth | 57 | Session/MFA/JWT solid; OAuth2 AS + cloud stubs |
 | cache | 60 | Core OK; TTL=0 / miss→CB footguns |
@@ -203,10 +204,13 @@ Landed foundation/reuse/domain hardening (scores above are the *pre-fix* snapsho
 
 ## 3. Communication & API
 
-### `pkg/messaging` (~71)
-- [ ] ❌ `manager.go` factory; wire Publish/Consume options or remove them
-- [ ] ❌ Honor TLS/claim/prefetch config fields; memory `ErrQueueFull`
-- [ ] ❌ ResilientConsumer; adapter unit/integration tests
+### `pkg/messaging` (~71 → improved)
+- [x] ✅ `manager.go` `NewFromConfig` (memory via RegisterDriver; other drivers documented / adapter `New`)
+- [x] ✅ Wire PublishOption/ConsumeOption via `Publish`/`Consume` helpers + headers/context (no interface break)
+- [x] ✅ Memory honors `BufferSize`; returns `ErrQueueFull` instead of silent drop
+- [x] ✅ `ResilientConsumer` (retry/CB on handler failures); `ResilientBroker.Consumer` wraps it
+- [x] ✅ Tests: instrumented/resilient/dedup, memory `ErrQueueFull`, dedup TOCTOU claim fix
+- [x] ✅ Softened kafka `doc.go` TODO; clarify TLS/prefetch are adapter-Config fields
 - [x] ✅ Clarify vs streaming for GCP Pub/Sub (streaming docs point to messaging)
 
 ### `pkg/communication` (~58)
