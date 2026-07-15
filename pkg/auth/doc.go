@@ -5,6 +5,9 @@
 //   - Token validation (JWT, Paseto, OIDC)
 //   - Session management
 //   - User context propagation
+//   - MFA (TOTP + SMS/email channel via pkg/communication)
+//   - Social OAuth2 (Google, GitHub, Facebook, Apple)
+//   - WebAuthn (library adapter for production; memory for tests)
 //
 // OAuth2 authorization-server shapes (TokenIssuer, Authorize/Token) live in
 // package oauth2 with an in-memory adapter — enough for local token generation,

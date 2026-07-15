@@ -23,7 +23,7 @@ Landed foundation/reuse/domain hardening (scores above are the *pre-fix* snapsho
 - ✅ `algorithms`: binarysearch, bfs/dfs, DistLimiter store-backed, sliding-window counter, educational stub docs, heap reuse in dijkstra/astar
 - ✅ `storage` root drivers, blob errors/resilience, GCS/Azure `blob.Store`, S3 miss→NotFound, SmartRWMutex memory adapters
 - ✅ `security`: root/errors, crypto harden + memory KeyProvider, secrets Rotate/events, reCAPTCHA adapter, honest docs + auth bridge
-- 🔄 `auth`: OAuth2 AS interfaces + memory; Cognito/Entra/GCP Verify/Login; OIDC exchange; EncryptionKey; root errors.go
+- ✅ `auth`: OAuth2 AS + IdP verify/login; SMS/email MFA via communication; Apple social; WebAuthn memory test path; EncryptionKey; root errors
 - ✅ `commerce`: root Money, payment webhooks/auth-capture/idempotency/events/resilience, billing plans+past_due, tax multi-jurisdiction, FX formatting
 - ✅ `messaging`: NewFromConfig(memory), Publish/Consume options helpers, ErrQueueFull, ResilientConsumer, dedup TOCTOU, wrapper tests
 - ✅ `compute`: root compute.go, SmartRWMutex memory, package sentinels, k8s Create→Get ID fix, container resilient wrapper, honest EC2/Docker stubs docs
@@ -40,7 +40,7 @@ Landed foundation/reuse/domain hardening (scores above are the *pre-fix* snapsho
 |---------|------:|-------|
 | messaging | 71→82 | Factory/options/ErrQueueFull/ResilientConsumer/tests landed |
 | database | 62 | Broad skeleton; sharding/resilience/tests thin |
-| auth | 57 | Session/MFA/JWT solid; OAuth2 AS + cloud stubs |
+| auth | 57→improved | Session/MFA/JWT; OAuth2 AS; SMS/email MFA; Apple social |
 | cache | 60 | Core OK; TTL=0 / miss→CB footguns |
 | logger | 58 | Widely used; Init/Async/trace bugs |
 | errors | 58 | Foundation usable; codes/Is/Wrap incomplete |
@@ -239,12 +239,14 @@ Landed foundation/reuse/domain hardening (scores above are the *pre-fix* snapsho
 
 ## 4. Security & auth
 
-### `pkg/auth` (~57)
+### `pkg/auth` (~57 → improved)
 - [x] ✅ OAuth2 authorization server interfaces + memory adapter (auth code / client credentials / refresh; not full OpenID Provider)
 - [x] ✅ Cognito/Entra Verify via OIDC JWKS; GCP Login via Identity Toolkit REST; OIDC code exchange + memory exchanger
-- [ ] ❌ SMS/email MFA; Apple social; SAML client
+- [x] ✅ SMS/email MFA ChannelProvider (`mfa/adapters/sms|email|channel`) via `pkg/communication` Sender; Twilio/SendGrid path documented
+- [x] ✅ Apple social provider (`endpoints.Apple` + id_token claims); client-secret JWT minting remains caller-owned
+- [ ] ❌ SAML client
 - [x] ✅ Root `errors.go` sentinels; cloud vs root IdP adapters remain dual surfaces (documented)
-- [x] ✅ EncryptionKey wired for session/MFA memory+redis; WebAuthn memory still stub (library adapter is real path)
+- [x] ✅ EncryptionKey wired for session/MFA memory+redis; WebAuthn memory is a usable challenge-tracking test double (library adapter remains production path)
 
 ### `pkg/security` (~30 → improved)
 - [x] ✅ Root `security.go` + domain `errors.go` (fraud/captcha/waf/scanning/secrets/kms/crypto) via `pkg/errors`
