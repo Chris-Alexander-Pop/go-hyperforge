@@ -18,14 +18,48 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"strings"
-	"sync"
 	"time"
 
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
+	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/concurrency"
 	pkgerrors "github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 	"github.com/chris-alexander-pop/go-hyperforge/pkg/workflow"
 	"github.com/google/uuid"
 )
+
+// AuthMode selects how ARM bearer tokens are obtained.
+type AuthMode string
+
+const (
+	// AuthModeClientSecret uses AAD client credentials (TenantID + ClientID + ClientSecret).
+	AuthModeClientSecret AuthMode = "client_secret"
+	// AuthModeManagedIdentity uses Azure IMDS Managed Identity (IdentityBase injectable for tests).
+	AuthModeManagedIdentity AuthMode = "managed_identity"
+	// AuthModeDefault uses azidentity.NewDefaultAzureCredential (env, MI, CLI, etc.).
+	AuthModeDefault AuthMode = "default"
+)
+
+const (
+	defaultTokenAudience = "https://management.azure.com/.default"
+	defaultIdentityBase  = "http://169.254.169.254"
+	imdsAPIVersion       = "2018-02-01"
+)
+
+// TokenSource obtains an ARM OAuth bearer token. When set on Config, it overrides AuthMode.
+type TokenSource interface {
+	GetToken(ctx context.Context) (string, error)
+}
+
+// TokenSourceFunc adapts a function to TokenSource.
+type TokenSourceFunc func(ctx context.Context) (string, error)
+
+// GetToken implements TokenSource.
+func (f TokenSourceFunc) GetToken(ctx context.Context) (string, error) {
+	return f(ctx)
+}
 
 // Config holds Azure Logic Apps configuration.
 type Config struct {
@@ -35,22 +69,40 @@ type Config struct {
 	// ResourceGroup is the Azure resource group.
 	ResourceGroup string
 
-	// TenantID is the Azure tenant ID.
+	// TenantID is the Azure tenant ID (client_secret auth).
 	TenantID string
 
-	// ClientID is the Azure client/application ID.
+	// ClientID is the Azure client/application ID (client_secret auth).
 	ClientID string
 
-	// ClientSecret is the Azure client secret.
+	// ClientSecret is the Azure client secret (client_secret auth).
 	ClientSecret string
 
 	// Location is the Azure region.
 	Location string
 
+	// AuthMode selects token acquisition: "client_secret" (default), "managed_identity", or "default".
+	AuthMode AuthMode
+
+	// UseManagedIdentity is a convenience equivalent to AuthModeManagedIdentity when AuthMode is empty.
+	UseManagedIdentity bool
+
+	// ManagedIdentityClientID is the client ID of a user-assigned managed identity (optional).
+	ManagedIdentityClientID string
+
+	// TokenAudience is the OAuth scope/resource for ARM (default https://management.azure.com/.default).
+	TokenAudience string
+
+	// IdentityBase overrides the IMDS base URL (default http://169.254.169.254). Inject httptest for tests.
+	IdentityBase string
+
+	// TokenSource optionally supplies tokens and overrides AuthMode (unit tests / custom creds).
+	TokenSource TokenSource
+
 	// HTTPClient optionally overrides the HTTP client (tests / custom transport).
 	HTTPClient *http.Client
 
-	// SkipAuth skips Azure AD token fetch (for httptest with injected HTTPClient).
+	// SkipAuth skips Azure AD / IMDS token fetch (for httptest with injected HTTPClient).
 	SkipAuth bool
 
 	// ManagementBase overrides the ARM base URL (default https://management.azure.com).
@@ -65,7 +117,7 @@ type Engine struct {
 	config     Config
 	httpClient *http.Client
 	token      string
-	mu         sync.RWMutex
+	mu         *concurrency.SmartRWMutex
 	workflows  map[string]*workflow.WorkflowDefinition
 	executions map[string]*workflow.Execution
 	closed     bool
@@ -82,6 +134,12 @@ func New(cfg Config) (*Engine, error) {
 	if cfg.LoginBase == "" {
 		cfg.LoginBase = "https://login.microsoftonline.com"
 	}
+	if cfg.TokenAudience == "" {
+		cfg.TokenAudience = defaultTokenAudience
+	}
+	if cfg.IdentityBase == "" {
+		cfg.IdentityBase = defaultIdentityBase
+	}
 	hc := cfg.HTTPClient
 	if hc == nil {
 		hc = &http.Client{Timeout: 30 * time.Second}
@@ -90,12 +148,13 @@ func New(cfg Config) (*Engine, error) {
 	engine := &Engine{
 		config:     cfg,
 		httpClient: hc,
+		mu:         concurrency.NewSmartRWMutex(concurrency.MutexConfig{Name: "workflow-logicapps"}),
 		workflows:  make(map[string]*workflow.WorkflowDefinition),
 		executions: make(map[string]*workflow.Execution),
 	}
 
 	if !cfg.SkipAuth {
-		if err := engine.authenticate(); err != nil {
+		if err := engine.authenticate(context.Background()); err != nil {
 			return nil, err
 		}
 	}
@@ -123,12 +182,46 @@ func (e *Engine) checkClosed() error {
 	return nil
 }
 
-func (e *Engine) authenticate() error {
+func (e *Engine) resolveAuthMode() AuthMode {
+	if e.config.AuthMode != "" {
+		return e.config.AuthMode
+	}
+	if e.config.UseManagedIdentity {
+		return AuthModeManagedIdentity
+	}
+	return AuthModeClientSecret
+}
+
+func (e *Engine) authenticate(ctx context.Context) error {
+	if e.config.TokenSource != nil {
+		tok, err := e.config.TokenSource.GetToken(ctx)
+		if err != nil {
+			return pkgerrors.Internal("failed to obtain token from TokenSource", err)
+		}
+		e.token = tok
+		return nil
+	}
+
+	switch e.resolveAuthMode() {
+	case AuthModeManagedIdentity:
+		return e.authenticateManagedIdentity(ctx)
+	case AuthModeDefault:
+		return e.authenticateDefault(ctx)
+	case AuthModeClientSecret, "":
+		return e.authenticateClientSecret()
+	default:
+		return pkgerrors.InvalidArgument("unknown AuthMode: "+string(e.config.AuthMode), nil)
+	}
+}
+
+func (e *Engine) authenticateClientSecret() error {
 	tokenURL := fmt.Sprintf("%s/%s/oauth2/v2.0/token", e.config.LoginBase, e.config.TenantID)
 
 	data := fmt.Sprintf(
-		"client_id=%s&client_secret=%s&scope=https://management.azure.com/.default&grant_type=client_credentials",
-		e.config.ClientID, e.config.ClientSecret,
+		"client_id=%s&client_secret=%s&scope=%s&grant_type=client_credentials",
+		url.QueryEscape(e.config.ClientID),
+		url.QueryEscape(e.config.ClientSecret),
+		url.QueryEscape(e.config.TokenAudience),
 	)
 
 	resp, err := e.httpClient.Post(tokenURL, "application/x-www-form-urlencoded", bytes.NewBufferString(data))
@@ -151,6 +244,78 @@ func (e *Engine) authenticate() error {
 
 	e.token = tokenResp.AccessToken
 	return nil
+}
+
+func (e *Engine) authenticateManagedIdentity(ctx context.Context) error {
+	resource := resourceFromAudience(e.config.TokenAudience)
+	q := url.Values{}
+	q.Set("api-version", imdsAPIVersion)
+	q.Set("resource", resource)
+	clientID := e.config.ManagedIdentityClientID
+	if clientID == "" {
+		clientID = e.config.ClientID
+	}
+	if clientID != "" {
+		q.Set("client_id", clientID)
+	}
+
+	tokenURL := strings.TrimRight(e.config.IdentityBase, "/") + "/metadata/identity/oauth2/token?" + q.Encode()
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, tokenURL, nil)
+	if err != nil {
+		return pkgerrors.Internal("failed to build IMDS request", err)
+	}
+	req.Header.Set("Metadata", "true")
+
+	resp, err := e.httpClient.Do(req)
+	if err != nil {
+		return pkgerrors.Internal("failed to authenticate via managed identity", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return pkgerrors.Internal("managed identity authentication failed: "+string(body), nil)
+	}
+
+	var tokenResp struct {
+		AccessToken string `json:"access_token"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&tokenResp); err != nil {
+		return pkgerrors.Internal("failed to parse IMDS token", err)
+	}
+	if tokenResp.AccessToken == "" {
+		return pkgerrors.Internal("IMDS returned empty access_token", nil)
+	}
+
+	e.token = tokenResp.AccessToken
+	return nil
+}
+
+func (e *Engine) authenticateDefault(ctx context.Context) error {
+	// User-assigned MI for DefaultAzureCredential is selected via AZURE_CLIENT_ID
+	// (azidentity convention). Prefer AuthModeManagedIdentity + ManagedIdentityClientID
+	// when you need an explicit client id without env mutation.
+	opts := &azidentity.DefaultAzureCredentialOptions{}
+	if e.config.TenantID != "" {
+		opts.TenantID = e.config.TenantID
+	}
+	cred, err := azidentity.NewDefaultAzureCredential(opts)
+	if err != nil {
+		return pkgerrors.Internal("failed to create DefaultAzureCredential", err)
+	}
+	tok, err := cred.GetToken(ctx, policy.TokenRequestOptions{
+		Scopes: []string{e.config.TokenAudience},
+	})
+	if err != nil {
+		return pkgerrors.Internal("failed to obtain token via DefaultAzureCredential", err)
+	}
+	e.token = tok.Token
+	return nil
+}
+
+// resourceFromAudience converts an AAD v2 scope (…/.default) to an IMDS resource URL.
+func resourceFromAudience(audience string) string {
+	return strings.TrimSuffix(audience, "/.default")
 }
 
 func (e *Engine) apiURL(path string) string {
