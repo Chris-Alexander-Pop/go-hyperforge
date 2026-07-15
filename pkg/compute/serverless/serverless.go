@@ -1,17 +1,3 @@
-// Package serverless provides a unified interface for serverless function management.
-//
-// Supported backends:
-//   - Memory: In-memory serverless for testing
-//   - Lambda: AWS Lambda
-//   - GCF: Google Cloud Functions
-//   - AzureFunctions: Azure Functions
-//
-// Usage:
-//
-//	import "github.com/chris-alexander-pop/system-design-library/pkg/compute/serverless/adapters/memory"
-//
-//	runtime := memory.New()
-//	result, err := runtime.Invoke(ctx, "my-function", payload)
 package serverless
 
 import (
@@ -20,11 +6,12 @@ import (
 )
 
 // Driver constants for serverless backends.
+// Memory, Lambda, and GCF ship; Azure Functions is reserved.
 const (
 	DriverMemory         = "memory"
 	DriverLambda         = "lambda"
 	DriverGCF            = "gcf"
-	DriverAzureFunctions = "azure-functions"
+	DriverAzureFunctions = "azure-functions" // reserved — not implemented
 )
 
 // Runtime represents the function runtime.

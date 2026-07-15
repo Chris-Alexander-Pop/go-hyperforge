@@ -254,12 +254,12 @@
 
 | Package | Status | Enables Services | Description |
 |---------|--------|------------------|-------------|
-| `pkg/compute/vm` | 🔄 | iaas | VM Management Interface + Memory Adapter (no cloud adapters) |
-| `pkg/compute/container` | ✅ | paas | Container Runtime Interface + Memory Adapter |
+| `pkg/compute/vm` | 🔄 | iaas | VM Management Interface + Memory Adapter (EC2/GCE/Azure reserved) |
+| `pkg/compute/container` | ✅ | paas | Container Runtime + memory + resilient wrapper |
 | `pkg/compute/serverless` | ✅ | faas | Serverless Runtime Interface + Memory Adapter |
 | `pkg/compute/serverless/adapters/lambda` | ✅ | faas | AWS Lambda Management |
 | `pkg/compute/serverless/adapters/gcf` | ✅ | faas | Google Cloud Functions |
-| `pkg/compute/container/adapters/k8s` | ✅ | paas | Kubernetes Client/Controller |
+| `pkg/compute/container/adapters/k8s` | ✅ | paas | Kubernetes (Create ID = pod name; Exec/Stats stub) |
 | `pkg/compute/container/adapters/fargate` | ✅ | paas | AWS Fargate |
 
 ---
@@ -316,7 +316,7 @@
 |--------|---------|---------------------|-------------|
 | **Compute** | `pkg/cloud/hypervisor` | 🔄 | VM Management interface + memory (Libvirt/QEMU/Firecracker not wired) |
 | **Compute** | `pkg/cloud/provisioning` | 🔄 | Bare Metal Provisioning interface + memory (PXE/IPMI not wired) |
-| **Compute** | `pkg/cloud/scheduler` | 🔄 | Placement Logic interface + memory (bin-packing strategies stubby) |
+| **Compute** | `pkg/cloud/scheduler` | ✅ | Placement: binpack / spread / random (memory) |
 | **Network** | `pkg/network/sdn` | 🔄 | Software Defined Networking (VPC/Overlay) — scaffold |
 | **Network** | `pkg/network/dhcp` | 🔄 | IP Address Management System (IPAM) — scaffold |
 | **Network** | `pkg/network/firewall` | 🔄 | Distributed Firewall / Security Groups — scaffold |

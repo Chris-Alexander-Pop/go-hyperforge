@@ -1,8 +1,12 @@
 package cloud
 
-// Common constants and types for the Cloud domain.
+// Common constants and types for the Cloud domain (private-cloud IaaS).
+//
+// These types are shared across hypervisor, provisioning, scheduler, and
+// controlplane. They are intentionally separate from pkg/compute/vm Instance
+// types, which mirror public-cloud provider APIs.
 
-// HostStatus challenges the state of a physical host or hypervisor.
+// HostStatus represents the state of a physical host or hypervisor.
 type HostStatus string
 
 const (

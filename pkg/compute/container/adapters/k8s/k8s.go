@@ -1,13 +1,8 @@
 // Package k8s provides a Kubernetes adapter for container.ContainerRuntime.
 //
-// Wraps the official Kubernetes client-go for pod and deployment management.
-//
-// Usage:
-//
-//	import "github.com/chris-alexander-pop/system-design-library/pkg/compute/container/adapters/k8s"
-//
-//	runtime, err := k8s.New(k8s.Config{Kubeconfig: "/path/to/kubeconfig"})
-//	container, err := runtime.Create(ctx, container.CreateOptions{Image: "nginx:latest"})
+// Pod name is used as the container ID so Create's returned ID works with Get,
+// Stop, Logs, and other name-based Kubernetes API calls. The pod UID is kept
+// in the hyperforge.io/uid label when present.
 package k8s
 
 import (
@@ -20,12 +15,15 @@ import (
 	pkgerrors "github.com/chris-alexander-pop/system-design-library/pkg/errors"
 	"github.com/google/uuid"
 	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 )
+
+const uidLabel = "hyperforge.io/uid"
 
 // Config holds K8s configuration.
 type Config struct {
@@ -83,12 +81,16 @@ func (r *Runtime) Create(ctx context.Context, opts container.CreateOptions) (*co
 		name = "container-" + uuid.NewString()[:8]
 	}
 
-	// Create a Pod
+	labels := map[string]string{}
+	for k, v := range opts.Labels {
+		labels[k] = v
+	}
+
 	pod := &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: r.namespace,
-			Labels:    opts.Labels,
+			Labels:    labels,
 		},
 		Spec: corev1.PodSpec{
 			Containers: []corev1.Container{
@@ -104,7 +106,6 @@ func (r *Runtime) Create(ctx context.Context, opts container.CreateOptions) (*co
 		},
 	}
 
-	// Set resource limits
 	if opts.Memory > 0 || opts.CPU > 0 {
 		pod.Spec.Containers[0].Resources = corev1.ResourceRequirements{
 			Limits: corev1.ResourceList{},
@@ -121,6 +122,13 @@ func (r *Runtime) Create(ctx context.Context, opts container.CreateOptions) (*co
 	if err != nil {
 		return nil, pkgerrors.Internal("failed to create pod", err)
 	}
+
+	// Persist UID on the object for callers that need it, without using it as ID.
+	if created.Labels == nil {
+		created.Labels = map[string]string{}
+	}
+	created.Labels[uidLabel] = string(created.UID)
+	_, _ = r.client.CoreV1().Pods(r.namespace).Update(ctx, created, metav1.UpdateOptions{})
 
 	return mapPodToContainer(created), nil
 }
@@ -150,6 +158,8 @@ func convertPorts(ports []container.PortMapping) []corev1.ContainerPort {
 	return result
 }
 
+// mapPodToContainer maps a Pod to a Container.
+// ID is the pod name so Create → Get round-trips via the Kubernetes name API.
 func mapPodToContainer(pod *corev1.Pod) *container.Container {
 	state := container.ContainerStateCreated
 	switch pod.Status.Phase {
@@ -164,7 +174,7 @@ func mapPodToContainer(pod *corev1.Pod) *container.Container {
 	}
 
 	c := &container.Container{
-		ID:        string(pod.UID),
+		ID:        pod.Name,
 		Name:      pod.Name,
 		State:     state,
 		Labels:    pod.Labels,
@@ -182,10 +192,53 @@ func mapPodToContainer(pod *corev1.Pod) *container.Container {
 	return c
 }
 
+// resolvePodName returns the pod name for API calls.
+// Accepts the Create-returned ID (pod name) or a legacy UID string.
+func (r *Runtime) resolvePodName(ctx context.Context, containerID string) (string, error) {
+	_, err := r.client.CoreV1().Pods(r.namespace).Get(ctx, containerID, metav1.GetOptions{})
+	if err == nil {
+		return containerID, nil
+	}
+	if !apierrors.IsNotFound(err) {
+		return "", pkgerrors.Internal("failed to get pod", err)
+	}
+
+	// Legacy: callers may still pass a UID from older Create responses.
+	list, listErr := r.client.CoreV1().Pods(r.namespace).List(ctx, metav1.ListOptions{
+		LabelSelector: uidLabel + "=" + containerID,
+	})
+	if listErr != nil {
+		return "", pkgerrors.Internal("failed to list pods by uid", listErr)
+	}
+	if len(list.Items) == 1 {
+		return list.Items[0].Name, nil
+	}
+
+	// Field selector on metadata.uid (supported by kube-apiserver).
+	list, listErr = r.client.CoreV1().Pods(r.namespace).List(ctx, metav1.ListOptions{
+		FieldSelector: "metadata.uid=" + containerID,
+	})
+	if listErr != nil {
+		return "", container.ErrContainerNotFound
+	}
+	if len(list.Items) == 1 {
+		return list.Items[0].Name, nil
+	}
+
+	return "", container.ErrContainerNotFound
+}
+
 func (r *Runtime) Get(ctx context.Context, containerID string) (*container.Container, error) {
-	pod, err := r.client.CoreV1().Pods(r.namespace).Get(ctx, containerID, metav1.GetOptions{})
+	name, err := r.resolvePodName(ctx, containerID)
 	if err != nil {
-		return nil, pkgerrors.NotFound("container not found", err)
+		return nil, err
+	}
+	pod, err := r.client.CoreV1().Pods(r.namespace).Get(ctx, name, metav1.GetOptions{})
+	if err != nil {
+		if apierrors.IsNotFound(err) {
+			return nil, container.ErrContainerNotFound
+		}
+		return nil, pkgerrors.Internal("failed to get pod", err)
 	}
 	return mapPodToContainer(pod), nil
 }
@@ -207,13 +260,21 @@ func (r *Runtime) List(ctx context.Context, opts container.ListOptions) ([]*cont
 }
 
 func (r *Runtime) Start(ctx context.Context, containerID string) error {
-	// Pods are started when created
-	return nil
+	// Pods are started when created.
+	_, err := r.resolvePodName(ctx, containerID)
+	return err
 }
 
 func (r *Runtime) Stop(ctx context.Context, containerID string, timeout time.Duration) error {
-	err := r.client.CoreV1().Pods(r.namespace).Delete(ctx, containerID, metav1.DeleteOptions{})
+	name, err := r.resolvePodName(ctx, containerID)
 	if err != nil {
+		return err
+	}
+	err = r.client.CoreV1().Pods(r.namespace).Delete(ctx, name, metav1.DeleteOptions{})
+	if err != nil {
+		if apierrors.IsNotFound(err) {
+			return container.ErrContainerNotFound
+		}
 		return pkgerrors.Internal("failed to stop pod", err)
 	}
 	return nil
@@ -228,11 +289,16 @@ func (r *Runtime) Remove(ctx context.Context, containerID string, force bool) er
 }
 
 func (r *Runtime) Logs(ctx context.Context, containerID string, follow bool) (io.ReadCloser, error) {
+	name, err := r.resolvePodName(ctx, containerID)
+	if err != nil {
+		return nil, err
+	}
+
 	podLogOpts := &corev1.PodLogOptions{
 		Follow: follow,
 	}
 
-	req := r.client.CoreV1().Pods(r.namespace).GetLogs(containerID, podLogOpts)
+	req := r.client.CoreV1().Pods(r.namespace).GetLogs(name, podLogOpts)
 	logs, err := req.Stream(ctx)
 	if err != nil {
 		return io.NopCloser(strings.NewReader("")), pkgerrors.Internal("failed to get logs", err)
@@ -242,7 +308,10 @@ func (r *Runtime) Logs(ctx context.Context, containerID string, follow bool) (io
 }
 
 func (r *Runtime) Exec(ctx context.Context, containerID string, opts container.ExecOptions) (*container.ExecResult, error) {
-	// Exec requires SPDYExecutor which is complex
+	if _, err := r.resolvePodName(ctx, containerID); err != nil {
+		return nil, err
+	}
+	// Full SPDY exec is not wired; return a stub success for interface conformance.
 	return &container.ExecResult{
 		ExitCode: 0,
 		Stdout:   "",
@@ -251,6 +320,11 @@ func (r *Runtime) Exec(ctx context.Context, containerID string, opts container.E
 }
 
 func (r *Runtime) Wait(ctx context.Context, containerID string) (int, error) {
+	name, err := r.resolvePodName(ctx, containerID)
+	if err != nil {
+		return -1, err
+	}
+
 	ticker := time.NewTicker(2 * time.Second)
 	defer ticker.Stop()
 
@@ -259,7 +333,7 @@ func (r *Runtime) Wait(ctx context.Context, containerID string) (int, error) {
 		case <-ctx.Done():
 			return -1, ctx.Err()
 		case <-ticker.C:
-			pod, err := r.client.CoreV1().Pods(r.namespace).Get(ctx, containerID, metav1.GetOptions{})
+			pod, err := r.client.CoreV1().Pods(r.namespace).Get(ctx, name, metav1.GetOptions{})
 			if err != nil {
 				return -1, pkgerrors.Internal("failed to get pod", err)
 			}
@@ -276,6 +350,9 @@ func (r *Runtime) Wait(ctx context.Context, containerID string) (int, error) {
 }
 
 func (r *Runtime) Stats(ctx context.Context, containerID string) (*container.ContainerStats, error) {
+	if _, err := r.resolvePodName(ctx, containerID); err != nil {
+		return nil, err
+	}
 	return &container.ContainerStats{
 		Timestamp: time.Now(),
 	}, nil

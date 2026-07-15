@@ -3,10 +3,10 @@ package memory
 
 import (
 	"context"
-	"sync"
 	"time"
 
 	"github.com/chris-alexander-pop/system-design-library/pkg/compute/serverless"
+	"github.com/chris-alexander-pop/system-design-library/pkg/concurrency"
 	"github.com/chris-alexander-pop/system-design-library/pkg/errors"
 	"github.com/google/uuid"
 )
@@ -16,7 +16,7 @@ type HandlerFunc func(ctx context.Context, payload []byte) ([]byte, error)
 
 // Runtime implements an in-memory serverless runtime for testing.
 type Runtime struct {
-	mu        sync.RWMutex
+	mu        *concurrency.SmartRWMutex
 	functions map[string]*serverless.Function
 	handlers  map[string]HandlerFunc
 	config    serverless.Config
@@ -25,6 +25,9 @@ type Runtime struct {
 // New creates a new in-memory serverless runtime.
 func New() *Runtime {
 	return &Runtime{
+		mu: concurrency.NewSmartRWMutex(concurrency.MutexConfig{
+			Name: "compute-serverless-memory",
+		}),
 		functions: make(map[string]*serverless.Function),
 		handlers:  make(map[string]HandlerFunc),
 		config:    serverless.Config{DefaultTimeout: 30 * time.Second, DefaultMemory: 128},
@@ -43,7 +46,7 @@ func (r *Runtime) CreateFunction(ctx context.Context, opts serverless.CreateFunc
 	defer r.mu.Unlock()
 
 	if _, exists := r.functions[opts.Name]; exists {
-		return nil, errors.Conflict("function already exists", nil)
+		return nil, serverless.ErrFunctionAlreadyExists
 	}
 
 	memory := opts.MemoryMB
@@ -71,7 +74,6 @@ func (r *Runtime) CreateFunction(ctx context.Context, opts serverless.CreateFunc
 
 	r.functions[opts.Name] = fn
 
-	// Register default echo handler if none exists
 	if _, ok := r.handlers[opts.Name]; !ok {
 		r.handlers[opts.Name] = func(ctx context.Context, payload []byte) ([]byte, error) {
 			return payload, nil
@@ -87,7 +89,7 @@ func (r *Runtime) GetFunction(ctx context.Context, name string) (*serverless.Fun
 
 	fn, ok := r.functions[name]
 	if !ok {
-		return nil, errors.NotFound("function not found", nil)
+		return nil, serverless.ErrFunctionNotFound
 	}
 
 	return fn, nil
@@ -111,7 +113,7 @@ func (r *Runtime) UpdateFunction(ctx context.Context, name string, opts serverle
 
 	fn, ok := r.functions[name]
 	if !ok {
-		return nil, errors.NotFound("function not found", nil)
+		return nil, serverless.ErrFunctionNotFound
 	}
 
 	if opts.MemoryMB > 0 {
@@ -136,7 +138,7 @@ func (r *Runtime) DeleteFunction(ctx context.Context, name string) error {
 	defer r.mu.Unlock()
 
 	if _, ok := r.functions[name]; !ok {
-		return errors.NotFound("function not found", nil)
+		return serverless.ErrFunctionNotFound
 	}
 
 	delete(r.functions, name)
@@ -152,20 +154,18 @@ func (r *Runtime) Invoke(ctx context.Context, opts serverless.InvokeOptions) (*s
 	r.mu.RUnlock()
 
 	if !fnOk {
-		return nil, errors.NotFound("function not found", nil)
+		return nil, serverless.ErrFunctionNotFound
 	}
 
 	result := &serverless.InvokeResult{
 		ExecutedVersion: fn.Version,
 	}
 
-	// Dry run - just validate
 	if opts.InvocationType == serverless.InvocationDryRun {
 		result.StatusCode = 204
 		return result, nil
 	}
 
-	// Async - return immediately
 	if opts.InvocationType == serverless.InvocationAsync {
 		if handlerOk {
 			go func() {
@@ -178,7 +178,6 @@ func (r *Runtime) Invoke(ctx context.Context, opts serverless.InvokeOptions) (*s
 		return result, nil
 	}
 
-	// Sync invocation
 	if !handlerOk {
 		result.StatusCode = 200
 		result.Payload = opts.Payload
@@ -222,7 +221,7 @@ func (r *Runtime) InvokeSimple(ctx context.Context, name string, payload []byte)
 	}
 
 	if result.FunctionError != "" {
-		return nil, errors.Internal("function error: "+result.FunctionError, nil)
+		return nil, errors.Wrap(serverless.ErrFunctionError, "function error: "+result.FunctionError)
 	}
 
 	return result.Payload, nil

@@ -1,18 +1,3 @@
-// Package container provides a unified interface for container orchestration.
-//
-// Supported backends:
-//   - Memory: In-memory container runtime for testing
-//   - Docker: Docker Engine
-//   - ECS: AWS Elastic Container Service
-//   - GKE: Google Kubernetes Engine
-//   - AKS: Azure Kubernetes Service
-//
-// Usage:
-//
-//	import "github.com/chris-alexander-pop/system-design-library/pkg/compute/container/adapters/memory"
-//
-//	runtime := memory.New()
-//	container, err := runtime.Create(ctx, container.CreateOptions{Image: "nginx:latest"})
 package container
 
 import (
@@ -22,12 +7,16 @@ import (
 )
 
 // Driver constants for container backends.
+// Memory ships here; k8s and fargate live under adapters/. Docker/ECS/GKE/AKS
+// names are reserved placeholders.
 const (
-	DriverMemory = "memory"
-	DriverDocker = "docker"
-	DriverECS    = "ecs"
-	DriverGKE    = "gke"
-	DriverAKS    = "aks"
+	DriverMemory  = "memory"
+	DriverDocker  = "docker" // reserved — not implemented
+	DriverECS     = "ecs"    // reserved — prefer adapters/fargate
+	DriverGKE     = "gke"    // reserved — prefer adapters/k8s + GKE kubeconfig
+	DriverAKS     = "aks"    // reserved — prefer adapters/k8s + AKS kubeconfig
+	DriverK8s     = "k8s"
+	DriverFargate = "fargate"
 )
 
 // ContainerState represents the state of a container.

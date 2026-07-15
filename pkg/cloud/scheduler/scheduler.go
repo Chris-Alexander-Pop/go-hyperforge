@@ -6,6 +6,13 @@ import (
 	"github.com/chris-alexander-pop/system-design-library/pkg/cloud"
 )
 
+// Strategy names for Config.Strategy.
+const (
+	StrategyRandom  = "random"
+	StrategyBinpack = "binpack"
+	StrategySpread  = "spread"
+)
+
 // Scheduler defines the interface for selecting optimal hosts for workloads.
 type Scheduler interface {
 	// SelectHost chooses the best host for the given requirements.

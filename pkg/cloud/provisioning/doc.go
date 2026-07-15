@@ -1,5 +1,5 @@
 // Package provisioning provides interfaces for managing the lifecycle of physical hardware.
 //
-// It handles tasks like OS installation (via PXE/iPXE), power management (IPMI/Redfish),
-// and hardware discovery.
+// Shipping: memory adapter only. PXE/iPXE, IPMI/Redfish, and hardware discovery
+// backends are reserved (driver names exist; implementations are not wired).
 package provisioning

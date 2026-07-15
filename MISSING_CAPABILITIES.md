@@ -26,6 +26,8 @@ Landed foundation/reuse/domain hardening (scores above are the *pre-fix* snapsho
 - 🔄 `auth`: OAuth2 AS interfaces + memory; Cognito/Entra/GCP Verify/Login; OIDC exchange; EncryptionKey; root errors.go
 - ✅ `commerce`: root Money, payment webhooks/auth-capture/idempotency/events/resilience, billing plans+past_due, tax multi-jurisdiction, FX formatting
 - ✅ `messaging`: NewFromConfig(memory), Publish/Consume options helpers, ErrQueueFull, ResilientConsumer, dedup TOCTOU, wrapper tests
+- ✅ `compute`: root compute.go, SmartRWMutex memory, package sentinels, k8s Create→Get ID fix, container resilient wrapper, honest EC2/Docker stubs docs
+- ✅ `cloud`: scheduler binpack/spread/random, controlplane/provisioning/scheduler memory tests, docs vs pkg/compute
 - 🔄 Remaining large gaps still listed below (TaxJar/Avalara/live FX, AI gateway, cloud IaaS adapters, security Vault/cloud KMS/WAF, etc.)
 
 ---
@@ -43,7 +45,7 @@ Landed foundation/reuse/domain hardening (scores above are the *pre-fix* snapsho
 | datastructures | 58 | Broad catalog; many stubs / low reuse |
 | communication | 58 | Ready: root drivers/errors/resilience, html/text templates, adapter tests |
 | data | 56 | Search strong; bigdata/docs overclaim |
-| compute | 52 | Interfaces + memory; cloud stubs |
+| compute | 52→improved | Root + sentinels + k8s ID fix; EC2/Docker still reserved |
 | concurrency | 52 | SmartMutex strong; rest experimental |
 | network | 50* | LB/DNS OK; CDN/APIGW/IP thin; no algo reuse |
 | api | 48 | Broad surface; GraphQL stub; standards weak |
@@ -52,7 +54,7 @@ Landed foundation/reuse/domain hardening (scores above are the *pre-fix* snapsho
 | events | 42 | Skeleton bus; unsafe async |
 | workflow | 38 | Scaffold; no events/messaging/distlock |
 | algorithms | 38 | Many educational stubs |
-| cloud | 38 | Memory-only IaaS scaffold |
+| cloud | 38→improved | Memory + real scheduler strategies; no Libvirt/IPMI |
 | telemetry | 36 | OTLP init stub only |
 | ai | 36 | Broad stubs; gateway/streaming missing |
 | analytics | 32 | HLL uniqueness only |
@@ -265,17 +267,20 @@ Landed foundation/reuse/domain hardening (scores above are the *pre-fix* snapsho
 - [ ] ❌ Cloud adapters matching TODO (Route53, CloudFront, etc.) or demote ✅
 - [ ] 🔗 `pkg/concurrency` in all memory adapters
 
-### `pkg/compute` (~52)
-- [ ] ❌ VM adapters EC2/GCE/Azure; Docker; Azure Functions
-- [ ] ❌ Fix k8s ID/name bug; real Exec/Stats; `pkg/resilience`
-- [ ] 🔗 `pkg/concurrency` in memory; use package sentinels
-- [ ] ❌ Root `compute.go`; clarify vs `pkg/cloud`
+### `pkg/compute` (~52 → improved)
+- [ ] ❌ VM adapters EC2/GCE/Azure; Docker; Azure Functions (docs demoted to reserved)
+- [x] ✅ Fix k8s ID/name bug (Create returns pod name usable with Get); UID legacy fallback
+- [ ] ❌ Real Exec/Stats on k8s (still stubs)
+- [x] ✅ Optional `container.ResilientRuntime` via `pkg/resilience`
+- [x] 🔗 `pkg/concurrency.SmartRWMutex` in memory adapters; package sentinels
+- [x] ✅ Root `compute.go`; docs clarify vs `pkg/cloud`
 
-### `pkg/cloud` (~38)
-- [ ] ❌ Libvirt/Firecracker/IPMI/PXE/etcd adapters (or demote TODO ✅)
-- [ ] ❌ Control-plane instance APIs; real scheduler strategies
-- [ ] ❌ Shared vocabulary with `pkg/compute`
-- [ ] ❌ Tests beyond one hypervisor case
+### `pkg/cloud` (~38 → improved)
+- [ ] ❌ Libvirt/Firecracker/IPMI/PXE/etcd adapters (docs demoted; memory-only)
+- [ ] ❌ Control-plane instance APIs (host inventory only today)
+- [x] ✅ Real scheduler strategies: binpack / spread / random (memory adapter)
+- [x] ✅ Shared vocabulary note vs `pkg/compute` in docs
+- [x] ✅ Tests for controlplane / provisioning / scheduler memory adapters
 
 ### `pkg/servicemesh` (~25)
 - [ ] 🔗 **Delete or thin-wrap** circuitbreaker → `pkg/resilience`
