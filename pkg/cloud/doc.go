@@ -1,10 +1,19 @@
-// Package cloud provides the core primitives and interfaces for building a Private Cloud (IaaS).
+// Package cloud provides interfaces and adapters for a private-cloud (IaaS) control plane.
 //
-// This package encompasses the following domains:
-//   - Hypervisor: Virtual Machine management (Libvirt, QEMU, Firecracker)
-//   - Provisioning: Bare metal lifecycle (PXE, IPMI)
-//   - Scheduler: Intelligent workload placement
-//   - Control Plane: Central API and state management
+// Domains:
+//   - Hypervisor: memory, remote libvirt (JSON/HTTP), Firecracker (unix/HTTP API)
+//   - Provisioning: memory, Redfish BMC, IPMI HTTP gateway
+//   - Scheduler: placement with binpack / spread / random strategies (+ memory adapter)
+//   - Control Plane: host inventory + instance create/bind APIs (+ memory adapter)
 //
-// The goal is to provide an AWS-like experience on bare metal infrastructure.
+// Relation to pkg/compute:
+//
+//   - pkg/cloud owns private-cloud host/instance vocabulary (Host, Resources,
+//     InstanceStatus, InstanceType) for building or simulating an IaaS control plane.
+//   - pkg/compute owns public-cloud / workload APIs (VM managers, container runtimes,
+//     serverless) against AWS/GCP/Azure/Kubernetes. Those subpackages define their own
+//     InstanceState and resource shapes for cloud-provider APIs.
+//
+// Prefer pkg/compute when calling managed cloud APIs; prefer pkg/cloud when modeling
+// hypervisors, bare metal, and placement inside a private cloud.
 package cloud

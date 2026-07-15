@@ -6,9 +6,9 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/sns"
-	"github.com/chris-alexander-pop/system-design-library/pkg/communication/sms"
-	"github.com/chris-alexander-pop/system-design-library/pkg/errors"
-	"github.com/chris-alexander-pop/system-design-library/pkg/validator"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/communication/sms"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/validator"
 )
 
 // Sender implements sms.Sender for AWS SNS.
@@ -18,7 +18,7 @@ type Sender struct {
 
 // New creates a new SNS sender.
 func New(ctx context.Context, cfg sms.Config) (*Sender, error) {
-	if err := validator.New().ValidateStruct(cfg); err != nil {
+	if err := validator.New().ValidateStruct(context.Background(), cfg); err != nil {
 		return nil, errors.InvalidArgument("invalid config", err)
 	}
 
@@ -38,6 +38,16 @@ func New(ctx context.Context, cfg sms.Config) (*Sender, error) {
 
 // Send implements sms.Sender.
 func (s *Sender) Send(ctx context.Context, msg *sms.Message) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	if msg == nil {
+		return errors.InvalidArgument("message is required", nil)
+	}
+	if msg.To == "" {
+		return errors.InvalidArgument("recipient is required", nil)
+	}
+
 	input := &sns.PublishInput{
 		Message:     aws.String(msg.Body),
 		PhoneNumber: aws.String(msg.To),

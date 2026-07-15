@@ -3,6 +3,8 @@ package mapreduce
 import (
 	"context"
 	"sync"
+
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/concurrency"
 )
 
 // Mapper function: Key, Value -> []KeyValue
@@ -73,7 +75,7 @@ func (j *Job) Run(ctx context.Context) (map[string][]interface{}, error) {
 
 	// Reduce Phase
 	results := make(map[string][]interface{})
-	var resultsMu sync.Mutex
+	resultsMu := concurrency.NewSmartMutex(concurrency.MutexConfig{Name: "mapreduce-results"})
 	var reduceWg sync.WaitGroup
 
 	type reduceJob struct {

@@ -3,7 +3,7 @@ package synapse_test
 import (
 	"testing"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/data/bigdata/adapters/synapse"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/data/bigdata/adapters/synapse"
 )
 
 func TestSynapse_Init(t *testing.T) {

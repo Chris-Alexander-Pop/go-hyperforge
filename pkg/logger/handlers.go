@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"regexp"
 	"strings"
+	"sync"
 	"sync/atomic"
 )
 
@@ -68,20 +69,23 @@ func (h *SamplingHandler) WithGroup(name string) slog.Handler {
 // --- Async Handler ---
 
 // AsyncHandler processes logs in a background goroutine to avoid blocking the caller.
-// Uses a buffered channel (Ring Buffer concept).
+// Uses a buffered channel. Call Shutdown to flush pending records before exit.
 type AsyncHandler struct {
-	next       slog.Handler
-	buffer     chan slog.Record
-	done       chan struct{}
-	dropOnFull bool // If true, drop logs when buffer full. If false, block (backpressure)
+	next         slog.Handler
+	buffer       chan slog.Record
+	done         chan struct{}
+	dropOnFull   bool // If true, drop logs when buffer full. If false, block (backpressure)
+	shutdownOnce *sync.Once
 }
 
+// NewAsyncHandler wraps next with a buffered async worker.
 func NewAsyncHandler(next slog.Handler, bufferSize int, dropOnFull bool) *AsyncHandler {
 	h := &AsyncHandler{
-		next:       next,
-		buffer:     make(chan slog.Record, bufferSize),
-		done:       make(chan struct{}),
-		dropOnFull: dropOnFull,
+		next:         next,
+		buffer:       make(chan slog.Record, bufferSize),
+		done:         make(chan struct{}),
+		dropOnFull:   dropOnFull,
+		shutdownOnce: &sync.Once{},
 	}
 	go h.process()
 	return h
@@ -118,34 +122,33 @@ func (h *AsyncHandler) Enabled(ctx context.Context, level slog.Level) bool {
 }
 
 func (h *AsyncHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
-	// Creating new AsyncHandler for WithAttrs is complex because it spawns new goroutine/channel
-	// USUALLY, Async is the LAST wrapper before output (or FIRST).
-	// If it's first, WithAttrs creates valid Record attributes but same Handler?
-	// slog logic: Handle gets Record. Record has attributes.
-	// So we can wrap the *next* handler?
-	// No, Record is immutable value.
-	// For Async, simple approach: just pass through.
-	// But Wait, WithAttrs returns a *new Handler*.
+	// Share buffer/worker with the parent; do not spawn a new goroutine.
 	return &AsyncHandler{
-		next:       h.next.WithAttrs(attrs),
-		buffer:     h.buffer, // Share buffer? Yes
-		done:       h.done,
-		dropOnFull: h.dropOnFull,
+		next:         h.next.WithAttrs(attrs),
+		buffer:       h.buffer,
+		done:         h.done,
+		dropOnFull:   h.dropOnFull,
+		shutdownOnce: h.shutdownOnce,
 	}
 }
 
 func (h *AsyncHandler) WithGroup(name string) slog.Handler {
 	return &AsyncHandler{
-		next:       h.next.WithGroup(name),
-		buffer:     h.buffer,
-		done:       h.done,
-		dropOnFull: h.dropOnFull,
+		next:         h.next.WithGroup(name),
+		buffer:       h.buffer,
+		done:         h.done,
+		dropOnFull:   h.dropOnFull,
+		shutdownOnce: h.shutdownOnce,
 	}
 }
 
+// Shutdown closes the buffer and waits for the worker to drain pending records.
+// It is safe to call more than once.
 func (h *AsyncHandler) Shutdown() {
-	close(h.buffer)
-	<-h.done
+	h.shutdownOnce.Do(func() {
+		close(h.buffer)
+		<-h.done
+	})
 }
 
 // --- Redact Handler ---
@@ -325,7 +328,12 @@ func (h *RedactHandler) redactString(s string) string {
 }
 
 func (h *RedactHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
-	return &RedactHandler{next: h.next.WithAttrs(attrs)}
+	// Bound attrs from logger.With bypass Handle, so redact them here.
+	redacted := make([]slog.Attr, len(attrs))
+	for i, a := range attrs {
+		redacted[i], _ = h.redactAttr(a, false)
+	}
+	return &RedactHandler{next: h.next.WithAttrs(redacted)}
 }
 
 func (h *RedactHandler) WithGroup(name string) slog.Handler {

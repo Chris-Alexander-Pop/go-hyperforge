@@ -8,9 +8,9 @@ import (
 	"os"
 	"time"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/database"
-	"github.com/chris-alexander-pop/system-design-library/pkg/database/document"
-	"github.com/chris-alexander-pop/system-design-library/pkg/errors"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/database"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/database/document"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )

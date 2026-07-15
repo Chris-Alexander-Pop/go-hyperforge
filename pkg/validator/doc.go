@@ -1,21 +1,42 @@
 /*
-Package validator provides input validation with custom validation rules.
+Package validator provides input validation and sanitization helpers.
+
+# Validation
 
 This package wraps go-playground/validator with additional custom validations:
-  - slug: URL-safe slug format
-  - password_strong: Password strength validation
+  - slug: URL-safe slug format (lowercase alphanumeric with hyphens)
+  - password_strong: Password strength (8+ chars, upper, lower, number, special)
   - phone_e164: E.164 phone number format
 
-Usage:
+Validation failures are mapped to pkg/errors.InvalidArgument. Prefer the
+Validator interface (implemented by Engine) and wrap with
+NewInstrumentedValidator for logging and OpenTelemetry spans.
 
-	import "github.com/chris-alexander-pop/system-design-library/pkg/validator"
+	import "github.com/chris-alexander-pop/go-hyperforge/pkg/validator"
 
-	v := validator.New()
+	v := validator.NewInstrumentedValidator(validator.New())
 
-	// Validate struct
-	err := v.ValidateStruct(myStruct)
+	err := v.ValidateStruct(ctx, myStruct)
+	err = v.ValidateVar(ctx, email, "required,email")
 
-	// Validate single value
-	err := v.ValidateVar(email, "required,email")
+# Sanitization
+
+Sanitizer strips or escapes HTML and can recurse through maps/slices via
+SanitizeMap. Prefer detection helpers before accepting untrusted input:
+
+  - DetectSQLInjection — common SQL injection patterns
+
+  - DetectCommandInjection — shell metacharacters
+
+  - DetectPathTraversal — ../ and encoded variants
+
+  - ValidatePathInside — ensure a target path stays within a base directory
+
+  - SanitizePath / SanitizeForShell — strip dangerous sequences (prefer
+    parameterized APIs over string interpolation when possible)
+
+    s := validator.NewSanitizer(validator.DefaultSanitizerConfig())
+    clean := s.Sanitize(userInput)
+    safe := s.SanitizeMap(formData)
 */
 package validator

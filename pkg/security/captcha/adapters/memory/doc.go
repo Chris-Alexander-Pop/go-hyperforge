@@ -1,2 +1,2 @@
-// Package memory provides an in-memory captcha verification adapter.
+// Package memory provides a deterministic captcha.Verifier for tests.
 package memory

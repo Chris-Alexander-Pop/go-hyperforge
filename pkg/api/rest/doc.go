@@ -1,14 +1,5 @@
-// Package rest provides utilities for building RESTful APIs.
+// Package rest provides an Echo-based HTTP server with timeouts, request logging,
+// and centralized error handling via pkg/errors.HTTPStatus.
 //
-// This package includes:
-//   - Standardized JSON response formatting
-//   - Error handling and mapping to HTTP status codes
-//   - Middleware for common concerns (CORS, RequestID, Logging)
-//   - Router configuration helpers
-//
-// Usage:
-//
-//	r := rest.NewRouter()
-//	r.Get("/health", rest.HealthHandler)
-//	r.Post("/users", CreateUserHandler)
+// It does not provide a full router DSL (use Echo directly via Server.Echo()).
 package rest

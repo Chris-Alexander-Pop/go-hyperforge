@@ -2,11 +2,11 @@ package memory_test
 
 import (
 	"context"
-	"github.com/chris-alexander-pop/system-design-library/pkg/database/timeseries/adapters/memory"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/database/timeseries/adapters/memory"
 	"testing"
 	"time"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/database/timeseries"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/database/timeseries"
 	"github.com/stretchr/testify/assert"
 )
 

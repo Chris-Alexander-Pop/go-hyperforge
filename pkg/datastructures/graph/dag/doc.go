@@ -1,4 +1,5 @@
-// Package dag provides functionality for dag.
-//
-// TODO: Add detailed documentation.
+/*
+Package dag provides a directed acyclic graph with cycle detection and
+topological sort (Kahn's algorithm).
+*/
 package dag

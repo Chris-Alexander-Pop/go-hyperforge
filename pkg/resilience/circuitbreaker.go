@@ -5,19 +5,8 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/concurrency"
-
-	"github.com/chris-alexander-pop/system-design-library/pkg/errors"
-	"github.com/chris-alexander-pop/system-design-library/pkg/logger"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/concurrency"
 )
-
-// Error codes for circuit breaker
-const (
-	CodeCircuitOpen = "CIRCUIT_OPEN"
-)
-
-// ErrCircuitOpen is returned when the circuit is open.
-var ErrCircuitOpen = errors.New(CodeCircuitOpen, "circuit breaker is open", nil)
 
 // CircuitBreaker implements the circuit breaker pattern.
 //
@@ -25,17 +14,21 @@ var ErrCircuitOpen = errors.New(CodeCircuitOpen, "circuit breaker is open", nil)
 //   - Closed: Normal operation. Failures are counted.
 //   - Open: All requests fail fast. After timeout, transitions to half-open.
 //   - Half-Open: Limited requests are allowed to test recovery.
+//
+// Logging and tracing belong on InstrumentedCircuitBreaker; this type stays quiet.
 type CircuitBreaker struct {
 	config CircuitBreakerConfig
 
-	state       atomic.Value // State
-	failures    atomic.Int64
-	successes   atomic.Int64
-	lastFailure atomic.Int64 // Unix timestamp
-	mu          *concurrency.SmartRWMutex
+	state         atomic.Value // State
+	failures      atomic.Int64
+	successes     atomic.Int64
+	lastFailure   atomic.Int64 // Unix timestamp
+	halfOpenCount atomic.Int64
+	mu            *concurrency.SmartRWMutex
 }
 
-// NewCircuitBreaker creates a new circuit breaker.
+// NewCircuitBreaker creates a new circuit breaker (concrete, uninstrumented).
+// Use NewInstrumentedBreakerFromConfig when observability is desired.
 func NewCircuitBreaker(cfg CircuitBreakerConfig) *CircuitBreaker {
 	if cfg.FailureThreshold == 0 {
 		cfg.FailureThreshold = 5
@@ -57,15 +50,13 @@ func NewCircuitBreaker(cfg CircuitBreakerConfig) *CircuitBreaker {
 
 // Execute runs the given function with circuit breaker protection.
 func (cb *CircuitBreaker) Execute(ctx context.Context, fn Executor) error {
-	// Check if we should allow the request
-	if !cb.allowRequest() {
-		return ErrCircuitOpen
+	allowed, reject := cb.allowRequest()
+	if !allowed {
+		return reject
 	}
 
-	// Execute
 	err := fn(ctx)
 
-	// Record result
 	if err != nil {
 		cb.recordFailure()
 	} else {
@@ -87,37 +78,65 @@ func (cb *CircuitBreaker) Reset() {
 	cb.setState(StateClosed)
 	cb.failures.Store(0)
 	cb.successes.Store(0)
+	cb.halfOpenCount.Store(0)
 }
 
-func (cb *CircuitBreaker) allowRequest() bool {
+// ForceOpen forces the circuit into the open state.
+func (cb *CircuitBreaker) ForceOpen() {
+	cb.mu.Lock()
+	defer cb.mu.Unlock()
+	cb.lastFailure.Store(time.Now().UnixMilli())
+	cb.halfOpenCount.Store(0)
+	cb.setState(StateOpen)
+}
+
+// ForceClose forces the circuit into the closed state.
+func (cb *CircuitBreaker) ForceClose() {
+	cb.Reset()
+}
+
+// allowRequest reports whether a call may proceed and, if not, which sentinel to return.
+func (cb *CircuitBreaker) allowRequest() (bool, error) {
 	state := cb.State()
 
 	switch state {
 	case StateClosed:
-		return true
+		return true, nil
 
 	case StateOpen:
-		// Check if timeout has passed
 		lastFailure := time.UnixMilli(cb.lastFailure.Load())
 		if time.Since(lastFailure) > cb.config.Timeout {
 			cb.mu.Lock()
-			// Double-check under lock
 			if cb.State() == StateOpen {
 				cb.setState(StateHalfOpen)
 				cb.successes.Store(0)
-				logger.L().Info("circuit breaker transitioning to half-open",
-					"name", cb.config.Name)
+				cb.halfOpenCount.Store(0)
 			}
 			cb.mu.Unlock()
-			return true
+			return cb.reserveHalfOpen()
 		}
-		return false
+		return false, ErrCircuitOpen
 
 	case StateHalfOpen:
-		return true
+		return cb.reserveHalfOpen()
 	}
 
-	return false
+	return false, ErrCircuitOpen
+}
+
+func (cb *CircuitBreaker) reserveHalfOpen() (bool, error) {
+	if cb.config.MaxRequests <= 0 {
+		return true, nil
+	}
+	for {
+		cur := cb.halfOpenCount.Load()
+		if cur >= cb.config.MaxRequests {
+			return false, ErrTooManyRequests
+		}
+		if cb.halfOpenCount.CompareAndSwap(cur, cur+1) {
+			return true, nil
+		}
+	}
 }
 
 func (cb *CircuitBreaker) recordSuccess() {
@@ -125,7 +144,6 @@ func (cb *CircuitBreaker) recordSuccess() {
 
 	switch state {
 	case StateClosed:
-		// Reset failure count on success
 		cb.failures.Store(0)
 
 	case StateHalfOpen:
@@ -135,9 +153,7 @@ func (cb *CircuitBreaker) recordSuccess() {
 			if cb.State() == StateHalfOpen {
 				cb.setState(StateClosed)
 				cb.failures.Store(0)
-				logger.L().Info("circuit breaker closed",
-					"name", cb.config.Name,
-					"successes", successes)
+				cb.halfOpenCount.Store(0)
 			}
 			cb.mu.Unlock()
 		}
@@ -155,20 +171,15 @@ func (cb *CircuitBreaker) recordFailure() {
 			cb.mu.Lock()
 			if cb.State() == StateClosed {
 				cb.setState(StateOpen)
-				logger.L().Warn("circuit breaker opened",
-					"name", cb.config.Name,
-					"failures", failures)
 			}
 			cb.mu.Unlock()
 		}
 
 	case StateHalfOpen:
-		// Any failure in half-open goes back to open
 		cb.mu.Lock()
 		if cb.State() == StateHalfOpen {
 			cb.setState(StateOpen)
-			logger.L().Warn("circuit breaker reopened from half-open",
-				"name", cb.config.Name)
+			cb.halfOpenCount.Store(0)
 		}
 		cb.mu.Unlock()
 	}
@@ -201,3 +212,5 @@ type CircuitBreakerMetrics struct {
 	Successes   int64
 	LastFailure time.Time
 }
+
+var _ Breaker = (*CircuitBreaker)(nil)

@@ -2,68 +2,98 @@ package azureblob
 
 import (
 	"context"
+	"fmt"
 	"io"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/storage/azblob"
+	"github.com/Azure/azure-sdk-for-go/sdk/storage/azblob/bloberror"
+	pkgerrors "github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/storage/blob"
 )
 
-type Adapter struct {
-	client *azblob.Client
+// Ensure Store implements blob.Store.
+var _ blob.Store = (*Store)(nil)
+
+// Store implements blob.Store using Azure Blob Storage.
+type Store struct {
+	client    *azblob.Client
+	container string
+	account   string
 }
 
-func New(accountName string) (*Adapter, error) {
-	// Construct URL
-	url := "https://" + accountName + ".blob.core.windows.net/"
+// New creates an Azure Blob-backed store.
+// Uses Config.AzureAccountName (or falls back to AccessKeyID) and Config.Bucket as the container.
+func New(cfg blob.Config) (blob.Store, error) {
+	account := cfg.AzureAccountName
+	if account == "" {
+		account = cfg.AccessKeyID
+	}
+	if account == "" {
+		return nil, blob.ErrInvalidConfig
+	}
+	if cfg.Bucket == "" {
+		return nil, blob.ErrInvalidConfig
+	}
 
-	// DefaultCreds
+	url := fmt.Sprintf("https://%s.blob.core.windows.net/", account)
+
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
-		return nil, err
+		return nil, pkgerrors.Internal("failed to create azure credential", err)
 	}
 
 	client, err := azblob.NewClient(url, cred, nil)
 	if err != nil {
-		return nil, err
+		return nil, pkgerrors.Internal("failed to create azure blob client", err)
 	}
 
-	return &Adapter{client: client}, nil
+	return &Store{
+		client:    client,
+		container: cfg.Bucket,
+		account:   account,
+	}, nil
 }
 
-func (a *Adapter) Put(ctx context.Context, container, blob string, data []byte) error {
-	_, err := a.client.UploadBuffer(ctx, container, blob, data, nil)
-	return err
+func mapError(op string, err error) error {
+	if err == nil {
+		return nil
+	}
+	if bloberror.HasCode(err, bloberror.BlobNotFound, bloberror.ContainerNotFound) {
+		return pkgerrors.NotFound("blob not found", err)
+	}
+	return pkgerrors.Internal("failed to "+op+" from azure blob", err)
 }
 
-func (a *Adapter) Get(ctx context.Context, container, blob string) ([]byte, error) {
-	resp, err := a.client.DownloadStream(ctx, container, blob, nil)
+func (s *Store) Upload(ctx context.Context, key string, data io.Reader) error {
+	_, err := s.client.UploadStream(ctx, s.container, key, data, nil)
 	if err != nil {
-		return nil, err
+		return mapError("upload", err)
 	}
-	defer resp.Body.Close()
-	return io.ReadAll(resp.Body)
+	return nil
 }
 
-func (a *Adapter) List(ctx context.Context, container string) ([]string, error) {
-	var results []string
-	pager := a.client.NewListBlobsFlatPager(container, nil)
-	for pager.More() {
-		resp, err := pager.NextPage(ctx)
-		if err != nil {
-			return nil, err
-		}
-		for _, blob := range resp.Segment.BlobItems {
-			results = append(results, *blob.Name)
-		}
+func (s *Store) Download(ctx context.Context, key string) (io.ReadCloser, error) {
+	resp, err := s.client.DownloadStream(ctx, s.container, key, nil)
+	if err != nil {
+		return nil, mapError("download", err)
 	}
-	return results, nil
+	return resp.Body, nil
 }
 
-func (a *Adapter) Delete(ctx context.Context, container, blob string) error {
-	_, err := a.client.DeleteBlob(ctx, container, blob, nil)
-	return err
+func (s *Store) Delete(ctx context.Context, key string) error {
+	_, err := s.client.DeleteBlob(ctx, s.container, key, nil)
+	if err != nil {
+		return mapError("delete", err)
+	}
+	return nil
 }
 
-func (a *Adapter) Close() error {
+func (s *Store) URL(key string) string {
+	return fmt.Sprintf("https://%s.blob.core.windows.net/%s/%s", s.account, s.container, key)
+}
+
+// Close is a no-op for the Azure client.
+func (s *Store) Close() error {
 	return nil
 }

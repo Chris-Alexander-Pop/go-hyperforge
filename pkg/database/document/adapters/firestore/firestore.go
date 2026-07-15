@@ -5,8 +5,8 @@ import (
 	"strings"
 
 	"cloud.google.com/go/firestore"
-	"github.com/chris-alexander-pop/system-design-library/pkg/database/document"
-	"github.com/chris-alexander-pop/system-design-library/pkg/errors"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/database/document"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 	"google.golang.org/api/iterator"
 )
 

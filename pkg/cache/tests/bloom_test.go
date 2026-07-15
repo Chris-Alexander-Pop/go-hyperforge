@@ -5,8 +5,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/cache"
-	"github.com/chris-alexander-pop/system-design-library/pkg/cache/adapters/memory"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/cache"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/cache/adapters/memory"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 )
 
 func TestBloomCache(t *testing.T) {
@@ -23,27 +24,30 @@ func TestBloomCache(t *testing.T) {
 	key := "bloom-key"
 	value := "bloom-value"
 
-	// 1. Set (should add to bloom)
-	err := c.Set(ctx, key, value, time.Minute)
-	if err != nil {
+	if err := c.Set(ctx, key, value, time.Minute); err != nil {
 		t.Fatalf("Set failed: %v", err)
 	}
 
-	// 2. Get (should pass bloom check)
 	var res string
-	err = c.Get(ctx, key, &res)
-	if err != nil {
+	if err := c.Get(ctx, key, &res); err != nil {
 		t.Fatalf("Get failed: %v", err)
 	}
 	if res != value {
 		t.Errorf("Expected %s, got %s", value, res)
 	}
 
-	// 3. Negative Lookup (should be blocked by bloom or fail in cache)
-	// Since bloom is empty for "missing-key", it should block it early (optimized)
-	// or if false positive, fail in cache. Both result in ErrKeyNotFound equivalent (not nil).
-	err = c.Get(ctx, "missing-key", &res)
+	err := c.Get(ctx, "missing-key", &res)
 	if err == nil {
-		t.Error("Expected error for missing key")
+		t.Fatal("Expected error for missing key")
+	}
+	if !cache.IsNotFound(err) {
+		t.Fatalf("expected NotFound, got %v", err)
+	}
+	if !errors.Is(err, cache.ErrKeyNotFound) {
+		t.Fatalf("expected ErrKeyNotFound sentinel, got %v", err)
+	}
+	var appErr *errors.AppError
+	if !errors.As(err, &appErr) || appErr.Code != errors.CodeNotFound {
+		t.Fatalf("errors.As CodeNotFound failed: %v", err)
 	}
 }

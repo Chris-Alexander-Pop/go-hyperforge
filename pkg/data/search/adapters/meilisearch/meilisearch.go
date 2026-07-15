@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/data/search"
-	"github.com/chris-alexander-pop/system-design-library/pkg/errors"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/data/search"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 	meili "github.com/meilisearch/meilisearch-go"
 )
 
@@ -329,4 +329,9 @@ func (e *Engine) Refresh(ctx context.Context, indexName string) error {
 
 func (e *Engine) Close() error {
 	return nil
+}
+
+// Suggest is not yet implemented for Meilisearch; use the memory adapter for autocomplete in tests.
+func (e *Engine) Suggest(ctx context.Context, indexName string, query search.SuggestQuery) ([]search.Suggestion, error) {
+	return nil, search.ErrSuggestUnsupported
 }

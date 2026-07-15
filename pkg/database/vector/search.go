@@ -4,10 +4,10 @@ import (
 	"context"
 	"runtime"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/datastructures/heap"
-	"github.com/chris-alexander-pop/system-design-library/pkg/errors"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/concurrency"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/datastructures/heap"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 	"golang.org/x/sync/errgroup"
-	"golang.org/x/sync/semaphore"
 )
 
 // SearchFunc defines the signature for searching a single shard
@@ -27,7 +27,7 @@ func ScatterGatherSearch(
 	// 1. Concurrency Control
 	// Limit concurrency to NumCPU * 2 to prevent explosion
 	maxConcurrency := int64(runtime.NumCPU() * 2)
-	sem := semaphore.NewWeighted(maxConcurrency)
+	sem := concurrency.NewSemaphore(maxConcurrency)
 
 	resultsChan := make(chan []Result, len(shardIDs))
 	g, ctx := errgroup.WithContext(ctx)

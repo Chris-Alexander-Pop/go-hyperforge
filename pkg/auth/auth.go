@@ -2,9 +2,11 @@
 //
 // Supported adapters:
 //   - JWT: Local JWT generation and verification
-//   - OIDC: OpenID Connect integration
-//   - Session: Server-side session management
-//   - PASETO: Secure token generation
+//   - OIDC: OpenID Connect ID-token verify + optional auth-code exchange
+//   - OAuth2 AS: authorize/token interfaces + memory adapter (pkg/auth/oauth2)
+//   - Session / MFA / WebAuthn / Social (client OAuth2)
+//   - SAML SP client skeleton (pkg/auth/saml) + memory ACS test double
+//   - Cloud IdP: Cognito, Entra ID, GCP/Firebase
 package auth
 
 import (

@@ -3,18 +3,20 @@ package graph
 import (
 	"fmt"
 	"strings"
-	"sync"
+
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/concurrency"
 )
 
 // Graph represents a generic graph using adjacency list.
 type Graph[T comparable] struct {
 	adj map[T][]T
-	mu  sync.RWMutex
+	mu  *concurrency.SmartRWMutex
 }
 
 func New[T comparable]() *Graph[T] {
 	return &Graph[T]{
 		adj: make(map[T][]T),
+		mu:  concurrency.NewSmartRWMutex(concurrency.MutexConfig{Name: "Graph"}),
 	}
 }
 

@@ -111,8 +111,8 @@ package redis
 
 import (
     "github.com/redis/go-redis/v9"  // SDK isolated here
-    "github.com/chris-alexander-pop/system-design-library/pkg/cache"
-    "github.com/chris-alexander-pop/system-design-library/pkg/errors"
+    "github.com/chris-alexander-pop/go-hyperforge/pkg/cache"
+    "github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 )
 ```
 
@@ -380,9 +380,9 @@ import (
     "time"
 
     // 2. Internal pkg/ packages (alphabetical)
-    "github.com/chris-alexander-pop/system-design-library/pkg/concurrency"
-    "github.com/chris-alexander-pop/system-design-library/pkg/errors"
-    "github.com/chris-alexander-pop/system-design-library/pkg/logger"
+    "github.com/chris-alexander-pop/go-hyperforge/pkg/concurrency"
+    "github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
+    "github.com/chris-alexander-pop/go-hyperforge/pkg/logger"
 
     // 3. External dependencies (alphabetical)
     "github.com/redis/go-redis/v9"
@@ -445,7 +445,7 @@ func (c *RedisCache) Close() error { ... }
 **Always** use `pkg/errors` for error creation and wrapping:
 
 ```go
-import "github.com/chris-alexander-pop/system-design-library/pkg/errors"
+import "github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 
 // ✅ CORRECT: Use pkg/errors
 func (c *RedisCache) Get(ctx context.Context, key string, dest interface{}) error {
@@ -506,7 +506,7 @@ Every package MUST have a package-level doc comment (in `{capability}.go` or `do
 //
 // Basic usage:
 //
-//     import "github.com/chris-alexander-pop/system-design-library/pkg/cache/adapters/redis"
+//     import "github.com/chris-alexander-pop/go-hyperforge/pkg/cache/adapters/redis"
 //     
 //     cache := redis.New(cfg)
 //     defer cache.Close()
@@ -599,7 +599,7 @@ Every package MUST integrate with the following core packages where applicable.
 **MANDATORY** for all error creation and wrapping.
 
 ```go
-import "github.com/chris-alexander-pop/system-design-library/pkg/errors"
+import "github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 
 // Use predefined error codes
 errors.NotFound("user not found", nil)
@@ -626,7 +626,7 @@ grpcStatus := errors.GRPCStatus(err)
 **MANDATORY** for all logging. NEVER use `fmt.Println` or `log.Printf`.
 
 ```go
-import "github.com/chris-alexander-pop/system-design-library/pkg/logger"
+import "github.com/chris-alexander-pop/go-hyperforge/pkg/logger"
 
 // Use context-aware logging (preferred)
 logger.L().InfoContext(ctx, "processing request", 
@@ -690,7 +690,7 @@ func (c *InstrumentedCache) Get(ctx context.Context, key string, dest interface{
 Use for loading configs from environment:
 
 ```go
-import "github.com/chris-alexander-pop/system-design-library/pkg/config"
+import "github.com/chris-alexander-pop/go-hyperforge/pkg/config"
 
 var cfg cache.Config
 if err := config.Load(&cfg); err != nil {
@@ -703,7 +703,7 @@ if err := config.Load(&cfg); err != nil {
 Use for validating structs and inputs:
 
 ```go
-import "github.com/chris-alexander-pop/system-design-library/pkg/validator"
+import "github.com/chris-alexander-pop/go-hyperforge/pkg/validator"
 
 v := validator.New()
 
@@ -723,7 +723,7 @@ if err := v.ValidateVar(email, "required,email"); err != nil {
 Use for mutex and concurrency primitives:
 
 ```go
-import "github.com/chris-alexander-pop/system-design-library/pkg/concurrency"
+import "github.com/chris-alexander-pop/go-hyperforge/pkg/concurrency"
 
 type MemoryCache struct {
     items map[string]item
@@ -751,7 +751,7 @@ func (m *MemoryCache) Get(ctx context.Context, key string, dest interface{}) err
 Use for circuit breakers and retries in adapters that make external calls:
 
 ```go
-import "github.com/chris-alexander-pop/system-design-library/pkg/resilience"
+import "github.com/chris-alexander-pop/go-hyperforge/pkg/resilience"
 
 type ResilientCache struct {
     next Cache
@@ -778,7 +778,7 @@ func (c *ResilientCache) Get(ctx context.Context, key string, dest interface{}) 
 Use for emitting domain events:
 
 ```go
-import "github.com/chris-alexander-pop/system-design-library/pkg/events"
+import "github.com/chris-alexander-pop/go-hyperforge/pkg/events"
 
 func (s *UserService) CreateUser(ctx context.Context, user *User) error {
     if err := s.repo.Create(ctx, user); err != nil {
@@ -802,7 +802,7 @@ func (s *UserService) CreateUser(ctx context.Context, user *User) error {
 Use for adding caching layers:
 
 ```go
-import "github.com/chris-alexander-pop/system-design-library/pkg/cache"
+import "github.com/chris-alexander-pop/go-hyperforge/pkg/cache"
 
 type CachedUserRepo struct {
     repo  UserRepository
@@ -837,7 +837,7 @@ Use for test suites:
 ```go
 import (
     "testing"
-    "github.com/chris-alexander-pop/system-design-library/pkg/test"
+    "github.com/chris-alexander-pop/go-hyperforge/pkg/test"
 )
 
 type CacheTestSuite struct {
@@ -869,18 +869,27 @@ func TestCacheSuite(t *testing.T) {
 }
 ```
 
-### 6.11 `pkg/analytics` - Usage Analytics
+### 6.11 `pkg/analytics` - Uniqueness Tracking
 
-Use for tracking feature usage:
+Approximate unique-element counts via HyperLogLog (not warehouse analytics).
+Adapters: `adapters/memory` (pkg/datastructures/hyperloglog) and `adapters/redis` (PFADD/PFCOUNT/PFMERGE).
 
 ```go
-import "github.com/chris-alexander-pop/system-design-library/pkg/analytics"
+import (
+    "github.com/chris-alexander-pop/go-hyperforge/pkg/analytics"
+    "github.com/chris-alexander-pop/go-hyperforge/pkg/analytics/adapters/memory"
+)
 
-// Track unique events
-tracker := analytics.NewUniqueTracker(cfg)
-if tracker.Track(userID) {
-    // First time for this user
+tracker, err := memory.New(analytics.DefaultConfig())
+if err != nil {
+    return err
 }
+defer tracker.Close()
+
+_ = tracker.Add(ctx, "visitors", userID)
+count, err := tracker.Count(ctx, "visitors") // missing counter → (0, nil)
+_ = tracker.Merge(ctx, "week", "monday")
+_ = tracker.Reset(ctx, "visitors")
 ```
 
 ### 6.12 `pkg/crypto` - Encryption
@@ -888,7 +897,7 @@ if tracker.Track(userID) {
 Use for encryption/hashing:
 
 ```go
-import "github.com/chris-alexander-pop/system-design-library/pkg/security/crypto"
+import "github.com/chris-alexander-pop/go-hyperforge/pkg/security/crypto"
 
 // Encryption
 enc := crypto.NewAESEncryptor(key)
@@ -901,13 +910,23 @@ hash := hasher.Hash(data)
 
 ### 6.13 `pkg/datastructures` - Data Structures
 
-Use built-in data structures:
+Use built-in data structures — **prefer reuse over local copies**:
+
+| Need | Prefer |
+|------|--------|
+| Priority queue / Dijkstra-style PQ | `datastructures/heap` (`NewMinHeap`) |
+| Probabilistic membership / negative cache | `datastructures/bloomfilter` |
+| Bounded hot-key cache | `datastructures/lru` (or LFU/ARC) |
+| FIFO / ring / delay | `datastructures/queue` |
+
+Known reuse: `algorithms/graph/{dijkstra,astar,prim}` → heap; `cache` bloom wrapper + `messaging` dedup → bloomfilter; `workflow/adapters/memory` definition hot-cache → lru.
 
 ```go
 import (
-    "github.com/chris-alexander-pop/system-design-library/pkg/datastructures/bloomfilter"
-    "github.com/chris-alexander-pop/system-design-library/pkg/datastructures/heap"
-    "github.com/chris-alexander-pop/system-design-library/pkg/datastructures/queue"
+    "github.com/chris-alexander-pop/go-hyperforge/pkg/datastructures/bloomfilter"
+    "github.com/chris-alexander-pop/go-hyperforge/pkg/datastructures/heap"
+    "github.com/chris-alexander-pop/go-hyperforge/pkg/datastructures/lru"
+    "github.com/chris-alexander-pop/go-hyperforge/pkg/datastructures/queue"
 )
 ```
 
@@ -917,9 +936,9 @@ Use built-in algorithms:
 
 ```go
 import (
-    "github.com/chris-alexander-pop/system-design-library/pkg/algorithms/binarysearch"
-    "github.com/chris-alexander-pop/system-design-library/pkg/algorithms/dfs"
-    "github.com/chris-alexander-pop/system-design-library/pkg/algorithms/bfs"
+    "github.com/chris-alexander-pop/go-hyperforge/pkg/algorithms/search/binarysearch"
+    "github.com/chris-alexander-pop/go-hyperforge/pkg/algorithms/graph/dfs"
+    "github.com/chris-alexander-pop/go-hyperforge/pkg/algorithms/graph/bfs"
 )
 ```
 
@@ -2014,9 +2033,9 @@ package {driver}
 import (
     "context"
     
-    "github.com/chris-alexander-pop/system-design-library/pkg/{capability}"
-    "github.com/chris-alexander-pop/system-design-library/pkg/concurrency"
-    "github.com/chris-alexander-pop/system-design-library/pkg/errors"
+    "github.com/chris-alexander-pop/go-hyperforge/pkg/{capability}"
+    "github.com/chris-alexander-pop/go-hyperforge/pkg/concurrency"
+    "github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 )
 
 type {Driver}{Capability} struct {
@@ -2049,7 +2068,7 @@ package {capability}
 import (
     "context"
     
-    "github.com/chris-alexander-pop/system-design-library/pkg/logger"
+    "github.com/chris-alexander-pop/go-hyperforge/pkg/logger"
     "go.opentelemetry.io/otel"
     "go.opentelemetry.io/otel/attribute"
     "go.opentelemetry.io/otel/codes"

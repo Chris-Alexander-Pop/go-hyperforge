@@ -7,7 +7,8 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/ai/genai/llm"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/ai/genai/llm"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 )
 
 // Agent runs autonomous tasks.
@@ -86,7 +87,7 @@ func (a *Agent) Run(ctx context.Context, task string) (string, error) {
 		history = append(history, llm.Message{Role: llm.RoleUser, Content: observation})
 	}
 
-	return "", fmt.Errorf("max steps reached")
+	return "", errors.ResourceExhausted("max steps reached", nil)
 }
 
 func (a *Agent) buildSystemPrompt() string {

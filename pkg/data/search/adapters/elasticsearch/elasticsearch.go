@@ -10,8 +10,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/data/search"
-	"github.com/chris-alexander-pop/system-design-library/pkg/errors"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/data/search"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 	"github.com/elastic/go-elasticsearch/v8"
 	"github.com/elastic/go-elasticsearch/v8/esapi"
 )
@@ -609,6 +609,11 @@ func (e *Engine) Refresh(ctx context.Context, indexName string) error {
 
 func (e *Engine) Close() error {
 	return nil
+}
+
+// Suggest is not yet implemented for Elasticsearch; use the memory adapter for autocomplete in tests.
+func (e *Engine) Suggest(ctx context.Context, indexName string, query search.SuggestQuery) ([]search.Suggestion, error) {
+	return nil, search.ErrSuggestUnsupported
 }
 
 func (e *Engine) parseError(res *esapi.Response) error {

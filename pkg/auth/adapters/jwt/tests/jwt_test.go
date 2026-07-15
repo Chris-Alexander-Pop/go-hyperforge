@@ -2,7 +2,7 @@ package jwt_test
 
 import (
 	"context"
-	"github.com/chris-alexander-pop/system-design-library/pkg/auth/adapters/jwt"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/auth/adapters/jwt"
 	"testing"
 	"time"
 )

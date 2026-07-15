@@ -5,7 +5,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/streaming/adapters/kinesis"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/streaming/adapters/kinesis"
 )
 
 func TestKinesis_Init(t *testing.T) {

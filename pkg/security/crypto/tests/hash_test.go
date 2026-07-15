@@ -3,7 +3,7 @@ package tests
 import (
 	"testing"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/security/crypto"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/security/crypto"
 )
 
 func TestHasher_Argon2id(t *testing.T) {

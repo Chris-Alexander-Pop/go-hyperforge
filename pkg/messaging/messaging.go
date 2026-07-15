@@ -1,40 +1,8 @@
-// Package messaging provides a unified abstraction layer for message brokers.
-//
-// This package defines the core interfaces for producing and consuming messages
-// across different messaging systems (Kafka, RabbitMQ, NATS, AWS SQS/SNS, GCP Pub/Sub,
-// Azure Service Bus).
-//
-// # Architecture
-//
-// The package follows the adapter pattern with decoupled dependencies:
-//   - Core interfaces are defined here (zero external dependencies)
-//   - Each adapter lives in its own sub-package (pkg/messaging/adapters/{driver})
-//   - Users import only the adapter they need, pulling only that SDK
-//
-// # Usage
-//
-//	import (
-//	    "github.com/chris-alexander-pop/system-design-library/pkg/messaging"
-//	    "github.com/chris-alexander-pop/system-design-library/pkg/messaging/adapters/kafka"
-//	)
-//
-//	// Create a Kafka broker
-//	broker, err := kafka.New(kafka.Config{Brokers: []string{"localhost:9092"}})
-//
-//	// Create a producer
-//	producer, err := broker.Producer("my-topic")
-//	defer producer.Close()
-//
-//	// Publish a message
-//	err = producer.Publish(ctx, &messaging.Message{
-//	    ID:      uuid.New().String(),
-//	    Topic:   "my-topic",
-//	    Payload: []byte(`{"event": "user.created"}`),
-//	})
 package messaging
 
 import (
 	"context"
+	"strconv"
 	"time"
 )
 
@@ -135,77 +103,188 @@ type Broker interface {
 	Healthy(ctx context.Context) bool
 }
 
-// PublishOption configures a publish operation.
-type PublishOption func(*publishOptions)
+// Well-known header keys used by ApplyPublishOptions so adapters can honor
+// broker-specific publish hints without changing the Producer interface.
+const (
+	HeaderDelaySeconds    = "x-messaging-delay-seconds"
+	HeaderOrderingKey     = "x-messaging-ordering-key"
+	HeaderMessageGroupID  = "x-messaging-message-group-id"
+	HeaderDeduplicationID = "x-messaging-deduplication-id"
+)
 
-type publishOptions struct {
-	// DelaySeconds delays message delivery (SQS, Azure Service Bus)
+// PublishOption configures a publish operation.
+type PublishOption func(*PublishOptions)
+
+// PublishOptions holds broker hints applied before Publish.
+type PublishOptions struct {
+	// DelaySeconds delays message delivery (SQS, Azure Service Bus).
 	DelaySeconds int64
-	// OrderingKey ensures messages with the same key are delivered in order (GCP Pub/Sub)
+	// OrderingKey ensures messages with the same key are delivered in order (GCP Pub/Sub).
 	OrderingKey string
-	// MessageGroupID groups messages for FIFO ordering (SQS FIFO)
+	// MessageGroupID groups messages for FIFO ordering (SQS FIFO).
 	MessageGroupID string
-	// DeduplicationID prevents duplicate message delivery (SQS FIFO)
+	// DeduplicationID prevents duplicate message delivery (SQS FIFO).
 	DeduplicationID string
 }
 
 // WithDelay sets a delivery delay for the message.
 func WithDelay(seconds int64) PublishOption {
-	return func(o *publishOptions) {
+	return func(o *PublishOptions) {
 		o.DelaySeconds = seconds
 	}
 }
 
 // WithOrderingKey sets the ordering key for message ordering.
 func WithOrderingKey(key string) PublishOption {
-	return func(o *publishOptions) {
+	return func(o *PublishOptions) {
 		o.OrderingKey = key
 	}
 }
 
 // WithMessageGroupID sets the message group for FIFO ordering.
 func WithMessageGroupID(groupID string) PublishOption {
-	return func(o *publishOptions) {
+	return func(o *PublishOptions) {
 		o.MessageGroupID = groupID
 	}
 }
 
 // WithDeduplicationID sets the deduplication ID for exactly-once delivery.
 func WithDeduplicationID(dedupID string) PublishOption {
-	return func(o *publishOptions) {
+	return func(o *PublishOptions) {
 		o.DeduplicationID = dedupID
 	}
 }
 
-// ConsumeOption configures a consume operation.
-type ConsumeOption func(*consumeOptions)
+// ApplyPublishOptions writes publish hints into msg.Headers (and Key when an
+// ordering key is set). Adapters may read these via ParsePublishOptions.
+func ApplyPublishOptions(msg *Message, opts ...PublishOption) {
+	if msg == nil || len(opts) == 0 {
+		return
+	}
+	o := &PublishOptions{}
+	for _, opt := range opts {
+		if opt != nil {
+			opt(o)
+		}
+	}
+	if msg.Headers == nil {
+		msg.Headers = make(map[string]string)
+	}
+	if o.DelaySeconds > 0 {
+		msg.Headers[HeaderDelaySeconds] = formatInt64(o.DelaySeconds)
+	}
+	if o.OrderingKey != "" {
+		msg.Headers[HeaderOrderingKey] = o.OrderingKey
+		if len(msg.Key) == 0 {
+			msg.Key = []byte(o.OrderingKey)
+		}
+	}
+	if o.MessageGroupID != "" {
+		msg.Headers[HeaderMessageGroupID] = o.MessageGroupID
+	}
+	if o.DeduplicationID != "" {
+		msg.Headers[HeaderDeduplicationID] = o.DeduplicationID
+	}
+}
 
-type consumeOptions struct {
-	// MaxMessages limits the number of messages to fetch at once
+// ParsePublishOptions reads publish hints previously applied to msg.Headers.
+func ParsePublishOptions(msg *Message) PublishOptions {
+	if msg == nil || msg.Headers == nil {
+		return PublishOptions{}
+	}
+	return PublishOptions{
+		DelaySeconds:    parseInt64(msg.Headers[HeaderDelaySeconds]),
+		OrderingKey:     msg.Headers[HeaderOrderingKey],
+		MessageGroupID:  msg.Headers[HeaderMessageGroupID],
+		DeduplicationID: msg.Headers[HeaderDeduplicationID],
+	}
+}
+
+// Publish applies opts to msg then delegates to p.Publish.
+// Prefer this helper when callers need PublishOption without changing Producer.
+func Publish(ctx context.Context, p Producer, msg *Message, opts ...PublishOption) error {
+	ApplyPublishOptions(msg, opts...)
+	return p.Publish(ctx, msg)
+}
+
+// ConsumeOption configures a consume operation.
+type ConsumeOption func(*ConsumeOptions)
+
+// ConsumeOptions holds poll/visibility hints for Consume.
+type ConsumeOptions struct {
+	// MaxMessages limits the number of messages to fetch at once.
 	MaxMessages int
-	// VisibilityTimeout sets how long a message is hidden after being received
+	// VisibilityTimeout sets how long a message is hidden after being received.
 	VisibilityTimeout time.Duration
-	// WaitTime sets how long to wait for messages (long polling)
+	// WaitTime sets how long to wait for messages (long polling).
 	WaitTime time.Duration
 }
 
 // WithMaxMessages sets the maximum number of messages to receive.
 func WithMaxMessages(n int) ConsumeOption {
-	return func(o *consumeOptions) {
+	return func(o *ConsumeOptions) {
 		o.MaxMessages = n
 	}
 }
 
 // WithVisibilityTimeout sets the visibility timeout for received messages.
 func WithVisibilityTimeout(d time.Duration) ConsumeOption {
-	return func(o *consumeOptions) {
+	return func(o *ConsumeOptions) {
 		o.VisibilityTimeout = d
 	}
 }
 
 // WithWaitTime sets the wait time for long polling.
 func WithWaitTime(d time.Duration) ConsumeOption {
-	return func(o *consumeOptions) {
+	return func(o *ConsumeOptions) {
 		o.WaitTime = d
 	}
+}
+
+type consumeOptionsCtxKey struct{}
+
+// ContextWithConsumeOptions stores consume opts on ctx for adapters to read.
+func ContextWithConsumeOptions(ctx context.Context, opts ...ConsumeOption) context.Context {
+	if len(opts) == 0 {
+		return ctx
+	}
+	o := &ConsumeOptions{}
+	for _, opt := range opts {
+		if opt != nil {
+			opt(o)
+		}
+	}
+	return context.WithValue(ctx, consumeOptionsCtxKey{}, *o)
+}
+
+// ConsumeOptionsFromContext returns consume opts previously stored on ctx.
+func ConsumeOptionsFromContext(ctx context.Context) (ConsumeOptions, bool) {
+	if ctx == nil {
+		return ConsumeOptions{}, false
+	}
+	o, ok := ctx.Value(consumeOptionsCtxKey{}).(ConsumeOptions)
+	return o, ok
+}
+
+// Consume stores opts on ctx then delegates to c.Consume.
+// SQS/Service Bus adapters may honor MaxMessages / WaitTime / VisibilityTimeout
+// from context; the memory adapter ignores them.
+func Consume(ctx context.Context, c Consumer, handler MessageHandler, opts ...ConsumeOption) error {
+	ctx = ContextWithConsumeOptions(ctx, opts...)
+	return c.Consume(ctx, handler)
+}
+
+func formatInt64(n int64) string {
+	return strconv.FormatInt(n, 10)
+}
+
+func parseInt64(s string) int64 {
+	if s == "" {
+		return 0
+	}
+	n, err := strconv.ParseInt(s, 10, 64)
+	if err != nil {
+		return 0
+	}
+	return n
 }

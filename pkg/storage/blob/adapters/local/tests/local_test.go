@@ -4,10 +4,10 @@ import (
 	"os"
 	"testing"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/storage/blob"
-	"github.com/chris-alexander-pop/system-design-library/pkg/storage/blob/adapters/local"
-	"github.com/chris-alexander-pop/system-design-library/pkg/storage/blob/testsuite"
-	"github.com/chris-alexander-pop/system-design-library/pkg/test"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/storage/blob"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/storage/blob/adapters/local"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/storage/blob/testsuite"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/test"
 )
 
 type LocalSuite struct {

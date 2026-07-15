@@ -3,10 +3,11 @@ package bounded
 import (
 	"crypto/sha256"
 	"encoding/binary"
-	"errors"
 	"fmt"
 	"sort"
-	"sync"
+
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/concurrency"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 )
 
 // Hasher implements Consistent Hashing with Bounded Loads.
@@ -18,7 +19,7 @@ type Hasher struct {
 	ring       []uint64
 	ringMap    map[uint64]string
 	loads      map[string]int64
-	mu         sync.RWMutex
+	mu         *concurrency.SmartRWMutex
 }
 
 func New(vNodes int, loadFactor float64) *Hasher {
@@ -30,6 +31,7 @@ func New(vNodes int, loadFactor float64) *Hasher {
 		loadFactor: loadFactor,
 		ringMap:    make(map[uint64]string),
 		loads:      make(map[string]int64),
+		mu:         concurrency.NewSmartRWMutex(concurrency.MutexConfig{Name: "consistenthash-bounded"}),
 	}
 }
 
@@ -55,7 +57,7 @@ func (h *Hasher) Get(key string) (string, error) {
 	defer h.mu.Unlock()
 
 	if len(h.ring) == 0 {
-		return "", errors.New("no hosts")
+		return "", errors.FailedPrecondition("no hosts", nil)
 	}
 
 	hash := h.hash(key)

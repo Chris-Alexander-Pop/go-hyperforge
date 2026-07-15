@@ -16,7 +16,7 @@ import (
 	"math/bits"
 	"unsafe"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/concurrency"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/concurrency"
 )
 
 // BloomFilter is a space-efficient probabilistic data structure.

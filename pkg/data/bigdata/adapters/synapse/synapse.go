@@ -4,7 +4,7 @@ import (
 	"context"
 	"database/sql"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/data/bigdata"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/data/bigdata"
 	_ "github.com/microsoft/go-mssqldb" // SQL Server Driver
 )
 

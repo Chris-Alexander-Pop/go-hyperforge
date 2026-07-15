@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/cache"
-	"github.com/chris-alexander-pop/system-design-library/pkg/logger"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/cache"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/logger"
 )
 
 type responseWriterWrapper struct {

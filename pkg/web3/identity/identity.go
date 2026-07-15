@@ -1,13 +1,3 @@
-// Package identity provides Web3 identity and wallet authentication.
-//
-// Supports WalletConnect, Sign-In with Ethereum (SIWE), and DIDs.
-//
-// Usage:
-//
-//	import "github.com/chris-alexander-pop/system-design-library/pkg/web3/identity"
-//
-//	verifier := identity.NewSIWEVerifier()
-//	valid, err := verifier.Verify(ctx, message, signature)
 package identity
 
 import (
@@ -19,30 +9,24 @@ import (
 	"strings"
 	"time"
 
-	pkgerrors "github.com/chris-alexander-pop/system-design-library/pkg/errors"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/concurrency"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/web3"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/crypto"
 )
 
-// SIWEMessage represents a Sign-In with Ethereum message.
-type SIWEMessage struct {
-	Domain         string
-	Address        string
-	Statement      string
-	URI            string
-	Version        string
-	ChainID        int
-	Nonce          string
-	IssuedAt       time.Time
-	ExpirationTime *time.Time
-	NotBefore      *time.Time
-	RequestID      string
-	Resources      []string
-}
+// Ensure SIWEVerifier implements web3.Verifier.
+var _ web3.Verifier = (*SIWEVerifier)(nil)
 
-// String formats the SIWE message for signing.
-func (m *SIWEMessage) String() string {
+// SIWEMessage is an alias for web3.SIWEMessage.
+type SIWEMessage = web3.SIWEMessage
+
+// FormatSIWE formats a SIWE message for EIP-191 personal_sign.
+func FormatSIWE(m *web3.SIWEMessage) string {
+	if m == nil {
+		return ""
+	}
 	var sb strings.Builder
 
 	sb.WriteString(fmt.Sprintf("%s wants you to sign in with your Ethereum account:\n", m.Domain))
@@ -78,13 +62,16 @@ func (m *SIWEMessage) String() string {
 }
 
 // SIWEVerifier verifies Sign-In with Ethereum signatures.
+// Nonce consumption is race-safe via pkg/concurrency.SmartRWMutex.
 type SIWEVerifier struct {
+	mu         *concurrency.SmartRWMutex
 	usedNonces map[string]time.Time
 }
 
-// NewSIWEVerifier creates a new SIWE verifier.
+// NewSIWEVerifier creates a new SIWE verifier with a race-safe nonce store.
 func NewSIWEVerifier() *SIWEVerifier {
 	return &SIWEVerifier{
+		mu:         concurrency.NewSmartRWMutex(concurrency.MutexConfig{Name: "web3-siwe-nonces"}),
 		usedNonces: make(map[string]time.Time),
 	}
 }
@@ -93,19 +80,19 @@ func NewSIWEVerifier() *SIWEVerifier {
 func (v *SIWEVerifier) GenerateNonce() (string, error) {
 	bytes := make([]byte, 16)
 	if _, err := rand.Read(bytes); err != nil {
-		return "", pkgerrors.Internal("failed to generate nonce", err)
+		return "", web3.ErrInvalidConfig("failed to generate nonce", err)
 	}
 	return hex.EncodeToString(bytes), nil
 }
 
 // CreateMessage creates a new SIWE message.
-func (v *SIWEVerifier) CreateMessage(domain, address, uri, statement string, chainID int) (*SIWEMessage, error) {
+func (v *SIWEVerifier) CreateMessage(domain, address, uri, statement string, chainID int) (*web3.SIWEMessage, error) {
 	nonce, err := v.GenerateNonce()
 	if err != nil {
 		return nil, err
 	}
 
-	return &SIWEMessage{
+	return &web3.SIWEMessage{
 		Domain:    domain,
 		Address:   address,
 		Statement: statement,
@@ -117,31 +104,41 @@ func (v *SIWEVerifier) CreateMessage(domain, address, uri, statement string, cha
 	}, nil
 }
 
-// Verify verifies a SIWE signature.
-func (v *SIWEVerifier) Verify(ctx context.Context, message *SIWEMessage, signature string) (bool, error) {
+// Verify verifies a SIWE signature (EIP-191 personal_sign recovery).
+func (v *SIWEVerifier) Verify(ctx context.Context, message *web3.SIWEMessage, signature string) (bool, error) {
+	if err := ctx.Err(); err != nil {
+		return false, err
+	}
+	if message == nil {
+		return false, web3.ErrInvalidSignature("message is required", nil)
+	}
+
 	// Check expiration
 	if message.ExpirationTime != nil && time.Now().After(*message.ExpirationTime) {
-		return false, pkgerrors.InvalidArgument("message expired", nil)
+		return false, web3.ErrMessageExpired()
 	}
 
 	// Check not before
 	if message.NotBefore != nil && time.Now().Before(*message.NotBefore) {
-		return false, pkgerrors.InvalidArgument("message not yet valid", nil)
+		return false, web3.ErrMessageNotYetValid()
 	}
+
+	v.mu.Lock()
+	defer v.mu.Unlock()
 
 	// Check nonce hasn't been used
 	if _, used := v.usedNonces[message.Nonce]; used {
-		return false, pkgerrors.InvalidArgument("nonce already used", nil)
+		return false, web3.ErrNonceReused(message.Nonce)
 	}
 
 	// Verify signature
-	msgStr := message.String()
+	msgStr := FormatSIWE(message)
 	prefixedMsg := fmt.Sprintf("\x19Ethereum Signed Message:\n%d%s", len(msgStr), msgStr)
 	msgHash := crypto.Keccak256Hash([]byte(prefixedMsg))
 
 	sigBytes, err := hexutil.Decode(signature)
 	if err != nil {
-		return false, pkgerrors.InvalidArgument("invalid signature format", err)
+		return false, web3.ErrInvalidSignature("invalid signature format", err)
 	}
 
 	// Adjust v value for recovery
@@ -153,7 +150,7 @@ func (v *SIWEVerifier) Verify(ctx context.Context, message *SIWEMessage, signatu
 
 	pubKey, err := crypto.SigToPub(msgHash.Bytes(), sigBytes)
 	if err != nil {
-		return false, pkgerrors.InvalidArgument("failed to recover public key", err)
+		return false, web3.ErrInvalidSignature("failed to recover public key", err)
 	}
 
 	recoveredAddr := crypto.PubkeyToAddress(*pubKey)
@@ -169,14 +166,14 @@ func (v *SIWEVerifier) Verify(ctx context.Context, message *SIWEMessage, signatu
 	return true, nil
 }
 
-// VerifySignature verifies a simple Ethereum signature.
+// VerifySignature verifies a simple Ethereum personal_sign signature.
 func VerifySignature(message, signature, address string) (bool, error) {
 	prefixedMsg := fmt.Sprintf("\x19Ethereum Signed Message:\n%d%s", len(message), message)
 	msgHash := crypto.Keccak256Hash([]byte(prefixedMsg))
 
 	sigBytes, err := hexutil.Decode(signature)
 	if err != nil {
-		return false, pkgerrors.InvalidArgument("invalid signature", err)
+		return false, web3.ErrInvalidSignature("invalid signature", err)
 	}
 
 	if len(sigBytes) == 65 && sigBytes[64] >= 27 {
@@ -185,7 +182,7 @@ func VerifySignature(message, signature, address string) (bool, error) {
 
 	pubKey, err := crypto.SigToPub(msgHash.Bytes(), sigBytes)
 	if err != nil {
-		return false, pkgerrors.InvalidArgument("failed to recover public key", err)
+		return false, web3.ErrInvalidSignature("failed to recover public key", err)
 	}
 
 	recoveredAddr := crypto.PubkeyToAddress(*pubKey)
@@ -194,7 +191,28 @@ func VerifySignature(message, signature, address string) (bool, error) {
 	return recoveredAddr == expectedAddr, nil
 }
 
-// DID represents a Decentralized Identifier.
+// SignPersonal signs a message with EIP-191 personal_sign and returns a hex signature.
+// Intended for tests and local tooling; production signing belongs in wallets.
+func SignPersonal(message string, privateKeyHex string) (string, error) {
+	key, err := crypto.HexToECDSA(strings.TrimPrefix(privateKeyHex, "0x"))
+	if err != nil {
+		return "", web3.ErrInvalidConfig("invalid private key", err)
+	}
+
+	prefixedMsg := fmt.Sprintf("\x19Ethereum Signed Message:\n%d%s", len(message), message)
+	msgHash := crypto.Keccak256Hash([]byte(prefixedMsg))
+
+	sig, err := crypto.Sign(msgHash.Bytes(), key)
+	if err != nil {
+		return "", web3.ErrInvalidSignature("failed to sign message", err)
+	}
+	if len(sig) == 65 {
+		sig[64] += 27
+	}
+	return hexutil.Encode(sig), nil
+}
+
+// DID represents a Decentralized Identifier (parse/format only — no resolution).
 type DID struct {
 	Method     string
 	Identifier string
@@ -203,13 +221,13 @@ type DID struct {
 	Fragment   string
 }
 
-// Parse parses a DID string.
+// ParseDID parses a DID string into components. It does not resolve DID documents.
 func ParseDID(did string) (*DID, error) {
 	// Basic DID regex: did:method:identifier
 	re := regexp.MustCompile(`^did:([a-z0-9]+):([a-zA-Z0-9._-]+)(?:/([^?#]*))?(?:\?([^#]*))?(?:#(.*))?$`)
 	matches := re.FindStringSubmatch(did)
 	if matches == nil {
-		return nil, pkgerrors.InvalidArgument("invalid DID format", nil)
+		return nil, web3.ErrInvalidConfig("invalid DID format", nil)
 	}
 
 	d := &DID{
@@ -244,7 +262,8 @@ func (d *DID) String() string {
 	return result
 }
 
-// EthereumDID creates a DID from an Ethereum address.
+// EthereumDID creates a DID from an Ethereum address (did:ethr:...).
+// This does not resolve or verify on-chain identity documents.
 func EthereumDID(address string) *DID {
 	return &DID{
 		Method:     "ethr",

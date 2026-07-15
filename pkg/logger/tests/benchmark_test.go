@@ -6,7 +6,7 @@ import (
 	"log/slog"
 	"testing"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/logger"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/logger"
 )
 
 func BenchmarkRedactHandler(b *testing.B) {

@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/logger"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/logger"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
@@ -51,6 +51,38 @@ func (s *InstrumentedStore) Search(ctx context.Context, vector []float32, limit 
 	logger.L().DebugContext(ctx, "vector search completed",
 		"results", len(results),
 		"limit", limit,
+		"duration_ms", duration.Milliseconds(),
+	)
+	return results, nil
+}
+
+// SearchWithOpts finds nearest neighbors with optional metadata filter and tracing.
+func (s *InstrumentedStore) SearchWithOpts(ctx context.Context, vector []float32, opts SearchOpts) ([]Result, error) {
+	ctx, span := s.tracer.Start(ctx, "vector.SearchWithOpts", trace.WithAttributes(
+		attribute.Int("vector.dimension", len(vector)),
+		attribute.Int("vector.limit", opts.Limit),
+		attribute.Int("vector.filter_keys", len(opts.Filter)),
+	))
+	defer span.End()
+
+	start := time.Now()
+	results, err := s.next.SearchWithOpts(ctx, vector, opts)
+	duration := time.Since(start)
+
+	if err != nil {
+		logger.L().ErrorContext(ctx, "vector search with opts failed",
+			"error", err,
+			"limit", opts.Limit,
+			"duration_ms", duration.Milliseconds(),
+		)
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
+		return nil, err
+	}
+
+	logger.L().DebugContext(ctx, "vector search with opts completed",
+		"results", len(results),
+		"limit", opts.Limit,
 		"duration_ms", duration.Milliseconds(),
 	)
 	return results, nil

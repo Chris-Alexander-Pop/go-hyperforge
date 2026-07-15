@@ -6,7 +6,8 @@ import (
 
 // Config configures the KMS.
 type Config struct {
-	// Provider specifies the KMS provider (memory, aws-kms, gcp-kms, vault).
+	// Provider selects the KMS backend.
+	// Implemented: "memory", "aws-kms", "gcp-kms", "azure-kms". Reserved: "vault".
 	Provider string `env:"SECURITY_KMS_PROVIDER" env-default:"memory"`
 }
 

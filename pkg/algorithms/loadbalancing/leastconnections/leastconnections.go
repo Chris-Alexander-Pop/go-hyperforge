@@ -2,16 +2,16 @@ package leastconnections
 
 import (
 	"context"
-	"sync"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/algorithms/loadbalancing"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/algorithms/loadbalancing"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/concurrency"
 )
 
 // Balancer selects the node with the fewest active connections.
 // It requires manual instrumentation (Inc/Dec).
 type Balancer struct {
 	nodes map[string]int64 // node -> active count
-	mu    sync.RWMutex
+	mu    *concurrency.SmartRWMutex
 }
 
 // New creates a new LeastConnections balancer.
@@ -22,6 +22,7 @@ func New(nodes ...string) *Balancer {
 	}
 	return &Balancer{
 		nodes: m,
+		mu:    concurrency.NewSmartRWMutex(concurrency.MutexConfig{Name: "lb-leastconnections"}),
 	}
 }
 

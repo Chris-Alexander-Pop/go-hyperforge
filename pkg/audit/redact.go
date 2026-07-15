@@ -121,9 +121,15 @@ func (r *Redactor) Redact(input string) string {
 }
 
 // RedactMap redacts sensitive data from a map.
+// Keys matching IsSensitiveField are replaced wholesale with the redactor
+// replacement string; remaining values are walked recursively.
 func (r *Redactor) RedactMap(data map[string]interface{}) map[string]interface{} {
 	result := make(map[string]interface{}, len(data))
 	for k, v := range data {
+		if IsSensitiveField(k) {
+			result[k] = r.replacement
+			continue
+		}
 		result[k] = r.redactValue(v)
 	}
 	return result

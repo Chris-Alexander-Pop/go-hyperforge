@@ -1,19 +1,19 @@
 package dag
 
 import (
-	"errors"
-	"sync"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/concurrency"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 )
 
 var (
-	ErrCycleDetected = errors.New("cycle detected")
-	ErrNodeNotFound  = errors.New("node not found")
+	ErrCycleDetected = errors.FailedPrecondition("cycle detected", nil)
+	ErrNodeNotFound  = errors.NotFound("node not found", nil)
 )
 
 // DAG represents a Directed Acyclic Graph.
 type DAG[T any] struct {
 	nodes map[string]*node[T]
-	mu    sync.RWMutex
+	mu    *concurrency.SmartRWMutex
 }
 
 type node[T any] struct {
@@ -26,6 +26,7 @@ type node[T any] struct {
 func New[T any]() *DAG[T] {
 	return &DAG[T]{
 		nodes: make(map[string]*node[T]),
+		mu:    concurrency.NewSmartRWMutex(concurrency.MutexConfig{Name: "DAG"}),
 	}
 }
 

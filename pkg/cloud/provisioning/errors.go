@@ -1,6 +1,6 @@
 package provisioning
 
-import "github.com/chris-alexander-pop/system-design-library/pkg/errors"
+import "github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 
 var (
 	// ErrHostNotFound is returned when a requested host ID does not exist in the inventory.

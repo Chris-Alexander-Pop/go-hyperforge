@@ -4,7 +4,7 @@
 //
 // Usage:
 //
-//	import "github.com/chris-alexander-pop/system-design-library/pkg/ai/ml/training/distributed"
+//	import "github.com/chris-alexander-pop/go-hyperforge/pkg/ai/ml/training/distributed"
 //
 //	dsConfig := distributed.NewDeepSpeedConfig(distributed.ZeroStage2)
 //	cmd := distributed.TorchRunCommand("train.py", 4)

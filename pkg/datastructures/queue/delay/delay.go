@@ -3,13 +3,14 @@ package delay
 import (
 	"container/heap"
 	"context"
-	"errors"
 	"sync"
 	"time"
+
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 )
 
 // ErrClosed is returned when the queue is closed.
-var ErrClosed = errors.New("queue closed")
+var ErrClosed = errors.Unavailable("queue closed", nil)
 
 // Item represents a delayed task.
 type Item[T any] struct {

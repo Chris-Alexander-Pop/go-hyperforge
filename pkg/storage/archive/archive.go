@@ -1,18 +1,20 @@
-// Package archive provides a unified interface for cold/archive storage.
+// Package archive provides a unified interface for cold/archive object storage
+// (Glacier-style tiers with restore workflows). This is not tar/zip archive packaging.
 //
-// Supported backends:
-//   - Memory: In-memory archive store for testing
-//   - Glacier: AWS S3 Glacier / Glacier Deep Archive (planned)
-//   - Azure Archive: Azure Blob Archive tier (planned)
-//   - GCS Archive: Google Cloud Storage Archive class (planned)
+// Shipping backends today:
+//   - Memory: In-memory cold store for unit tests (instant restore)
+//   - Filesystem: Local cold directory (objects + meta sidecars; instant restore)
+//   - Glacier: Thin S3 Glacier/DEEP_ARCHIVE adapter (adapters/glacier; injectable ObjectAPI)
+//   - Azure: Blob Archive-tier adapter (adapters/azure; injectable BlobAPI)
+//   - GCS: ARCHIVE storage-class adapter (adapters/gcs; injectable ObjectAPI)
 //
 // Usage:
 //
-//	import "github.com/chris-alexander-pop/system-design-library/pkg/storage/archive/adapters/memory"
+//	import "github.com/chris-alexander-pop/go-hyperforge/pkg/storage/archive/adapters/memory"
 //
 //	store := memory.New()
-//	err := store.Archive(ctx, "backup/db-2024.tar.gz", reader)
-//	job, err := store.Restore(ctx, "backup/db-2024.tar.gz")
+//	err := store.Archive(ctx, "backup/db-2024.dump", reader, archive.ArchiveOptions{})
+//	job, err := store.Restore(ctx, "backup/db-2024.dump", archive.RestoreOptions{})
 package archive
 
 import (
@@ -24,6 +26,7 @@ import (
 // Driver constants for archive storage backends.
 const (
 	DriverMemory       = "memory"
+	DriverFilesystem   = "filesystem"
 	DriverGlacier      = "glacier"
 	DriverGlacierDeep  = "glacier-deep"
 	DriverAzureArchive = "azure-archive"

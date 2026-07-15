@@ -4,11 +4,11 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/audit"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/audit"
 )
 
 // AuditMiddleware logs HTTP requests to the audit log.
-func AuditMiddleware(logger *audit.Logger) func(http.Handler) http.Handler {
+func AuditMiddleware(auditor audit.Auditor) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			start := time.Now()
@@ -18,13 +18,13 @@ func AuditMiddleware(logger *audit.Logger) func(http.Handler) http.Handler {
 
 			next.ServeHTTP(rec, r)
 
-			// Log the request
+			// Log the request (audit failures must not break the response path)
 			outcome := audit.OutcomeSuccess
 			if rec.statusCode >= 400 {
 				outcome = audit.OutcomeFailure
 			}
 
-			logger.LogWithBuilder(r.Context(), audit.EventTypeDataRead).
+			_ = auditor.LogWithBuilder(r.Context(), audit.EventTypeDataRead).
 				Actor(GetSubject(r.Context()), "user").
 				ActorIP(r.RemoteAddr).
 				Action(r.Method+" "+r.URL.Path).

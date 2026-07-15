@@ -6,7 +6,7 @@ This catalog defines **120 critical microservices** for hyperscale production ap
 
 ### 1. **auth** ✅
 Authentication and authorization service.
-- JWT/OAuth2 token generation
+- JWT generation; OAuth2 authorization-server token issuance (memory adapter; not a full OpenID Provider)
 - Session management
 - Multi-factor authentication
 - SSO integration

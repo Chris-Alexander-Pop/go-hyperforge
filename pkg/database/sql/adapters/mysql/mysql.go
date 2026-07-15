@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/database"
-	"github.com/chris-alexander-pop/system-design-library/pkg/database/sql"
-	"github.com/chris-alexander-pop/system-design-library/pkg/errors"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/database"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/database/sql"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 	mysqldriver "github.com/go-sql-driver/mysql"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
@@ -63,7 +63,9 @@ func (a *Adapter) Get(ctx context.Context) *gorm.DB {
 	return a.db.WithContext(ctx)
 }
 
-// GetShard returns a database connection for the given shard key.
+// GetShard ignores key and returns the primary connection.
+// Single-instance adapters are not multi-shard; use sql.NewSharded with
+// sharding.Strategy for real key-based routing.
 func (a *Adapter) GetShard(ctx context.Context, key string) (*gorm.DB, error) {
 	return a.db.WithContext(ctx), nil
 }

@@ -1,7 +1,7 @@
 package lsm_test
 
 import (
-	"github.com/chris-alexander-pop/system-design-library/pkg/datastructures/tree/lsm"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/datastructures/tree/lsm"
 )
 
 import "testing"

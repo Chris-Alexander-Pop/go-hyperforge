@@ -35,9 +35,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/concurrency"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/concurrency"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/messaging"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/messaging"
 	"github.com/google/uuid"
 	"github.com/nats-io/nats.go"
 	"github.com/nats-io/nats.go/jetstream"
@@ -49,7 +49,7 @@ type Config struct {
 	URL string `env:"NATS_URL" env-default:"nats://localhost:4222"`
 
 	// Name is the client connection name.
-	Name string `env:"NATS_CLIENT_NAME" env-default:"system-design-library"`
+	Name string `env:"NATS_CLIENT_NAME" env-default:"go-hyperforge"`
 
 	// EnableJetStream enables JetStream for persistent messaging.
 	EnableJetStream bool `env:"NATS_JETSTREAM" env-default:"true"`

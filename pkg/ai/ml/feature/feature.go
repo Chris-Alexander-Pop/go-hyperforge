@@ -4,7 +4,7 @@
 //
 // Usage:
 //
-//	import "github.com/chris-alexander-pop/system-design-library/pkg/ai/ml/feature"
+//	import "github.com/chris-alexander-pop/go-hyperforge/pkg/ai/ml/feature"
 //
 //	store := feature.New(feature.Config{})
 //	features, err := store.GetOnlineFeatures(ctx, "user-features", entityKeys)
@@ -12,10 +12,10 @@ package feature
 
 import (
 	"context"
-	"sync"
 	"time"
 
-	pkgerrors "github.com/chris-alexander-pop/system-design-library/pkg/errors"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/concurrency"
+	pkgerrors "github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 )
 
 // Config holds feature store configuration.
@@ -127,7 +127,7 @@ type FeatureStore interface {
 type MemoryStore struct {
 	groups   map[string]*FeatureGroup
 	features map[string]map[string]*FeatureVector // group -> entityKey -> vector
-	mu       sync.RWMutex
+	mu       *concurrency.SmartRWMutex
 }
 
 // New creates a new memory feature store.
@@ -135,6 +135,7 @@ func New(cfg Config) *MemoryStore {
 	return &MemoryStore{
 		groups:   make(map[string]*FeatureGroup),
 		features: make(map[string]map[string]*FeatureVector),
+		mu:       concurrency.NewSmartRWMutex(concurrency.MutexConfig{Name: "ml-feature"}),
 	}
 }
 

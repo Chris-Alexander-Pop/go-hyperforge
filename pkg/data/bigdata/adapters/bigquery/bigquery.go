@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"cloud.google.com/go/bigquery"
-	"github.com/chris-alexander-pop/system-design-library/pkg/data/bigdata"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/data/bigdata"
 	"google.golang.org/api/iterator"
 )
 

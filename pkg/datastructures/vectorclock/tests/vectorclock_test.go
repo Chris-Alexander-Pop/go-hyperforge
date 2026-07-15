@@ -1,7 +1,7 @@
 package vectorclock_test
 
 import (
-	"github.com/chris-alexander-pop/system-design-library/pkg/datastructures/vectorclock"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/datastructures/vectorclock"
 	"testing"
 )
 

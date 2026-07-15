@@ -6,13 +6,17 @@ This package supports multiple SQL backends through a common interface:
   - MySQL: Popular open-source relational database
   - SQLite: Embedded database for development and testing
   - SQL Server (MSSQL): Microsoft's enterprise database
-  - ClickHouse: Column-oriented OLAP database
+  - ClickHouse: Column-oriented OLAP database (factory returns *gorm.DB today)
+
+Single-instance adapters implement GetShard as a stub (ignore key / return primary).
+For real multi-shard routing, use NewSharded with a sharding.Strategy.
+Optional retries and circuit breaking: NewResilientSQL (Execute is the main entry).
 
 Basic usage:
 
 	import (
-		"github.com/chris-alexander-pop/system-design-library/pkg/database/sql"
-		"github.com/chris-alexander-pop/system-design-library/pkg/database/sql/adapters/postgres"
+		"github.com/chris-alexander-pop/go-hyperforge/pkg/database/sql"
+		"github.com/chris-alexander-pop/go-hyperforge/pkg/database/sql/adapters/postgres"
 	)
 
 	cfg := sql.Config{

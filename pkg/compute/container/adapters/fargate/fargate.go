@@ -2,7 +2,7 @@
 //
 // Usage:
 //
-//	import "github.com/chris-alexander-pop/system-design-library/pkg/compute/container/adapters/fargate"
+//	import "github.com/chris-alexander-pop/go-hyperforge/pkg/compute/container/adapters/fargate"
 //
 //	runtime, err := fargate.New(fargate.Config{Region: "us-east-1", Cluster: "my-cluster"})
 //	container, err := runtime.Create(ctx, container.CreateOptions{Image: "nginx:latest"})
@@ -20,8 +20,8 @@ import (
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/ecs"
 	"github.com/aws/aws-sdk-go-v2/service/ecs/types"
-	"github.com/chris-alexander-pop/system-design-library/pkg/compute/container"
-	pkgerrors "github.com/chris-alexander-pop/system-design-library/pkg/errors"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/compute/container"
+	pkgerrors "github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 	"github.com/google/uuid"
 )
 

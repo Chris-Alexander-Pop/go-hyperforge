@@ -2,16 +2,16 @@ package memory
 
 import (
 	"context"
-	"sync"
 	"time"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/concurrency/distlock"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/concurrency"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/concurrency/distlock"
 )
 
 // Adapter implements distlock.Locker using in-memory storage.
 type Adapter struct {
 	locks map[string]*lockEntry
-	mu    sync.Mutex
+	mu    *concurrency.SmartMutex
 }
 
 type lockEntry struct {
@@ -22,6 +22,7 @@ type lockEntry struct {
 func New() *Adapter {
 	return &Adapter{
 		locks: make(map[string]*lockEntry),
+		mu:    concurrency.NewSmartMutex(concurrency.MutexConfig{Name: "distlock-memory"}),
 	}
 }
 

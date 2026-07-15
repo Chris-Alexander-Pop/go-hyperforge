@@ -8,7 +8,7 @@
 //
 // Usage:
 //
-//	import "github.com/chris-alexander-pop/system-design-library/pkg/database/sql/adapters/postgres"
+//	import "github.com/chris-alexander-pop/go-hyperforge/pkg/database/sql/adapters/postgres"
 //
 //	db, err := postgres.New(cfg)
 //	gormDB := db.Get(ctx)

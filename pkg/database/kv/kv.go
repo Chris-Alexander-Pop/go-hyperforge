@@ -2,12 +2,12 @@
 //
 // Supported backends:
 //   - Redis: Production-grade in-memory key-value store
-//   - Cassandra: Distributed NoSQL database
+//   - Cassandra: gocql adapter (adapters/cassandra)
 //   - Memory: In-memory store for testing
 //
 // Usage:
 //
-//	import "github.com/chris-alexander-pop/system-design-library/pkg/database/kv/adapters/redis"
+//	import "github.com/chris-alexander-pop/go-hyperforge/pkg/database/kv/adapters/redis"
 //
 //	client, err := redis.New(cfg)
 //	err = client.Set(ctx, "key", []byte("value"), time.Hour)

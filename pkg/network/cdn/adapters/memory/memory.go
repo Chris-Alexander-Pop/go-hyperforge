@@ -4,17 +4,16 @@ package memory
 import (
 	"context"
 	"fmt"
-	"sync"
 	"time"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/errors"
-	"github.com/chris-alexander-pop/system-design-library/pkg/network/cdn"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/concurrency"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/network/cdn"
 	"github.com/google/uuid"
 )
 
 // Manager implements an in-memory CDN manager for testing.
 type Manager struct {
-	mu            sync.RWMutex
+	mu            *concurrency.SmartRWMutex
 	distributions map[string]*cdn.Distribution
 	invalidations map[string][]*cdn.Invalidation // distID -> invalidations
 }
@@ -22,6 +21,7 @@ type Manager struct {
 // New creates a new in-memory CDN manager.
 func New() *Manager {
 	return &Manager{
+		mu:            concurrency.NewSmartRWMutex(concurrency.MutexConfig{Name: "memory-cdn"}),
 		distributions: make(map[string]*cdn.Distribution),
 		invalidations: make(map[string][]*cdn.Invalidation),
 	}
@@ -65,7 +65,7 @@ func (m *Manager) GetDistribution(ctx context.Context, id string) (*cdn.Distribu
 
 	dist, ok := m.distributions[id]
 	if !ok {
-		return nil, errors.NotFound("distribution not found", nil)
+		return nil, cdn.ErrDistributionNotFound
 	}
 	return dist, nil
 }
@@ -87,7 +87,7 @@ func (m *Manager) UpdateDistribution(ctx context.Context, id string, opts cdn.Cr
 
 	dist, ok := m.distributions[id]
 	if !ok {
-		return nil, errors.NotFound("distribution not found", nil)
+		return nil, cdn.ErrDistributionNotFound
 	}
 
 	if opts.OriginDomain != "" {
@@ -107,7 +107,7 @@ func (m *Manager) DeleteDistribution(ctx context.Context, id string) error {
 	defer m.mu.Unlock()
 
 	if _, ok := m.distributions[id]; !ok {
-		return errors.NotFound("distribution not found", nil)
+		return cdn.ErrDistributionNotFound
 	}
 	delete(m.distributions, id)
 	delete(m.invalidations, id)
@@ -120,7 +120,7 @@ func (m *Manager) DisableDistribution(ctx context.Context, id string) error {
 
 	dist, ok := m.distributions[id]
 	if !ok {
-		return errors.NotFound("distribution not found", nil)
+		return cdn.ErrDistributionNotFound
 	}
 	dist.Enabled = false
 	dist.Status = cdn.StatusDisabled
@@ -133,7 +133,7 @@ func (m *Manager) EnableDistribution(ctx context.Context, id string) error {
 
 	dist, ok := m.distributions[id]
 	if !ok {
-		return errors.NotFound("distribution not found", nil)
+		return cdn.ErrDistributionNotFound
 	}
 	dist.Enabled = true
 	dist.Status = cdn.StatusDeployed
@@ -145,7 +145,7 @@ func (m *Manager) Invalidate(ctx context.Context, distributionID string, paths [
 	defer m.mu.Unlock()
 
 	if _, ok := m.distributions[distributionID]; !ok {
-		return nil, errors.NotFound("distribution not found", nil)
+		return nil, cdn.ErrDistributionNotFound
 	}
 
 	inv := &cdn.Invalidation{
@@ -167,7 +167,7 @@ func (m *Manager) GetInvalidation(ctx context.Context, distributionID, invalidat
 
 	invs, ok := m.invalidations[distributionID]
 	if !ok {
-		return nil, errors.NotFound("invalidation not found", nil)
+		return nil, cdn.ErrInvalidationNotFound
 	}
 
 	for _, inv := range invs {
@@ -175,5 +175,5 @@ func (m *Manager) GetInvalidation(ctx context.Context, distributionID, invalidat
 			return inv, nil
 		}
 	}
-	return nil, errors.NotFound("invalidation not found", nil)
+	return nil, cdn.ErrInvalidationNotFound
 }

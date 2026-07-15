@@ -4,7 +4,7 @@ import (
 	"crypto/rand"
 	"testing"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/datastructures/bloomfilter"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/datastructures/bloomfilter"
 )
 
 func BenchmarkBloomFilter_Add(b *testing.B) {

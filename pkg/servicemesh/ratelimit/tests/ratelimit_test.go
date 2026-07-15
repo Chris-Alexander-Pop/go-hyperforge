@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/servicemesh/ratelimit"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/servicemesh/ratelimit"
 	"github.com/stretchr/testify/suite"
 )
 

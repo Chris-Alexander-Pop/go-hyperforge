@@ -12,5 +12,5 @@
 // These algorithms are used by pkg/api/ratelimit for API-level rate limiting
 // middleware and distributed rate limiting strategies.
 //
-// See also: github.com/chris-alexander-pop/system-design-library/pkg/api/ratelimit
+// See also: github.com/chris-alexander-pop/go-hyperforge/pkg/api/ratelimit
 package ratelimit

@@ -1,20 +1,17 @@
 // Package ip provides IP intelligence and geolocation services.
 //
-// Features:
+// Features (memory adapter today):
 //   - IP geolocation (country, city, region)
 //   - IP reputation and threat detection
 //   - ASN and ISP lookup
 //   - VPN/Proxy/Tor detection
 //
-// Supported backends:
-//   - Memory: In-memory for testing
-//   - MaxMind: MaxMind GeoIP2
-//   - IPInfo: IPInfo.io
-//   - IPStack: IPStack API
+// Only the memory adapter ships today. MaxMind / IPInfo / IPStack driver
+// constants are reserved placeholders — no external providers yet.
 //
 // Usage:
 //
-//	import "github.com/chris-alexander-pop/system-design-library/pkg/network/ip/adapters/memory"
+//	import "github.com/chris-alexander-pop/go-hyperforge/pkg/network/ip/adapters/memory"
 //
 //	geo := memory.New()
 //	loc, err := geo.Lookup(ctx, "8.8.8.8")
@@ -26,11 +23,12 @@ import (
 )
 
 // Driver constants for IP intelligence backends.
+// Only DriverMemory ships; provider drivers are reserved placeholders.
 const (
 	DriverMemory  = "memory"
-	DriverMaxMind = "maxmind"
-	DriverIPInfo  = "ipinfo"
-	DriverIPStack = "ipstack"
+	DriverMaxMind = "maxmind" // reserved — not implemented
+	DriverIPInfo  = "ipinfo"  // reserved — not implemented
+	DriverIPStack = "ipstack" // reserved — not implemented
 )
 
 // Config holds configuration for IP intelligence.

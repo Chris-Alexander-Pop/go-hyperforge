@@ -1,0 +1,36 @@
+---
+description: Attribute all git commits to Chris Pop
+alwaysApply: true
+---
+
+# Git Commit Attribution
+
+All commits in this repository **must** be authored and committed as:
+
+- **Name:** `Chris Pop`
+- **Email:** `chrisalexanderpop@gmail.com`
+
+## Required practice
+
+When creating commits (including amend, cherry-pick, rebase, or rewrite), always set author and committer explicitly so Cursor’s default agent identity is never used:
+
+```bash
+GIT_AUTHOR_NAME="Chris Pop" \
+GIT_AUTHOR_EMAIL="chrisalexanderpop@gmail.com" \
+GIT_COMMITTER_NAME="Chris Pop" \
+GIT_COMMITTER_EMAIL="chrisalexanderpop@gmail.com" \
+git commit -m "..."
+```
+
+Equivalent one-shot form:
+
+```bash
+git -c user.name="Chris Pop" -c user.email="chrisalexanderpop@gmail.com" commit -m "..."
+```
+
+## Rules
+
+- Do **not** create commits as `Cursor Agent <cursoragent@cursor.com>` or any other Cursor service identity.
+- Applies to the parent cloud agent **and** every subagent.
+- If rewriting history to fix attribution, rewrite author **and** committer, then force-push only when the user has asked for a rewrite.
+- Prefer keeping this attribution even when spawning subagents that commit — pass the same author/committer env vars or `-c user.name` / `-c user.email` in their instructions.

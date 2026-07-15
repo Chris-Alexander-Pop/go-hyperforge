@@ -6,7 +6,7 @@ import (
 	"math/rand"
 	"testing"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/data/search"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/data/search"
 )
 
 func BenchmarkBulk(b *testing.B) {

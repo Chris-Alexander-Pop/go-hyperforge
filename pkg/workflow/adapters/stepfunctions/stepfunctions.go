@@ -4,9 +4,12 @@
 //
 // Usage:
 //
-//	import "github.com/chris-alexander-pop/system-design-library/pkg/workflow/adapters/stepfunctions"
+//	import "github.com/chris-alexander-pop/go-hyperforge/pkg/workflow/adapters/stepfunctions"
 //
-//	engine, err := stepfunctions.New(stepfunctions.Config{Region: "us-east-1"})
+//	engine, err := stepfunctions.New(stepfunctions.Config{
+//	    Region: "us-east-1",
+//	    RoleArn: "arn:aws:iam::123456789012:role/StepFunctionsRole",
+//	})
 //	exec, err := engine.Start(ctx, workflow.StartOptions{WorkflowID: "arn:aws:states:...", Input: data})
 package stepfunctions
 
@@ -20,8 +23,8 @@ import (
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/sfn"
 	"github.com/aws/aws-sdk-go-v2/service/sfn/types"
-	pkgerrors "github.com/chris-alexander-pop/system-design-library/pkg/errors"
-	"github.com/chris-alexander-pop/system-design-library/pkg/workflow"
+	pkgerrors "github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/workflow"
 )
 
 // Config holds AWS Step Functions configuration.
@@ -37,11 +40,27 @@ type Config struct {
 
 	// Endpoint is an optional custom endpoint (for LocalStack).
 	Endpoint string
+
+	// RoleArn is the IAM role ARN used when CreateStateMachine runs (RegisterWorkflow).
+	// Required for RegisterWorkflow; Start/Get/List/Cancel do not need it.
+	RoleArn string
+}
+
+// SFAPI is the Step Functions client surface used by this adapter (for tests).
+type SFAPI interface {
+	CreateStateMachine(ctx context.Context, params *sfn.CreateStateMachineInput, optFns ...func(*sfn.Options)) (*sfn.CreateStateMachineOutput, error)
+	DescribeStateMachine(ctx context.Context, params *sfn.DescribeStateMachineInput, optFns ...func(*sfn.Options)) (*sfn.DescribeStateMachineOutput, error)
+	StartExecution(ctx context.Context, params *sfn.StartExecutionInput, optFns ...func(*sfn.Options)) (*sfn.StartExecutionOutput, error)
+	DescribeExecution(ctx context.Context, params *sfn.DescribeExecutionInput, optFns ...func(*sfn.Options)) (*sfn.DescribeExecutionOutput, error)
+	ListExecutions(ctx context.Context, params *sfn.ListExecutionsInput, optFns ...func(*sfn.Options)) (*sfn.ListExecutionsOutput, error)
+	StopExecution(ctx context.Context, params *sfn.StopExecutionInput, optFns ...func(*sfn.Options)) (*sfn.StopExecutionOutput, error)
+	SendTaskSuccess(ctx context.Context, params *sfn.SendTaskSuccessInput, optFns ...func(*sfn.Options)) (*sfn.SendTaskSuccessOutput, error)
+	SendTaskFailure(ctx context.Context, params *sfn.SendTaskFailureInput, optFns ...func(*sfn.Options)) (*sfn.SendTaskFailureOutput, error)
 }
 
 // Engine implements workflow.WorkflowEngine for AWS Step Functions.
 type Engine struct {
-	client *sfn.Client
+	client SFAPI
 	config Config
 }
 
@@ -69,15 +88,18 @@ func New(cfg Config) (*Engine, error) {
 		})
 	}
 
-	return &Engine{
-		client: sfn.NewFromConfig(awsCfg, clientOpts...),
-		config: cfg,
-	}, nil
+	return NewFromAPI(sfn.NewFromConfig(awsCfg, clientOpts...), cfg), nil
+}
+
+// NewFromAPI wraps an SFAPI (SDK client or test double).
+func NewFromAPI(api SFAPI, cfg Config) *Engine {
+	return &Engine{client: api, config: cfg}
 }
 
 func (e *Engine) RegisterWorkflow(ctx context.Context, def workflow.WorkflowDefinition) error {
-	// Step Functions state machines are created via CloudFormation or API
-	// This creates a new state machine
+	if e.config.RoleArn == "" {
+		return pkgerrors.InvalidArgument("stepfunctions RoleArn is required to create a state machine", nil)
+	}
 	definition, err := json.Marshal(map[string]interface{}{
 		"StartAt": def.StartAt,
 		"States":  convertStates(def.States),
@@ -89,7 +111,7 @@ func (e *Engine) RegisterWorkflow(ctx context.Context, def workflow.WorkflowDefi
 	_, err = e.client.CreateStateMachine(ctx, &sfn.CreateStateMachineInput{
 		Name:       aws.String(def.Name),
 		Definition: aws.String(string(definition)),
-		RoleArn:    aws.String("arn:aws:iam::123456789012:role/StepFunctionsRole"), // Placeholder
+		RoleArn:    aws.String(e.config.RoleArn),
 		Type:       types.StateMachineTypeStandard,
 	})
 	if err != nil {
@@ -264,10 +286,101 @@ func (e *Engine) Cancel(ctx context.Context, executionID string) error {
 	return nil
 }
 
+// CallbackSignal is the payload shape for Signal using the waitForTaskToken pattern.
+//
+// Step Functions has no Temporal-style named signals. Callers pass signalName
+// "task_success" or "task_failure" (or any name) with CallbackSignal / map data
+// containing TaskToken; this adapter calls SendTaskSuccess / SendTaskFailure.
+type CallbackSignal struct {
+	// TaskToken is the waitForTaskToken callback token from the activity context.
+	TaskToken string `json:"task_token"`
+
+	// Output is JSON-serializable success payload (task_success).
+	Output interface{} `json:"output,omitempty"`
+
+	// Error / Cause are used for task_failure.
+	Error string `json:"error,omitempty"`
+	Cause string `json:"cause,omitempty"`
+}
+
 func (e *Engine) Signal(ctx context.Context, executionID string, signalName string, data interface{}) error {
-	// Step Functions doesn't support signals in the same way as Temporal
-	// This would require using a callback pattern with SQS/SNS
-	return pkgerrors.Internal("signals not supported for Step Functions", nil)
+	_ = executionID // SFN callback tokens identify the task, not the execution ARN
+	cb, err := parseCallbackSignal(data)
+	if err != nil {
+		return err
+	}
+	if cb.TaskToken == "" {
+		return pkgerrors.InvalidArgument("stepfunctions Signal requires task_token (waitForTaskToken callback)", nil)
+	}
+
+	switch signalName {
+	case "task_failure", "failure", "fail":
+		_, err := e.client.SendTaskFailure(ctx, &sfn.SendTaskFailureInput{
+			TaskToken: aws.String(cb.TaskToken),
+			Error:     aws.String(cb.Error),
+			Cause:     aws.String(cb.Cause),
+		})
+		if err != nil {
+			return pkgerrors.Internal("failed to send task failure", err)
+		}
+		return nil
+	default:
+		out := "{}"
+		if cb.Output != nil {
+			raw, err := json.Marshal(cb.Output)
+			if err != nil {
+				return pkgerrors.InvalidArgument("failed to marshal callback output", err)
+			}
+			out = string(raw)
+		}
+		_, err := e.client.SendTaskSuccess(ctx, &sfn.SendTaskSuccessInput{
+			TaskToken: aws.String(cb.TaskToken),
+			Output:    aws.String(out),
+		})
+		if err != nil {
+			return pkgerrors.Internal("failed to send task success", err)
+		}
+		return nil
+	}
+}
+
+func parseCallbackSignal(data interface{}) (CallbackSignal, error) {
+	switch v := data.(type) {
+	case CallbackSignal:
+		return v, nil
+	case *CallbackSignal:
+		if v == nil {
+			return CallbackSignal{}, pkgerrors.InvalidArgument("callback signal is nil", nil)
+		}
+		return *v, nil
+	case string:
+		return CallbackSignal{TaskToken: v}, nil
+	case map[string]interface{}:
+		raw, err := json.Marshal(v)
+		if err != nil {
+			return CallbackSignal{}, pkgerrors.InvalidArgument("invalid callback signal map", err)
+		}
+		var cb CallbackSignal
+		if err := json.Unmarshal(raw, &cb); err != nil {
+			return CallbackSignal{}, pkgerrors.InvalidArgument("invalid callback signal map", err)
+		}
+		if cb.TaskToken == "" {
+			if t, ok := v["taskToken"].(string); ok {
+				cb.TaskToken = t
+			}
+		}
+		return cb, nil
+	default:
+		raw, err := json.Marshal(data)
+		if err != nil {
+			return CallbackSignal{}, pkgerrors.InvalidArgument("unsupported callback signal type", err)
+		}
+		var cb CallbackSignal
+		if err := json.Unmarshal(raw, &cb); err != nil {
+			return CallbackSignal{}, pkgerrors.InvalidArgument("unsupported callback signal type", err)
+		}
+		return cb, nil
+	}
 }
 
 func (e *Engine) Wait(ctx context.Context, executionID string) (*workflow.Execution, error) {

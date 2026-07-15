@@ -1,7 +1,7 @@
 package mergesort_test
 
 import (
-	"github.com/chris-alexander-pop/system-design-library/pkg/algorithms/sort/mergesort"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/algorithms/sort/mergesort"
 	"reflect"
 	"testing"
 )

@@ -1,10 +1,3 @@
-// Package crypto provides cryptographic utilities for secure data handling.
-//
-// This package includes:
-//   - Encryption: AES-GCM authenticated encryption
-//   - Hashing: Secure password hashing (Argon2id, bcrypt)
-//   - Key derivation: PBKDF2, HKDF
-//   - Envelope encryption: For KMS integration
 package crypto
 
 import (
@@ -13,15 +6,9 @@ import (
 	"crypto/cipher"
 	"crypto/rand"
 	"encoding/base64"
-	"errors"
 	"io"
-)
 
-// Errors
-var (
-	ErrInvalidKey        = errors.New("crypto: invalid key length")
-	ErrInvalidCiphertext = errors.New("crypto: invalid ciphertext")
-	ErrDecryptionFailed  = errors.New("crypto: decryption failed")
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 )
 
 // Encryptor encrypts and decrypts data.
@@ -30,10 +17,10 @@ type Encryptor interface {
 	Decrypt(ciphertext []byte) ([]byte, error)
 }
 
-// KeyProvider provides encryption keys.
+// KeyProvider provides encryption keys for envelope encryption.
 type KeyProvider interface {
 	GetKey(ctx context.Context, keyID string) ([]byte, error)
-	GenerateDataKey(ctx context.Context) (key []byte, encryptedKey []byte, keyID string, error error)
+	GenerateDataKey(ctx context.Context) (key []byte, encryptedKey []byte, keyID string, err error)
 	DecryptDataKey(ctx context.Context, encryptedKey []byte, keyID string) ([]byte, error)
 }
 
@@ -45,6 +32,9 @@ type KeyProvider interface {
 type AESEncryptor struct {
 	key []byte
 }
+
+// Ensure AESEncryptor implements Encryptor.
+var _ Encryptor = (*AESEncryptor)(nil)
 
 // NewAESEncryptor creates a new AES encryptor with the given key.
 // Key must be 16, 24, or 32 bytes (AES-128, AES-192, AES-256).
@@ -60,33 +50,32 @@ func NewAESEncryptor(key []byte) (*AESEncryptor, error) {
 func (e *AESEncryptor) Encrypt(plaintext []byte) ([]byte, error) {
 	block, err := aes.NewCipher(e.key)
 	if err != nil {
-		return nil, err
+		return nil, errors.New(CodeInternal, "failed to create AES cipher", err)
 	}
 
 	gcm, err := cipher.NewGCM(block)
 	if err != nil {
-		return nil, err
+		return nil, errors.New(CodeInternal, "failed to create GCM", err)
 	}
 
 	nonce := make([]byte, gcm.NonceSize())
 	if _, err := io.ReadFull(rand.Reader, nonce); err != nil {
-		return nil, err
+		return nil, errors.New(CodeInternal, "failed to generate nonce", err)
 	}
 
-	ciphertext := gcm.Seal(nonce, nonce, plaintext, nil)
-	return ciphertext, nil
+	return gcm.Seal(nonce, nonce, plaintext, nil), nil
 }
 
 // Decrypt decrypts ciphertext using AES-GCM.
 func (e *AESEncryptor) Decrypt(ciphertext []byte) ([]byte, error) {
 	block, err := aes.NewCipher(e.key)
 	if err != nil {
-		return nil, err
+		return nil, errors.New(CodeInternal, "failed to create AES cipher", err)
 	}
 
 	gcm, err := cipher.NewGCM(block)
 	if err != nil {
-		return nil, err
+		return nil, errors.New(CodeInternal, "failed to create GCM", err)
 	}
 
 	if len(ciphertext) < gcm.NonceSize() {
@@ -117,7 +106,7 @@ func (e *AESEncryptor) EncryptString(plaintext string) (string, error) {
 func (e *AESEncryptor) DecryptString(encoded string) (string, error) {
 	ciphertext, err := base64.StdEncoding.DecodeString(encoded)
 	if err != nil {
-		return "", err
+		return "", ErrInvalidCiphertext
 	}
 	plaintext, err := e.Decrypt(ciphertext)
 	if err != nil {
@@ -132,9 +121,12 @@ func (e *AESEncryptor) DecryptString(encoded string) (string, error) {
 
 // GenerateKey generates a cryptographically secure random key.
 func GenerateKey(length int) ([]byte, error) {
+	if length <= 0 {
+		return nil, ErrInvalidKey
+	}
 	key := make([]byte, length)
 	if _, err := io.ReadFull(rand.Reader, key); err != nil {
-		return nil, err
+		return nil, errors.New(CodeInternal, "failed to generate key", err)
 	}
 	return key, nil
 }

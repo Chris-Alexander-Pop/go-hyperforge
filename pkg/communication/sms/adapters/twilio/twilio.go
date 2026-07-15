@@ -3,9 +3,9 @@ package twilio
 import (
 	"context"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/communication/sms"
-	"github.com/chris-alexander-pop/system-design-library/pkg/errors"
-	"github.com/chris-alexander-pop/system-design-library/pkg/validator"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/communication/sms"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/validator"
 	"github.com/twilio/twilio-go"
 	twilioApi "github.com/twilio/twilio-go/rest/api/v2010"
 )
@@ -17,13 +17,18 @@ type Sender struct {
 }
 
 // New creates a new Twilio sender.
-func New(cfg sms.Config) (sms.Sender, error) {
-	if err := validator.New().ValidateStruct(cfg); err != nil {
+func New(cfg sms.Config) (*Sender, error) {
+	if err := validator.New().ValidateStruct(context.Background(), cfg); err != nil {
 		return nil, errors.InvalidArgument("invalid config", err)
 	}
 
 	if cfg.TwilioAccountSID == "" || cfg.TwilioAuthToken == "" {
 		return nil, errors.InvalidArgument("Twilio credentials are required", nil)
+	}
+
+	from := cfg.TwilioFromNumber
+	if from == "" {
+		from = cfg.DefaultFrom
 	}
 
 	client := twilio.NewRestClientWithParams(twilio.ClientParams{
@@ -33,12 +38,25 @@ func New(cfg sms.Config) (sms.Sender, error) {
 
 	return &Sender{
 		client: client,
-		from:   cfg.TwilioFromNumber, // Optional default from
+		from:   from,
 	}, nil
 }
 
 // Send implements sms.Sender.
+//
+// Note: the Twilio Go SDK CreateMessage API does not accept context.Context;
+// we honor cancellation/deadline before the request is issued.
 func (s *Sender) Send(ctx context.Context, msg *sms.Message) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	if msg == nil {
+		return errors.InvalidArgument("message is required", nil)
+	}
+	if msg.To == "" {
+		return errors.InvalidArgument("recipient is required", nil)
+	}
+
 	params := &twilioApi.CreateMessageParams{}
 	params.SetTo(msg.To)
 
@@ -52,6 +70,9 @@ func (s *Sender) Send(ctx context.Context, msg *sms.Message) error {
 	}
 
 	params.SetBody(msg.Body)
+	if msg.MediaURL != "" {
+		params.SetMediaUrl([]string{msg.MediaURL})
+	}
 
 	_, err := s.client.Api.CreateMessage(params)
 	if err != nil {
@@ -63,7 +84,6 @@ func (s *Sender) Send(ctx context.Context, msg *sms.Message) error {
 
 // SendBatch implements sms.Sender.
 func (s *Sender) SendBatch(ctx context.Context, msgs []*sms.Message) error {
-	// Twilio supports Messaging Services for bulk but standard API is per-message.
 	for _, msg := range msgs {
 		if err := s.Send(ctx, msg); err != nil {
 			return err

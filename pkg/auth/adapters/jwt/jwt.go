@@ -5,15 +5,15 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/auth"
-	"github.com/chris-alexander-pop/system-design-library/pkg/errors"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/auth"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 	"github.com/golang-jwt/jwt/v5"
 )
 
 type Config struct {
 	Secret     string        `env:"JWT_SECRET" env-required:"true"`
 	Expiration time.Duration `env:"JWT_EXPIRATION" env-default:"24h"`
-	Issuer     string        `env:"JWT_ISSUER" env-default:"system-design-library"`
+	Issuer     string        `env:"JWT_ISSUER" env-default:"go-hyperforge"`
 }
 
 type Adapter struct {

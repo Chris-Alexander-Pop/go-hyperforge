@@ -1,7 +1,7 @@
 package dijkstra_test
 
 import (
-	"github.com/chris-alexander-pop/system-design-library/pkg/algorithms/graph/dijkstra"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/algorithms/graph/dijkstra"
 	"reflect"
 	"testing"
 )

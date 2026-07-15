@@ -7,8 +7,8 @@ import (
 
 	"github.com/algolia/algoliasearch-client-go/v3/algolia/opt"
 	algoliasearch "github.com/algolia/algoliasearch-client-go/v3/algolia/search"
-	"github.com/chris-alexander-pop/system-design-library/pkg/data/search"
-	"github.com/chris-alexander-pop/system-design-library/pkg/errors"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/data/search"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 )
 
 // Engine implements search.SearchEngine using Algolia.
@@ -350,4 +350,9 @@ func (e *Engine) Refresh(ctx context.Context, indexName string) error {
 
 func (e *Engine) Close() error {
 	return nil
+}
+
+// Suggest is not yet implemented for Algolia; use the memory adapter for autocomplete in tests.
+func (e *Engine) Suggest(ctx context.Context, indexName string, query search.SuggestQuery) ([]search.Suggestion, error) {
+	return nil, search.ErrSuggestUnsupported
 }

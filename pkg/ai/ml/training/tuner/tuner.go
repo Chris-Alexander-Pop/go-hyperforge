@@ -4,7 +4,7 @@
 //
 // Usage:
 //
-//	import "github.com/chris-alexander-pop/system-design-library/pkg/ai/ml/training/tuner"
+//	import "github.com/chris-alexander-pop/go-hyperforge/pkg/ai/ml/training/tuner"
 //
 //	tuner := tuner.NewGridSearch(trainer, baseConfig, map[string][]inferface{}{"lr": {0.01, 0.001}})
 //	bestJob, err := tuner.Run(ctx)
@@ -17,7 +17,7 @@ import (
 	"sort"
 	"time"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/ai/ml/training"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/ai/ml/training"
 )
 
 // Strategy defines the tuning strategy.

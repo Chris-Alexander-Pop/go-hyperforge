@@ -1,6 +1,6 @@
 package loadbalancer
 
-import "github.com/chris-alexander-pop/system-design-library/pkg/errors"
+import "github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 
 // Sentinel errors for load balancer operations.
 var (
@@ -33,4 +33,10 @@ var (
 
 	// ErrTargetPoolInUse is returned when deleting a target pool with targets.
 	ErrTargetPoolInUse = errors.Conflict("target pool has registered targets", nil)
+
+	// ErrNoTargetsAvailable is returned when a pool has no targets to select.
+	ErrNoTargetsAvailable = errors.Unavailable("no targets available", nil)
+
+	// ErrUnsupportedAlgorithm is returned when an algorithm is not supported for in-process selection.
+	ErrUnsupportedAlgorithm = errors.InvalidArgument("unsupported load balancing algorithm", nil)
 )

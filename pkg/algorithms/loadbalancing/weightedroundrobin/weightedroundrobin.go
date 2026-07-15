@@ -2,9 +2,9 @@ package weightedroundrobin
 
 import (
 	"context"
-	"sync"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/algorithms/loadbalancing"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/algorithms/loadbalancing"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/concurrency"
 )
 
 // Balancer selects nodes based on their weight using
@@ -15,7 +15,7 @@ type Balancer struct {
 	maxW  int
 	i     int
 	cw    int
-	mu    sync.Mutex
+	mu    *concurrency.SmartMutex
 }
 
 type weightedNode struct {
@@ -29,6 +29,7 @@ func New() *Balancer {
 		nodes: make([]*weightedNode, 0),
 		i:     -1,
 		cw:    0,
+		mu:    concurrency.NewSmartMutex(concurrency.MutexConfig{Name: "lb-weightedroundrobin"}),
 	}
 }
 

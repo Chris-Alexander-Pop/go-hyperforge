@@ -4,7 +4,7 @@
 //
 // Usage:
 //
-//	import "github.com/chris-alexander-pop/system-design-library/pkg/ai/ml/training/presets/llm"
+//	import "github.com/chris-alexander-pop/go-hyperforge/pkg/ai/ml/training/presets/llm"
 //
 //	config := llm.NewFineTuneConfig("llama-3-8b", "dataset_path")
 //	config.UseQLoRA()
@@ -15,8 +15,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/ai/ml/training"
-	"github.com/chris-alexander-pop/system-design-library/pkg/ai/ml/training/distributed"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/ai/ml/training"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/ai/ml/training/distributed"
 )
 
 // TaskType defines the LLM task.

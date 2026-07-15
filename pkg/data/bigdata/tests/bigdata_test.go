@@ -4,8 +4,8 @@ import (
 	"context"
 	"testing"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/data/bigdata"
-	"github.com/chris-alexander-pop/system-design-library/pkg/data/bigdata/adapters/memory"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/data/bigdata"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/data/bigdata/adapters/memory"
 )
 
 func TestBigDataClient(t *testing.T) {
@@ -13,7 +13,7 @@ func TestBigDataClient(t *testing.T) {
 	client := memory.New()
 
 	// Wrap with instrumentation
-	instrumented := bigdata.NewInstrumentedClient(client)
+	instrumented := bigdata.NewInstrumentedClient(client, "memory")
 	defer instrumented.Close()
 
 	// Execute query

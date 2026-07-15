@@ -5,7 +5,7 @@ import (
 	"sort"
 	"strconv"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/concurrency"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/concurrency"
 )
 
 // Ring implements a consistent hashing ring.

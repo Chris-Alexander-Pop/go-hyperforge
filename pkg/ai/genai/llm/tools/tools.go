@@ -3,9 +3,9 @@ package tools
 
 import (
 	"context"
-	"fmt"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/ai/genai/llm"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/ai/genai/llm"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 )
 
 // ToolFunc is the function signature for a tool.
@@ -56,7 +56,7 @@ func (r *Registry) GetDefinitions() []llm.Tool {
 func (r *Registry) Execute(ctx context.Context, name string, argsJSON string) (string, error) {
 	tool, ok := r.tools[name]
 	if !ok {
-		return "", fmt.Errorf("tool not found: %s", name)
+		return "", errors.NotFound("tool not found: "+name, nil)
 	}
 
 	return tool.Func(ctx, []byte(argsJSON))

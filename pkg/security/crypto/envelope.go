@@ -4,17 +4,21 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
-	"errors"
+
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 )
 
 // EnvelopeEncryption implements the envelope encryption pattern.
 // Data is encrypted with a DEK (Data Encryption Key), and the DEK
-// is encrypted with a KEK (Key Encryption Key) from a KMS.
+// is encrypted with a KEK (Key Encryption Key) from a KeyProvider.
 //
 // This pattern allows:
-// - Fast local encryption with AES
-// - Secure key management via KMS
-// - Key rotation without re-encrypting all data
+//   - Fast local encryption with AES
+//   - Secure key management via a KMS-backed KeyProvider
+//   - Key rotation without re-encrypting all data
+//
+// For development, use crypto/adapters/memory.NewKeyProvider.
+// Cloud KMS adapters are not shipped yet.
 type EnvelopeEncryption struct {
 	kms KeyProvider
 }
@@ -37,13 +41,15 @@ func NewEnvelopeEncryption(kms KeyProvider) *EnvelopeEncryption {
 // 2. Encrypt data with DEK using AES-GCM
 // 3. Return encrypted data + encrypted DEK
 func (e *EnvelopeEncryption) Encrypt(ctx context.Context, plaintext []byte) (*EnvelopePayload, error) {
-	// Generate a data encryption key from KMS
+	if e.kms == nil {
+		return nil, errors.New(CodeInvalidKey, "key provider is required", nil)
+	}
+
 	dek, encryptedDEK, keyID, err := e.kms.GenerateDataKey(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	// Encrypt data with DEK
 	encryptor, err := NewAESEncryptor(dek)
 	if err != nil {
 		return nil, err
@@ -54,7 +60,6 @@ func (e *EnvelopeEncryption) Encrypt(ctx context.Context, plaintext []byte) (*En
 		return nil, err
 	}
 
-	// Clear DEK from memory
 	for i := range dek {
 		dek[i] = 0
 	}
@@ -71,13 +76,18 @@ func (e *EnvelopeEncryption) Encrypt(ctx context.Context, plaintext []byte) (*En
 // 1. Decrypt DEK using KMS
 // 2. Decrypt data with DEK
 func (e *EnvelopeEncryption) Decrypt(ctx context.Context, payload *EnvelopePayload) ([]byte, error) {
-	// Decode encrypted DEK
-	encryptedDEK, err := base64.StdEncoding.DecodeString(payload.EncryptedDEK)
-	if err != nil {
-		return nil, err
+	if e.kms == nil {
+		return nil, errors.New(CodeInvalidKey, "key provider is required", nil)
+	}
+	if payload == nil {
+		return nil, ErrInvalidCiphertext
 	}
 
-	// Decrypt DEK using KMS
+	encryptedDEK, err := base64.StdEncoding.DecodeString(payload.EncryptedDEK)
+	if err != nil {
+		return nil, ErrInvalidCiphertext
+	}
+
 	dek, err := e.kms.DecryptDataKey(ctx, encryptedDEK, payload.KeyID)
 	if err != nil {
 		return nil, err
@@ -88,13 +98,11 @@ func (e *EnvelopeEncryption) Decrypt(ctx context.Context, payload *EnvelopePaylo
 		}
 	}()
 
-	// Decode ciphertext
 	ciphertext, err := base64.StdEncoding.DecodeString(payload.EncryptedData)
 	if err != nil {
-		return nil, err
+		return nil, ErrInvalidCiphertext
 	}
 
-	// Decrypt data
 	encryptor, err := NewAESEncryptor(dek)
 	if err != nil {
 		return nil, err
@@ -116,59 +124,7 @@ func (e *EnvelopeEncryption) EncryptToJSON(ctx context.Context, plaintext []byte
 func (e *EnvelopeEncryption) DecryptFromJSON(ctx context.Context, data []byte) ([]byte, error) {
 	var payload EnvelopePayload
 	if err := json.Unmarshal(data, &payload); err != nil {
-		return nil, err
+		return nil, ErrInvalidCiphertext
 	}
 	return e.Decrypt(ctx, &payload)
-}
-
-// =========================================================================
-// In-Memory Key Provider (for testing/development)
-// =========================================================================
-
-// MemoryKeyProvider is an in-memory key provider for testing.
-// DO NOT use in production - keys should come from a real KMS.
-type MemoryKeyProvider struct {
-	masterKey []byte
-}
-
-// NewMemoryKeyProvider creates a new in-memory key provider.
-func NewMemoryKeyProvider(masterKey []byte) (*MemoryKeyProvider, error) {
-	if len(masterKey) != 32 {
-		return nil, errors.New("master key must be 32 bytes")
-	}
-	return &MemoryKeyProvider{masterKey: masterKey}, nil
-}
-
-func (m *MemoryKeyProvider) GetKey(ctx context.Context, keyID string) ([]byte, error) {
-	return m.masterKey, nil
-}
-
-func (m *MemoryKeyProvider) GenerateDataKey(ctx context.Context) ([]byte, []byte, string, error) {
-	// Generate random DEK
-	dek, err := GenerateAES256Key()
-	if err != nil {
-		return nil, nil, "", err
-	}
-
-	// "Encrypt" DEK with master key (simplified - real KMS uses proper wrapping)
-	encryptor, err := NewAESEncryptor(m.masterKey)
-	if err != nil {
-		return nil, nil, "", err
-	}
-
-	encryptedDEK, err := encryptor.Encrypt(dek)
-	if err != nil {
-		return nil, nil, "", err
-	}
-
-	return dek, encryptedDEK, "memory-key-1", nil
-}
-
-func (m *MemoryKeyProvider) DecryptDataKey(ctx context.Context, encryptedKey []byte, keyID string) ([]byte, error) {
-	encryptor, err := NewAESEncryptor(m.masterKey)
-	if err != nil {
-		return nil, err
-	}
-
-	return encryptor.Decrypt(encryptedKey)
 }

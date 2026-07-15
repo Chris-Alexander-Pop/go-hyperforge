@@ -5,7 +5,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/events"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/events"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
@@ -25,13 +26,13 @@ func (p *Plugin) Name() string {
 func (p *Plugin) Initialize(db *gorm.DB) error {
 	// Register callbacks
 	if err := db.Callback().Create().After("gorm:create").Register("events:after_create", p.afterCreate); err != nil {
-		return fmt.Errorf("failed to register after_create callback: %w", err)
+		return errors.Internal("failed to register after_create callback", err)
 	}
 	if err := db.Callback().Update().After("gorm:update").Register("events:after_update", p.afterUpdate); err != nil {
-		return fmt.Errorf("failed to register after_update callback: %w", err)
+		return errors.Internal("failed to register after_update callback", err)
 	}
 	if err := db.Callback().Delete().After("gorm:delete").Register("events:after_delete", p.afterDelete); err != nil {
-		return fmt.Errorf("failed to register after_delete callback: %w", err)
+		return errors.Internal("failed to register after_delete callback", err)
 	}
 	return nil
 }

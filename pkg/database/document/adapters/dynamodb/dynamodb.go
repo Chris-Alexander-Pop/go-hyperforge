@@ -10,8 +10,8 @@ import (
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
-	"github.com/chris-alexander-pop/system-design-library/pkg/database/document"
-	"github.com/chris-alexander-pop/system-design-library/pkg/errors"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/database/document"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 )
 
 // NOTE: This implementation assumes the AWS SDK v2 is available.

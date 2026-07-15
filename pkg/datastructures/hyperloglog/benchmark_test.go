@@ -4,7 +4,7 @@ import (
 	"crypto/rand"
 	"testing"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/datastructures/hyperloglog"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/datastructures/hyperloglog"
 )
 
 func BenchmarkHyperLogLog_Add(b *testing.B) {

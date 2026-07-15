@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/security/fraud"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/security/fraud"
 	"github.com/google/uuid"
 )
 

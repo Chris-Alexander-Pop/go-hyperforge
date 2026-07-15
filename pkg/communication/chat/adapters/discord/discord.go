@@ -4,9 +4,9 @@ import (
 	"context"
 
 	"github.com/bwmarrin/discordgo"
-	"github.com/chris-alexander-pop/system-design-library/pkg/communication/chat"
-	"github.com/chris-alexander-pop/system-design-library/pkg/errors"
-	"github.com/chris-alexander-pop/system-design-library/pkg/validator"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/communication/chat"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/validator"
 )
 
 // Sender implements chat.Sender for Discord.
@@ -16,7 +16,7 @@ type Sender struct {
 
 // New creates a new Discord sender.
 func New(cfg chat.Config) (*Sender, error) {
-	if err := validator.New().ValidateStruct(cfg); err != nil {
+	if err := validator.New().ValidateStruct(context.Background(), cfg); err != nil {
 		return nil, errors.InvalidArgument("invalid config", err)
 	}
 
@@ -24,7 +24,6 @@ func New(cfg chat.Config) (*Sender, error) {
 		return nil, errors.InvalidArgument("Discord token is required", nil)
 	}
 
-	// Create a new Discord session using the provided bot token.
 	dg, err := discordgo.New("Bot " + cfg.DiscordToken)
 	if err != nil {
 		return nil, errors.Internal("failed to create discord session", err)
@@ -37,51 +36,51 @@ func New(cfg chat.Config) (*Sender, error) {
 
 // Send implements chat.Sender.
 func (s *Sender) Send(ctx context.Context, msg *chat.Message) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	if msg == nil {
+		return errors.InvalidArgument("message is required", nil)
+	}
+
 	channelID := msg.ChannelID
 	if channelID == "" {
 		return errors.InvalidArgument("ChannelID is required for Discord", nil)
 	}
 
-	// Simple text message
+	opts := []discordgo.RequestOption{discordgo.WithContext(ctx)}
+
 	if len(msg.Attachments) == 0 {
-		_, err := s.session.ChannelMessageSend(channelID, msg.Text)
+		_, err := s.session.ChannelMessageSend(channelID, msg.Text, opts...)
 		if err != nil {
 			return errors.Internal("failed to send discord message", err)
 		}
 		return nil
 	}
 
-	// Rich embed
 	embed := &discordgo.MessageEmbed{
-		Title:       "Message", // Default title if none, or handle differently
 		Description: msg.Text,
 	}
 
-	// Discord API limits 1 embed per message usually in simple helper, or complex allows list.
-	// We'll map the first attachment to the main embed, and fields.
-	// Or we create complex message.
-
-	// Complex implementation to handle attachments roughly mapped to Embeds
-	if len(msg.Attachments) > 0 {
-		att := msg.Attachments[0]
+	att := msg.Attachments[0]
+	if att.Title != "" {
 		embed.Title = att.Title
-		embed.Description = att.Text // Use attachment text if present, or msg.Text
-
-		if att.ImageURL != "" {
-			embed.Image = &discordgo.MessageEmbedImage{
-				URL: att.ImageURL,
-			}
-		}
-		for _, f := range att.Fields {
-			embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{
-				Name:   f.Title,
-				Value:  f.Value,
-				Inline: f.Short,
-			})
-		}
+	}
+	if att.Text != "" {
+		embed.Description = att.Text
+	}
+	if att.ImageURL != "" {
+		embed.Image = &discordgo.MessageEmbedImage{URL: att.ImageURL}
+	}
+	for _, f := range att.Fields {
+		embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{
+			Name:   f.Title,
+			Value:  f.Value,
+			Inline: f.Short,
+		})
 	}
 
-	_, err := s.session.ChannelMessageSendEmbed(channelID, embed)
+	_, err := s.session.ChannelMessageSendEmbed(channelID, embed, opts...)
 	if err != nil {
 		return errors.Internal("failed to send discord embed", err)
 	}

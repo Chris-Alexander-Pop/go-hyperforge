@@ -4,7 +4,7 @@
 //
 // Usage:
 //
-//	import lbgcp "github.com/chris-alexander-pop/system-design-library/pkg/network/loadbalancer/adapters/gcp"
+//	import lbgcp "github.com/chris-alexander-pop/go-hyperforge/pkg/network/loadbalancer/adapters/gcp"
 //
 //	manager, err := lbgcp.New(lbgcp.Config{ProjectID: "my-project"})
 //	lb, err := manager.CreateLoadBalancer(ctx, loadbalancer.CreateLoadBalancerOptions{Name: "my-lb"})
@@ -18,8 +18,8 @@ import (
 
 	compute "cloud.google.com/go/compute/apiv1"
 	"cloud.google.com/go/compute/apiv1/computepb"
-	pkgerrors "github.com/chris-alexander-pop/system-design-library/pkg/errors"
-	"github.com/chris-alexander-pop/system-design-library/pkg/network/loadbalancer"
+	pkgerrors "github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/network/loadbalancer"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/option"
 )

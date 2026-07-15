@@ -1,4 +1,5 @@
 // Package scheduler provides the logic for placing workloads onto hosts.
 //
-// It supports different strategies like Bin Packing, Spread, and Random placement.
+// Shipping: memory adapter with real strategies — "binpack", "spread", "random".
+// Production cluster schedulers (Kubernetes scheduler plugins, etc.) are not wired.
 package scheduler

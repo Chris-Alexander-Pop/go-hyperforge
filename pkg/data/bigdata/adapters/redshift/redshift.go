@@ -8,8 +8,8 @@ import (
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/redshiftdata"
 	"github.com/aws/aws-sdk-go-v2/service/redshiftdata/types"
-	"github.com/chris-alexander-pop/system-design-library/pkg/data/bigdata"
-	"github.com/chris-alexander-pop/system-design-library/pkg/errors"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/data/bigdata"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 )
 
 type Adapter struct {

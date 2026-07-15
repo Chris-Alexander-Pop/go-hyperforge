@@ -1,11 +1,3 @@
-// Package greengrass provides an AWS Greengrass edge compute client.
-//
-// Usage:
-//
-//	import "github.com/chris-alexander-pop/system-design-library/pkg/iot/adapters/greengrass"
-//
-//	client, err := greengrass.New(greengrass.Config{Region: "us-east-1"})
-//	group, err := client.CreateGroup(ctx, "my-edge-group")
 package greengrass
 
 import (
@@ -16,7 +8,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/greengrassv2"
 	"github.com/aws/aws-sdk-go-v2/service/greengrassv2/types"
-	pkgerrors "github.com/chris-alexander-pop/system-design-library/pkg/errors"
+	pkgerrors "github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 )
 
 // Config holds Greengrass configuration.

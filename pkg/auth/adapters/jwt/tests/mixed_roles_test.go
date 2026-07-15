@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/auth/adapters/jwt"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/auth/adapters/jwt"
 	libjwt "github.com/golang-jwt/jwt/v5"
 )
 

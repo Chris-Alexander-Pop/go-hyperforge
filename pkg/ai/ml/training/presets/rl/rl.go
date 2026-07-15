@@ -10,7 +10,7 @@ package rl
 import (
 	"fmt"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/ai/ml/training"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/ai/ml/training"
 )
 
 // Algorithm defines the RL algorithm.

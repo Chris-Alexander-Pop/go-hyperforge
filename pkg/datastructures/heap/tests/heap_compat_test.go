@@ -2,7 +2,7 @@ package heap_test
 
 import (
 	stdheap "container/heap"
-	myheap "github.com/chris-alexander-pop/system-design-library/pkg/datastructures/heap"
+	myheap "github.com/chris-alexander-pop/go-hyperforge/pkg/datastructures/heap"
 	"testing"
 )
 

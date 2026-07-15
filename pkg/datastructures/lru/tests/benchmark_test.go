@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/datastructures/lru"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/datastructures/lru"
 )
 
 var keys []string

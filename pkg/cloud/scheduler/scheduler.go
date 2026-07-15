@@ -3,7 +3,14 @@ package scheduler
 import (
 	"context"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/cloud"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/cloud"
+)
+
+// Strategy names for Config.Strategy.
+const (
+	StrategyRandom  = "random"
+	StrategyBinpack = "binpack"
+	StrategySpread  = "spread"
 )
 
 // Scheduler defines the interface for selecting optimal hosts for workloads.

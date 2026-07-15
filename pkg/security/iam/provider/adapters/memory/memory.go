@@ -4,9 +4,9 @@ import (
 	"context"
 	"time"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/concurrency"
-	"github.com/chris-alexander-pop/system-design-library/pkg/security/iam"
-	"github.com/chris-alexander-pop/system-design-library/pkg/security/iam/provider"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/concurrency"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/security/iam"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/security/iam/provider"
 	"github.com/google/uuid"
 )
 

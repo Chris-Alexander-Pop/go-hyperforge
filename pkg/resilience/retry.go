@@ -5,6 +5,8 @@ import (
 	"math"
 	"math/rand"
 	"time"
+
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 )
 
 // Retry executes the function with automatic retries and exponential backoff.
@@ -77,7 +79,7 @@ func Retry(ctx context.Context, cfg RetryConfig, fn Executor) error {
 }
 
 // RetryWithCircuitBreaker combines retry and circuit breaker.
-func RetryWithCircuitBreaker(ctx context.Context, cb *CircuitBreaker, retryCfg RetryConfig, fn Executor) error {
+func RetryWithCircuitBreaker(ctx context.Context, cb Breaker, retryCfg RetryConfig, fn Executor) error {
 	return Retry(ctx, retryCfg, func(ctx context.Context) error {
 		return cb.Execute(ctx, fn)
 	})
@@ -98,11 +100,43 @@ func ExponentialBackoff(attempt int, base time.Duration, max time.Duration, jitt
 	return time.Duration(backoff)
 }
 
-// WithTimeout wraps a function with a timeout.
+// WithTimeout wraps a function with a deadline.
+//
+// Behavior:
+//   - timeout <= 0: runs fn with the parent context unchanged.
+//   - On deadline: returns a CodeDeadlineExceeded AppError that unwraps to
+//     context.DeadlineExceeded (errors.Is still works).
+//   - Enforces the deadline even if fn ignores ctx by racing the call against
+//     the timer. Prefer ctx-aware fns; a blocked fn may leave a goroutine until
+//     it returns.
 func WithTimeout(timeout time.Duration, fn Executor) Executor {
 	return func(ctx context.Context) error {
+		if timeout <= 0 {
+			return fn(ctx)
+		}
+
 		ctx, cancel := context.WithTimeout(ctx, timeout)
 		defer cancel()
-		return fn(ctx)
+
+		done := make(chan error, 1)
+		go func() {
+			done <- fn(ctx)
+		}()
+
+		select {
+		case err := <-done:
+			return err
+		case <-ctx.Done():
+			select {
+			case err := <-done:
+				return err
+			default:
+				cause := ctx.Err()
+				if errors.Is(cause, context.DeadlineExceeded) {
+					return errors.DeadlineExceeded("operation timed out", cause)
+				}
+				return cause
+			}
+		}
 	}
 }

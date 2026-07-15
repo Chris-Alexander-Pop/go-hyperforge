@@ -3,7 +3,7 @@ package payment
 import (
 	"context"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/logger"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/logger"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
@@ -26,12 +26,13 @@ func NewInstrumentedProvider(next Provider) *InstrumentedProvider {
 
 func (p *InstrumentedProvider) Charge(ctx context.Context, req *ChargeRequest) (*Transaction, error) {
 	ctx, span := p.tracer.Start(ctx, "payment.Charge", trace.WithAttributes(
-		attribute.Float64("charge.amount", req.Amount),
-		attribute.String("charge.currency", req.Currency),
+		attribute.Int64("charge.amount", req.Amount.Amount),
+		attribute.String("charge.currency", req.Amount.Currency),
 	))
 	defer span.End()
 
-	logger.L().InfoContext(ctx, "processing charge", "amount", req.Amount, "currency", req.Currency)
+	logger.L().InfoContext(ctx, "processing charge",
+		"amount", req.Amount.Amount, "currency", req.Amount.Currency)
 
 	tx, err := p.next.Charge(ctx, req)
 	if err != nil {
@@ -48,7 +49,7 @@ func (p *InstrumentedProvider) Charge(ctx context.Context, req *ChargeRequest) (
 func (p *InstrumentedProvider) Refund(ctx context.Context, req *RefundRequest) (*Transaction, error) {
 	ctx, span := p.tracer.Start(ctx, "payment.Refund", trace.WithAttributes(
 		attribute.String("transaction.id", req.TransactionID),
-		attribute.Float64("refund.amount", req.Amount),
+		attribute.Int64("refund.amount", req.Amount.Amount),
 	))
 	defer span.End()
 

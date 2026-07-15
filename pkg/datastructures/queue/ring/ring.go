@@ -1,12 +1,13 @@
 package ring
 
 import (
-	"errors"
 	"sync"
+
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 )
 
-var ErrBufferFull = errors.New("ring buffer is full")
-var ErrBufferEmpty = errors.New("ring buffer is empty")
+var ErrBufferFull = errors.ResourceExhausted("ring buffer is full", nil)
+var ErrBufferEmpty = errors.FailedPrecondition("ring buffer is empty", nil)
 
 // Buffer is a fixed-size circular buffer.
 type Buffer[T any] struct {

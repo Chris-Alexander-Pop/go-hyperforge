@@ -1,39 +1,201 @@
 package telemetry_test
 
 import (
+	"bytes"
+	"context"
+	"errors"
+	"strings"
 	"testing"
 	"time"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/telemetry"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/telemetry"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/trace"
 )
 
-func TestInit(t *testing.T) {
-	// Use known bad endpoint to avoid hanging? Or assume it passes async checks?
-	// otlptracegrpc might attempt connection.
-	// Let's rely on standard timeouts if it blocks.
+func TestInitNoop(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
 
-	done := make(chan bool)
+	shutdown, err := telemetry.Init(ctx, telemetry.Config{
+		ServiceName: "test-noop",
+		Provider:    telemetry.ProviderNoop,
+		SampleRate:  1.0,
+	})
+	if err != nil {
+		t.Fatalf("Init noop: %v", err)
+	}
+	if shutdown == nil {
+		t.Fatal("expected non-nil shutdown")
+	}
+
+	tr := otel.Tracer("telemetry_test")
+	_, span := tr.Start(ctx, "noop.span")
+	span.End()
+
+	m := telemetry.Meter("telemetry_test")
+	counter, err := m.Int64Counter("test.requests")
+	if err != nil {
+		t.Fatalf("Int64Counter: %v", err)
+	}
+	counter.Add(ctx, 1)
+
+	if err := shutdown(ctx); err != nil {
+		t.Fatalf("shutdown: %v", err)
+	}
+}
+
+func TestInitStdoutMetrics(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+
+	var buf bytes.Buffer
+	shutdown, err := telemetry.Init(ctx, telemetry.Config{
+		ServiceName:  "test-stdout-metrics",
+		Provider:     telemetry.ProviderStdout,
+		SampleRate:   1.0,
+		StdoutWriter: &buf,
+	})
+	if err != nil {
+		t.Fatalf("Init stdout: %v", err)
+	}
+
+	counter, err := telemetry.Meter("telemetry_test").Int64Counter("stdout.requests")
+	if err != nil {
+		t.Fatalf("counter: %v", err)
+	}
+	counter.Add(ctx, 3)
+
+	if err := shutdown(ctx); err != nil {
+		t.Fatalf("shutdown: %v", err)
+	}
+}
+
+func TestDisableMetrics(t *testing.T) {
+	ctx := context.Background()
+	shutdown, err := telemetry.Init(ctx, telemetry.Config{
+		ServiceName:    "test-no-metrics",
+		Provider:       telemetry.ProviderNoop,
+		DisableMetrics: true,
+	})
+	if err != nil {
+		t.Fatalf("Init: %v", err)
+	}
+	defer shutdown(ctx)
+}
+
+func TestInitStdout(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+
+	var buf bytes.Buffer
+	shutdown, err := telemetry.Init(ctx, telemetry.Config{
+		ServiceName:  "test-stdout",
+		Provider:     telemetry.ProviderStdout,
+		SampleRate:   1.0,
+		StdoutWriter: &buf,
+	})
+	if err != nil {
+		t.Fatalf("Init stdout: %v", err)
+	}
+
+	tr := otel.Tracer("telemetry_test")
+	_, span := tr.Start(ctx, "stdout.span")
+	span.End()
+
+	if err := shutdown(ctx); err != nil {
+		t.Fatalf("shutdown: %v", err)
+	}
+	if buf.Len() == 0 {
+		t.Fatal("expected stdout exporter to write span data")
+	}
+}
+
+func TestInitSampleRateZero(t *testing.T) {
+	ctx := context.Background()
+	shutdown, err := telemetry.Init(ctx, telemetry.Config{
+		ServiceName: "test-sample-zero",
+		Provider:    telemetry.ProviderNoop,
+		SampleRate:  0,
+	})
+	if err != nil {
+		t.Fatalf("Init: %v", err)
+	}
+	defer shutdown(ctx)
+
+	tr := otel.Tracer("telemetry_test")
+	_, span := tr.Start(ctx, "never.sampled")
+	if span.SpanContext().IsSampled() {
+		t.Fatal("expected NeverSample when SampleRate=0")
+	}
+	span.End()
+}
+
+func TestRecordErrorAndSetStatus(t *testing.T) {
+	ctx := context.Background()
+	shutdown, err := telemetry.Init(ctx, telemetry.Config{
+		ServiceName: "test-helpers",
+		Provider:    telemetry.ProviderNoop,
+	})
+	if err != nil {
+		t.Fatalf("Init: %v", err)
+	}
+	defer shutdown(ctx)
+
+	tr := telemetry.Tracer("telemetry_test")
+	_, span := tr.Start(ctx, "helper.span")
+
+	telemetry.RecordError(span, nil) // no-op
+	telemetry.RecordError(span, errors.New("boom"))
+	telemetry.SetStatus(span, codes.Ok, "")
+	span.End()
+}
+
+func TestInitDoesNotHangWithoutCollector(t *testing.T) {
+	done := make(chan error, 1)
 	go func() {
-		shutdown, err := telemetry.Init(telemetry.Config{
-			ServiceName: "test-service",
-			Endpoint:    "localhost:4317", // assume unreachability is fine or instant fail
+		ctx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
+		defer cancel()
+		shutdown, err := telemetry.Init(ctx, telemetry.Config{
+			ServiceName: "test-fast",
+			Provider:    telemetry.ProviderNoop,
 		})
-
 		if err != nil {
-			t.Logf("Init failed (expected if collector offline): %v", err)
-		} else {
-			if shutdown == nil {
-				t.Error("Current implementation returned nil shutdown on success")
-			}
-			// Don't call shutdown as it might flush traces and block
+			done <- err
+			return
 		}
-		done <- true
+		done <- shutdown(context.Background())
 	}()
 
 	select {
-	case <-done:
-		// success
+	case err := <-done:
+		if err != nil {
+			t.Fatalf("noop Init/shutdown failed: %v", err)
+		}
 	case <-time.After(2 * time.Second):
-		t.Log("Init timed out, likely trying to connect")
+		t.Fatal("Init hung — noop path must not contact a collector")
 	}
+}
+
+func TestOTLPConfigFields(t *testing.T) {
+	cfg := telemetry.Config{
+		ServiceName:    "svc",
+		ServiceVersion: "1.2.3",
+		Environment:    "test",
+		Endpoint:       "collector:4317",
+		Provider:       telemetry.ProviderOTLP,
+		SampleRate:     0.5,
+		Insecure:       true,
+	}
+	if cfg.SampleRate != 0.5 {
+		t.Fatalf("SampleRate=%v", cfg.SampleRate)
+	}
+	if !cfg.Insecure {
+		t.Fatal("expected Insecure true")
+	}
+	if !strings.EqualFold(cfg.Provider, telemetry.ProviderOTLP) {
+		t.Fatalf("Provider=%s", cfg.Provider)
+	}
+	_ = trace.SpanFromContext(context.Background())
 }

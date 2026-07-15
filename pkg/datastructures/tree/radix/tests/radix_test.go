@@ -1,7 +1,7 @@
 package radix_test
 
 import (
-	"github.com/chris-alexander-pop/system-design-library/pkg/datastructures/tree/radix"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/datastructures/tree/radix"
 )
 
 import "testing"

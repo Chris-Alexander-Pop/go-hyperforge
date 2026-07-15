@@ -8,8 +8,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/ai/genai/llm"
-	pkgerrors "github.com/chris-alexander-pop/system-design-library/pkg/errors"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/ai/genai/llm"
+	pkgerrors "github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 )
 
 type Client struct {
@@ -108,6 +108,11 @@ func (c *Client) Chat(ctx context.Context, messages []llm.Message, opts ...llm.G
 			TotalTokens:      result.Usage.InputTokens + result.Usage.OutputTokens,
 		},
 	}, nil
+}
+
+// StreamChat adapts Chat into a single-chunk stream until native SSE streaming is wired.
+func (c *Client) StreamChat(ctx context.Context, messages []llm.Message, opts ...llm.GenerateOption) (<-chan llm.GenerationChunk, error) {
+	return llm.StreamFromChat(ctx, c.Chat, messages, opts...)
 }
 
 var _ llm.Client = (*Client)(nil)

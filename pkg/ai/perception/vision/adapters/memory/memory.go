@@ -3,8 +3,8 @@ package memory
 import (
 	"context"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/ai/perception/vision"
-	"github.com/chris-alexander-pop/system-design-library/pkg/errors"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/ai/perception/vision"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 )
 
 // ComputerVision implements vision.ComputerVision using mock data.

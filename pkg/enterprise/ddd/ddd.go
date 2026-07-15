@@ -1,18 +1,7 @@
-// Package ddd provides Domain-Driven Design primitives.
-//
-// Includes base types for entities, value objects, aggregates, and domain events.
-//
-// Usage:
-//
-//	import "github.com/chris-alexander-pop/system-design-library/pkg/enterprise/ddd"
-//
-//	type Order struct {
-//	    ddd.AggregateRoot
-//	    items []OrderItem
-//	}
 package ddd
 
 import (
+	"context"
 	"time"
 
 	"github.com/google/uuid"
@@ -150,10 +139,12 @@ func (a *AggregateRoot) ClearUncommittedEvents() {
 }
 
 // Repository is the generic repository pattern interface.
+// All methods take context.Context as the first parameter for cancellation,
+// deadlines, and tracing propagation (PACKAGE_STANDARDS §1.4).
 type Repository[T Entity] interface {
-	FindByID(id string) (T, error)
-	Save(entity T) error
-	Delete(id string) error
+	FindByID(ctx context.Context, id string) (T, error)
+	Save(ctx context.Context, entity T) error
+	Delete(ctx context.Context, id string) error
 }
 
 // Specification is the specification pattern for querying.

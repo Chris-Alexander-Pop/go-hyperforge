@@ -10,8 +10,8 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/timestreamquery"
 	"github.com/aws/aws-sdk-go-v2/service/timestreamwrite"
 	"github.com/aws/aws-sdk-go-v2/service/timestreamwrite/types"
-	"github.com/chris-alexander-pop/system-design-library/pkg/database/timeseries"
-	"github.com/chris-alexander-pop/system-design-library/pkg/errors"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/database/timeseries"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 )
 
 // NOTE: This implementation assumes the AWS SDK v2 is available.

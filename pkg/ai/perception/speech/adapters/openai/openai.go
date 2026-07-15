@@ -10,8 +10,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/ai/perception/speech"
-	pkgerrors "github.com/chris-alexander-pop/system-design-library/pkg/errors"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/ai/perception/speech"
+	pkgerrors "github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 )
 
 // Service implements speech.SpeechClient using OpenAI.

@@ -3,11 +3,11 @@ package executor
 import (
 	"context"
 	"fmt"
-	"sync"
 	"time"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/errors"
-	"github.com/chris-alexander-pop/system-design-library/pkg/events"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/concurrency"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/events"
 )
 
 // Task is a unit of work.
@@ -66,7 +66,7 @@ func (d *DAGExecutor) Run(ctx context.Context) error {
 	}
 
 	// 3. Execute layer by layer (parallelizable)
-	var mu sync.Mutex
+	mu := concurrency.NewSmartMutex(concurrency.MutexConfig{Name: "bigdata-dag-errs"})
 	var errs []error
 
 	active := 0
@@ -78,7 +78,7 @@ func (d *DAGExecutor) Run(ctx context.Context) error {
 
 	// Start initial
 	for _, id := range queue {
-		d.startTask(ctx, id, doneCh, &mu, &errs)
+		d.startTask(ctx, id, doneCh, mu, &errs)
 		active++
 	}
 
@@ -99,7 +99,7 @@ func (d *DAGExecutor) Run(ctx context.Context) error {
 			for _, child := range children {
 				inDegree[child]--
 				if inDegree[child] == 0 {
-					d.startTask(ctx, child, doneCh, &mu, &errs)
+					d.startTask(ctx, child, doneCh, mu, &errs)
 					active++
 				}
 			}
@@ -107,8 +107,9 @@ func (d *DAGExecutor) Run(ctx context.Context) error {
 
 		mu.Lock()
 		if len(errs) > 0 {
+			err := errs[0]
 			mu.Unlock()
-			return errs[0] // Return first error
+			return err // Return first error
 		}
 		mu.Unlock()
 	}
@@ -116,7 +117,7 @@ func (d *DAGExecutor) Run(ctx context.Context) error {
 	return nil
 }
 
-func (d *DAGExecutor) startTask(ctx context.Context, id string, doneCh chan<- string, mu *sync.Mutex, errs *[]error) {
+func (d *DAGExecutor) startTask(ctx context.Context, id string, doneCh chan<- string, mu *concurrency.SmartMutex, errs *[]error) {
 	node := d.nodes[id]
 	go func() {
 		// Emit Started

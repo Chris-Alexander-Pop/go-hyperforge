@@ -1,17 +1,3 @@
-// Package workflow provides a unified interface for workflow orchestration.
-//
-// Supported backends:
-//   - Memory: In-memory workflow engine for testing
-//   - StepFunctions: AWS Step Functions
-//   - Temporal: Temporal.io durable execution
-//   - LogicApps: Azure Logic Apps
-//
-// Usage:
-//
-//	import "github.com/chris-alexander-pop/system-design-library/pkg/workflow/adapters/memory"
-//
-//	engine := memory.New()
-//	exec, err := engine.Start(ctx, workflow.StartOptions{WorkflowID: "order-123", Input: orderData})
 package workflow
 
 import (
@@ -110,7 +96,42 @@ type State struct {
 
 	// TimeoutSeconds is the state timeout.
 	TimeoutSeconds int
+
+	// Seconds is the wait duration for Wait states (Step Functions-style).
+	Seconds int
+
+	// Choices are evaluated in order for Choice states (ASL-style).
+	Choices []ChoiceRule
+
+	// Default is the fallback next state when no Choice rule matches.
+	Default string
+
+	// Branches are parallel sub-flows for Parallel states.
+	Branches []Branch
 }
+
+// ChoiceRule is a single ASL-style choice condition.
+// Only the first matching rule wins. Variable is a top-level map key
+// (optional "$.prefix" is stripped).
+type ChoiceRule struct {
+	Variable      string
+	StringEquals  string
+	NumericEquals *float64
+	BooleanEquals *bool
+	IsPresent     *bool
+	Next          string
+}
+
+// Branch is a Parallel state branch. When States is empty, the parent
+// workflow States map is used (referenced by StartAt name).
+type Branch struct {
+	StartAt string
+	States  []State
+}
+
+// TaskHandler executes a Task state resource. Input is the current execution data;
+// the returned value becomes the next state's input (and final Output on End).
+type TaskHandler func(ctx context.Context, input interface{}) (interface{}, error)
 
 // RetryPolicy defines retry behavior.
 type RetryPolicy struct {

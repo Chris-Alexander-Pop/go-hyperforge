@@ -9,9 +9,9 @@ import (
 	"crypto/x509"
 	"os"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/errors"
-	"github.com/chris-alexander-pop/system-design-library/pkg/logger"
-	"github.com/chris-alexander-pop/system-design-library/pkg/resilience"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/logger"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/resilience"
 	"github.com/hashicorp/go-retryablehttp"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
@@ -19,7 +19,7 @@ import (
 type Config struct {
 	Timeout   time.Duration `env:"CLIENT_TIMEOUT" env-default:"30s"`
 	Retries   int           `env:"CLIENT_RETRIES" env-default:"3"`
-	UserAgent string        `env:"CLIENT_USER_AGENT" env-default:"system-design-library-client"`
+	UserAgent string        `env:"CLIENT_USER_AGENT" env-default:"go-hyperforge-client"`
 
 	// Auth
 	BearerToken string `env:"CLIENT_BEARER_TOKEN"`

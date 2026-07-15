@@ -3,7 +3,7 @@ package analytics
 import (
 	"context"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/logger"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/logger"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
@@ -23,6 +23,9 @@ func NewInstrumentedTracker(next Tracker) *InstrumentedTracker {
 		tracer: otel.Tracer("pkg/analytics"),
 	}
 }
+
+// Ensure InstrumentedTracker implements Tracker.
+var _ Tracker = (*InstrumentedTracker)(nil)
 
 func (t *InstrumentedTracker) Add(ctx context.Context, counter string, element string) error {
 	ctx, span := t.tracer.Start(ctx, "analytics.Add", trace.WithAttributes(
@@ -72,4 +75,25 @@ func (t *InstrumentedTracker) Reset(ctx context.Context, counter string) error {
 		logger.L().InfoContext(ctx, "counter reset", "counter", counter)
 	}
 	return err
+}
+
+func (t *InstrumentedTracker) Merge(ctx context.Context, dest, source string) error {
+	ctx, span := t.tracer.Start(ctx, "analytics.Merge", trace.WithAttributes(
+		attribute.String("counter.dest", dest),
+		attribute.String("counter.source", source),
+	))
+	defer span.End()
+
+	err := t.next.Merge(ctx, dest, source)
+	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
+		logger.L().ErrorContext(ctx, "failed to merge counters",
+			"dest", dest, "source", source, "error", err)
+	}
+	return err
+}
+
+func (t *InstrumentedTracker) Close() error {
+	return t.next.Close()
 }

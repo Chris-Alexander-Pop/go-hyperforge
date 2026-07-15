@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/datastructures/concurrentmap"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/datastructures/concurrentmap"
 )
 
 func BenchmarkConcurrentMap_Set(b *testing.B) {

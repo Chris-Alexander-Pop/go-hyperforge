@@ -1,23 +1,3 @@
-// Package kafka provides a Kafka messaging adapter using Sarama.
-//
-// This adapter implements the messaging.Broker interface for Apache Kafka,
-// supporting producer/consumer groups, partitioning, and SASL/TLS authentication.
-//
-// # Usage
-//
-//	cfg := kafka.Config{
-//	    Brokers: []string{"localhost:9092"},
-//	    Version: "3.6.0",
-//	}
-//	broker, err := kafka.New(cfg)
-//	if err != nil {
-//	    log.Fatal(err)
-//	}
-//	defer broker.Close()
-//
-// # Dependencies
-//
-// This package requires: github.com/IBM/sarama
 package kafka
 
 import (
@@ -27,8 +7,8 @@ import (
 	"time"
 
 	"github.com/IBM/sarama"
-	"github.com/chris-alexander-pop/system-design-library/pkg/concurrency"
-	"github.com/chris-alexander-pop/system-design-library/pkg/messaging"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/concurrency"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/messaging"
 )
 
 // Config holds configuration for the Kafka broker.
@@ -40,7 +20,7 @@ type Config struct {
 	Version string `env:"KAFKA_VERSION" env-default:"3.6.0"`
 
 	// ClientID identifies this client to the broker.
-	ClientID string `env:"KAFKA_CLIENT_ID" env-default:"system-design-library"`
+	ClientID string `env:"KAFKA_CLIENT_ID" env-default:"go-hyperforge"`
 
 	// SASL configuration for authentication.
 	SASL *SASLConfig

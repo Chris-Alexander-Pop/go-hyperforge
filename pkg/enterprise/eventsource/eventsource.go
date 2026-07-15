@@ -4,23 +4,26 @@
 //
 // Usage:
 //
-//	import "github.com/chris-alexander-pop/system-design-library/pkg/enterprise/eventsource"
+//	import (
+//	    "github.com/chris-alexander-pop/go-hyperforge/pkg/enterprise/eventsource"
+//	    "github.com/chris-alexander-pop/go-hyperforge/pkg/enterprise/eventsource/adapters/memory"
+//	)
 //
-//	store := eventsource.NewInMemoryEventStore()
-//	err := store.Append(ctx, "order-123", events)
+//	store := memory.NewEventStore()
+//	err := store.Append(ctx, "order-123", 0, events)
 //	history, err := store.Load(ctx, "order-123")
 package eventsource
 
 import (
 	"context"
 	"encoding/json"
-	"sync"
 	"time"
 
-	pkgerrors "github.com/chris-alexander-pop/system-design-library/pkg/errors"
+	pkgerrors "github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 )
 
 // Event represents a stored event.
+// Versions are 1-based: the first event in a stream has Version 1.
 type Event struct {
 	ID            string                 `json:"id"`
 	AggregateID   string                 `json:"aggregate_id"`
@@ -35,102 +38,19 @@ type Event struct {
 // EventStore persists and retrieves events.
 type EventStore interface {
 	// Append adds events to an aggregate's stream.
+	// expectedVersion is the current stream version (0 for a new stream).
+	// Pass expectedVersion < 0 to skip the optimistic concurrency check.
 	Append(ctx context.Context, aggregateID string, expectedVersion int, events []Event) error
 
 	// Load retrieves all events for an aggregate.
 	Load(ctx context.Context, aggregateID string) ([]Event, error)
 
-	// LoadFrom retrieves events from a specific version.
+	// LoadFrom retrieves events with Version >= fromVersion (1-based).
+	// fromVersion <= 1 returns the full stream (same as Load for existing streams).
 	LoadFrom(ctx context.Context, aggregateID string, fromVersion int) ([]Event, error)
 
 	// LoadAll retrieves all events (for projections).
 	LoadAll(ctx context.Context) ([]Event, error)
-}
-
-// InMemoryEventStore is an in-memory event store for testing.
-type InMemoryEventStore struct {
-	streams map[string][]Event
-	mu      sync.RWMutex
-}
-
-// NewInMemoryEventStore creates a new in-memory event store.
-func NewInMemoryEventStore() *InMemoryEventStore {
-	return &InMemoryEventStore{
-		streams: make(map[string][]Event),
-	}
-}
-
-// Append adds events to an aggregate's stream.
-func (s *InMemoryEventStore) Append(ctx context.Context, aggregateID string, expectedVersion int, events []Event) error {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	stream := s.streams[aggregateID]
-	currentVersion := len(stream)
-
-	// Optimistic concurrency check
-	if expectedVersion >= 0 && currentVersion != expectedVersion {
-		return pkgerrors.Conflict("version conflict", nil)
-	}
-
-	// Set versions and timestamps
-	for i := range events {
-		events[i].Version = currentVersion + i + 1
-		if events[i].Timestamp.IsZero() {
-			events[i].Timestamp = time.Now()
-		}
-	}
-
-	s.streams[aggregateID] = append(stream, events...)
-	return nil
-}
-
-// Load retrieves all events for an aggregate.
-func (s *InMemoryEventStore) Load(ctx context.Context, aggregateID string) ([]Event, error) {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-
-	stream, ok := s.streams[aggregateID]
-	if !ok {
-		return []Event{}, nil
-	}
-
-	// Return a copy
-	result := make([]Event, len(stream))
-	copy(result, stream)
-	return result, nil
-}
-
-// LoadFrom retrieves events from a specific version.
-func (s *InMemoryEventStore) LoadFrom(ctx context.Context, aggregateID string, fromVersion int) ([]Event, error) {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-
-	stream, ok := s.streams[aggregateID]
-	if !ok {
-		return []Event{}, nil
-	}
-
-	if fromVersion >= len(stream) {
-		return []Event{}, nil
-	}
-
-	result := make([]Event, len(stream)-fromVersion)
-	copy(result, stream[fromVersion:])
-	return result, nil
-}
-
-// LoadAll retrieves all events.
-func (s *InMemoryEventStore) LoadAll(ctx context.Context) ([]Event, error) {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-
-	var all []Event
-	for _, stream := range s.streams {
-		all = append(all, stream...)
-	}
-
-	return all, nil
 }
 
 // EventSourcedAggregate can be reconstructed from events.
@@ -141,8 +61,11 @@ type EventSourcedAggregate interface {
 	// AggregateType returns the aggregate type name.
 	AggregateType() string
 
-	// Version returns the current version.
+	// Version returns the current committed version (0 before any events).
 	Version() int
+
+	// SetVersion sets the committed version after load or save.
+	SetVersion(version int)
 
 	// ApplyEvent applies an event to update state.
 	ApplyEvent(event Event) error
@@ -187,6 +110,11 @@ func (a *BaseEventSourcedAggregate) Version() int {
 	return a.version
 }
 
+// SetVersion sets the committed version.
+func (a *BaseEventSourcedAggregate) SetVersion(version int) {
+	a.version = version
+}
+
 // IncrementVersion increments the version.
 func (a *BaseEventSourcedAggregate) IncrementVersion() {
 	a.version++
@@ -224,15 +152,27 @@ func (a *BaseEventSourcedAggregate) RecordEvent(eventType string, data interface
 
 // EventRepository provides aggregate persistence through events.
 type EventRepository struct {
-	store EventStore
+	store     EventStore
+	snapshots SnapshotStore
 }
 
-// NewEventRepository creates a new event repository.
+// NewEventRepository creates a new event repository without snapshot support.
 func NewEventRepository(store EventStore) *EventRepository {
 	return &EventRepository{store: store}
 }
 
-// Save persists uncommitted events.
+// NewEventRepositoryWithSnapshots creates a repository that loads via snapshots
+// when the aggregate implements Snapshottable.
+func NewEventRepositoryWithSnapshots(store EventStore, snapshots SnapshotStore) *EventRepository {
+	return &EventRepository{store: store, snapshots: snapshots}
+}
+
+// SetSnapshotStore attaches or replaces the optional SnapshotStore.
+func (r *EventRepository) SetSnapshotStore(snapshots SnapshotStore) {
+	r.snapshots = snapshots
+}
+
+// Save persists uncommitted events and advances the aggregate version.
 func (r *EventRepository) Save(ctx context.Context, aggregate EventSourcedAggregate) error {
 	events := aggregate.GetUncommittedEvents()
 	if len(events) == 0 {
@@ -244,24 +184,71 @@ func (r *EventRepository) Save(ctx context.Context, aggregate EventSourcedAggreg
 		return err
 	}
 
+	// Append assigns 1-based versions onto the event slice in place.
+	aggregate.SetVersion(events[len(events)-1].Version)
 	aggregate.ClearUncommittedEvents()
 	return nil
 }
 
-// Load reconstructs an aggregate from its event history.
+// Load reconstructs an aggregate from its event history and sets its version.
+// When a SnapshotStore is configured and aggregate implements Snapshottable,
+// Load restores from the latest snapshot then applies only later events.
 func (r *EventRepository) Load(ctx context.Context, aggregate EventSourcedAggregate) error {
+	if snapAgg, ok := aggregate.(Snapshottable); ok && r.snapshots != nil {
+		snap, err := r.snapshots.Load(ctx, aggregate.AggregateID())
+		if err != nil {
+			return err
+		}
+		if snap != nil {
+			if err := snapAgg.RestoreSnapshot(snap.Data); err != nil {
+				return err
+			}
+			aggregate.SetVersion(snap.Version)
+			return r.applyFrom(ctx, aggregate, snap.Version+1)
+		}
+	}
+
 	events, err := r.store.Load(ctx, aggregate.AggregateID())
 	if err != nil {
 		return err
 	}
+	return r.applyEvents(aggregate, events)
+}
 
+func (r *EventRepository) applyFrom(ctx context.Context, aggregate EventSourcedAggregate, fromVersion int) error {
+	events, err := r.store.LoadFrom(ctx, aggregate.AggregateID(), fromVersion)
+	if err != nil {
+		return err
+	}
+	return r.applyEvents(aggregate, events)
+}
+
+func (r *EventRepository) applyEvents(aggregate EventSourcedAggregate, events []Event) error {
 	for _, event := range events {
 		if err := aggregate.ApplyEvent(event); err != nil {
 			return err
 		}
+		aggregate.SetVersion(event.Version)
 	}
-
 	return nil
+}
+
+// SaveSnapshot persists the current aggregate state at Version().
+func (r *EventRepository) SaveSnapshot(ctx context.Context, aggregate Snapshottable) error {
+	if r.snapshots == nil {
+		return ErrInvalidArgument("snapshot store is required", nil)
+	}
+	data, err := aggregate.SnapshotData()
+	if err != nil {
+		return err
+	}
+	return r.snapshots.Save(ctx, Snapshot{
+		AggregateID:   aggregate.AggregateID(),
+		AggregateType: aggregate.AggregateType(),
+		Version:       aggregate.Version(),
+		Timestamp:     time.Now().UTC(),
+		Data:          data,
+	})
 }
 
 // Snapshot represents a point-in-time aggregate state.
@@ -279,38 +266,14 @@ type SnapshotStore interface {
 	Save(ctx context.Context, snapshot Snapshot) error
 
 	// Load retrieves the latest snapshot for an aggregate.
+	// Returns nil, nil when no snapshot exists.
 	Load(ctx context.Context, aggregateID string) (*Snapshot, error)
 }
 
-// InMemorySnapshotStore is an in-memory snapshot store.
-type InMemorySnapshotStore struct {
-	snapshots map[string]Snapshot
-	mu        sync.RWMutex
-}
-
-// NewInMemorySnapshotStore creates a new in-memory snapshot store.
-func NewInMemorySnapshotStore() *InMemorySnapshotStore {
-	return &InMemorySnapshotStore{
-		snapshots: make(map[string]Snapshot),
-	}
-}
-
-// Save stores a snapshot.
-func (s *InMemorySnapshotStore) Save(ctx context.Context, snapshot Snapshot) error {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	s.snapshots[snapshot.AggregateID] = snapshot
-	return nil
-}
-
-// Load retrieves the latest snapshot.
-func (s *InMemorySnapshotStore) Load(ctx context.Context, aggregateID string) (*Snapshot, error) {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-
-	snapshot, ok := s.snapshots[aggregateID]
-	if !ok {
-		return nil, nil
-	}
-	return &snapshot, nil
+// Snapshottable is an EventSourcedAggregate that can serialize and restore
+// its state for SnapshotStore-backed loads.
+type Snapshottable interface {
+	EventSourcedAggregate
+	RestoreSnapshot(data json.RawMessage) error
+	SnapshotData() (json.RawMessage, error)
 }

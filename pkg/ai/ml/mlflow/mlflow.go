@@ -2,7 +2,7 @@
 //
 // Usage:
 //
-//	import "github.com/chris-alexander-pop/system-design-library/pkg/ai/ml/mlflow"
+//	import "github.com/chris-alexander-pop/go-hyperforge/pkg/ai/ml/mlflow"
 //
 //	client := mlflow.New(mlflow.Config{TrackingURI: "http://localhost:5000"})
 //	run, err := client.CreateRun(ctx, "my-experiment")
@@ -17,7 +17,7 @@ import (
 	"net/http"
 	"time"
 
-	pkgerrors "github.com/chris-alexander-pop/system-design-library/pkg/errors"
+	pkgerrors "github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 )
 
 // Config holds MLflow configuration.

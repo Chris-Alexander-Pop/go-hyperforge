@@ -1,22 +1,12 @@
-// Package saga provides the Saga pattern for distributed transactions.
-//
-// The Saga pattern manages long-running transactions by breaking them into
-// a series of local transactions with compensating actions for rollback.
-//
-// Usage:
-//
-//	saga := saga.New("order-saga")
-//	saga.AddStep(saga.Step{Name: "reserve-inventory", Action: reserveInventory, Compensate: releaseInventory})
-//	saga.AddStep(saga.Step{Name: "charge-payment", Action: chargePayment, Compensate: refundPayment})
-//	result, err := saga.Execute(ctx, orderData)
 package saga
 
 import (
 	"context"
-	"sync"
+	stderrors "errors"
 	"time"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/errors"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/concurrency"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 	"github.com/google/uuid"
 )
 
@@ -135,7 +125,6 @@ func (s *Saga) Execute(ctx context.Context, input interface{}) (*Execution, erro
 	data := input
 	completedSteps := make([]*StepResult, 0)
 
-	// Execute forward steps
 	for _, step := range s.steps {
 		stepResult := &StepResult{
 			Name:      step.Name,
@@ -146,7 +135,6 @@ func (s *Saga) Execute(ctx context.Context, input interface{}) (*Execution, erro
 
 		var output interface{}
 		err := func() error {
-			// Apply timeout if specified
 			stepCtx := ctx
 			if step.Timeout > 0 {
 				var cancel context.CancelFunc
@@ -166,7 +154,6 @@ func (s *Saga) Execute(ctx context.Context, input interface{}) (*Execution, erro
 			exec.Status = StatusCompensating
 			exec.Error = err.Error()
 
-			// Compensate completed steps in reverse order
 			if compErr := s.compensate(ctx, completedSteps); compErr != nil {
 				exec.Status = StatusFailed
 				exec.Error = exec.Error + "; compensation failed: " + compErr.Error()
@@ -181,7 +168,7 @@ func (s *Saga) Execute(ctx context.Context, input interface{}) (*Execution, erro
 		stepResult.Status = StatusCompleted
 		stepResult.Output = output
 		completedSteps = append(completedSteps, stepResult)
-		data = output // Chain outputs
+		data = output
 	}
 
 	exec.Status = StatusCompleted
@@ -194,11 +181,9 @@ func (s *Saga) Execute(ctx context.Context, input interface{}) (*Execution, erro
 func (s *Saga) compensate(ctx context.Context, completedSteps []*StepResult) error {
 	var errs []error
 
-	// Compensate in reverse order
 	for i := len(completedSteps) - 1; i >= 0; i-- {
 		stepResult := completedSteps[i]
 
-		// Find the step definition
 		var step *Step
 		for j := range s.steps {
 			if s.steps[j].Name == stepResult.Name {
@@ -213,11 +198,15 @@ func (s *Saga) compensate(ctx context.Context, completedSteps []*StepResult) err
 
 		if _, err := step.Compensate(ctx, stepResult.Output); err != nil {
 			errs = append(errs, err)
+			stepResult.Status = StatusFailed
+			stepResult.Error = err
+		} else {
+			stepResult.Status = StatusCompensated
 		}
 	}
 
 	if len(errs) > 0 {
-		return errors.Internal("compensation failed", errs[0])
+		return errors.Internal("compensation failed", stderrors.Join(errs...))
 	}
 
 	return nil
@@ -228,15 +217,23 @@ func (s *Saga) Name() string {
 	return s.name
 }
 
+// Steps returns a copy of the saga steps.
+func (s *Saga) Steps() []Step {
+	out := make([]Step, len(s.steps))
+	copy(out, s.steps)
+	return out
+}
+
 // SagaRegistry manages saga definitions.
 type SagaRegistry struct {
-	mu    sync.RWMutex
+	mu    *concurrency.SmartRWMutex
 	sagas map[string]*Saga
 }
 
 // NewRegistry creates a new saga registry.
 func NewRegistry() *SagaRegistry {
 	return &SagaRegistry{
+		mu:    concurrency.NewSmartRWMutex(concurrency.MutexConfig{Name: "workflow-saga-registry"}),
 		sagas: make(map[string]*Saga),
 	}
 }

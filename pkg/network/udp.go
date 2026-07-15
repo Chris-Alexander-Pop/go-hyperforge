@@ -4,7 +4,8 @@ import (
 	"context"
 	"net"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/logger"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/logger"
 )
 
 type UDPHandler func(addr net.Addr, data []byte)
@@ -26,7 +27,7 @@ func NewUDPServer(cfg Config, handler UDPHandler) *UDPServer {
 func (s *UDPServer) ListenAndServe(ctx context.Context) error {
 	pc, err := net.ListenPacket("udp", s.cfg.Addr)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "udp listen")
 	}
 	defer pc.Close()
 
@@ -44,13 +45,10 @@ func (s *UDPServer) ListenAndServe(ctx context.Context) error {
 			if ctx.Err() != nil {
 				return nil
 			}
-			logger.L().ErrorContext(ctx, "udp read error", "error", err)
+			logger.L().ErrorContext(ctx, "udp read error", "error", errors.Wrap(err, "udp read"))
 			continue
 		}
 
-		// Cloning buffer for async handling or block?
-		// Block is safer for simple UDP loop unless we allocate per packet.
-		// For "Overengineered", we allocate valid data slice.
 		data := make([]byte, n)
 		copy(data, buf[:n])
 

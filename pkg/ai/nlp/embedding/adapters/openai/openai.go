@@ -8,8 +8,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/ai/nlp/embedding"
-	pkgerrors "github.com/chris-alexander-pop/system-design-library/pkg/errors"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/ai/nlp/embedding"
+	pkgerrors "github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 )
 
 // Service implements embedding.Service using OpenAI.

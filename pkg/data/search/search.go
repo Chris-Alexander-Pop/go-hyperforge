@@ -1,14 +1,16 @@
 // Package search provides a unified interface for full-text search engines.
 //
 // Supported backends:
-//   - Memory: In-memory search for testing
-//   - Elasticsearch: Elasticsearch/OpenSearch adapter
+//   - Memory: In-memory search for testing (includes Suggest autocomplete)
+//   - Elasticsearch: Elasticsearch adapter
+//   - OpenSearch: dedicated HTTP client (ES-compatible REST)
 //   - Meilisearch: Meilisearch adapter
 //   - Algolia: Algolia search adapter
+//   - Typesense: Typesense HTTP API client
 //
 // Usage:
 //
-//	import "github.com/chris-alexander-pop/system-design-library/pkg/data/search/adapters/memory"
+//	import "github.com/chris-alexander-pop/go-hyperforge/pkg/data/search/adapters/memory"
 //
 //	engine := memory.New()
 //	err := engine.Index(ctx, "products", "123", product)
@@ -41,6 +43,9 @@ type Config struct {
 	ElasticsearchPassword string `env:"SEARCH_ES_PASSWORD"`
 	ElasticsearchAPIKey   string `env:"SEARCH_ES_API_KEY"`
 
+	// OpenSearchURL overrides ElasticsearchURL when Driver=opensearch (tests via httptest).
+	OpenSearchURL string `env:"SEARCH_OPENSEARCH_URL"`
+
 	// Meilisearch specific
 	MeilisearchURL    string `env:"SEARCH_MEILI_URL" env-default:"http://localhost:7700"`
 	MeilisearchAPIKey string `env:"SEARCH_MEILI_API_KEY"`
@@ -49,6 +54,10 @@ type Config struct {
 	AlgoliaAppID     string `env:"SEARCH_ALGOLIA_APP_ID"`
 	AlgoliaAPIKey    string `env:"SEARCH_ALGOLIA_API_KEY"`
 	AlgoliaSearchKey string `env:"SEARCH_ALGOLIA_SEARCH_KEY"`
+
+	// Typesense specific
+	TypesenseURL    string `env:"SEARCH_TYPESENSE_URL" env-default:"http://localhost:8108"`
+	TypesenseAPIKey string `env:"SEARCH_TYPESENSE_API_KEY"`
 
 	// Common options
 	Timeout       time.Duration `env:"SEARCH_TIMEOUT" env-default:"30s"`
@@ -285,6 +294,30 @@ type IndexInfo struct {
 	CreatedAt time.Time
 }
 
+// SuggestQuery configures autocomplete / prefix suggestions.
+type SuggestQuery struct {
+	// Prefix is the partial text to complete.
+	Prefix string
+
+	// Field limits suggestions to a single document field (optional).
+	Field string
+
+	// Size is the maximum number of suggestions to return.
+	Size int
+}
+
+// Suggestion is a single autocomplete suggestion.
+type Suggestion struct {
+	// Text is the suggested completion string.
+	Text string
+
+	// Score is a relative ranking score.
+	Score float64
+
+	// Payload may carry the source document ID or other metadata.
+	Payload map[string]interface{}
+}
+
 // SearchEngine defines the interface for full-text search operations.
 type SearchEngine interface {
 	// CreateIndex creates a new search index with the given mapping.
@@ -307,6 +340,9 @@ type SearchEngine interface {
 
 	// Search performs a search query.
 	Search(ctx context.Context, indexName string, query Query) (*SearchResult, error)
+
+	// Suggest returns autocomplete suggestions for a prefix.
+	Suggest(ctx context.Context, indexName string, query SuggestQuery) ([]Suggestion, error)
 
 	// Bulk performs multiple operations in a single request.
 	Bulk(ctx context.Context, indexName string, ops []BulkOperation) (*BulkResult, error)

@@ -2,11 +2,12 @@ package vector
 
 import (
 	"context"
+	"fmt"
 )
 
 // Config holds configuration for a vector database.
 type Config struct {
-	// Driver specifies the vector backend: "pinecone", "memory".
+	// Driver specifies the vector backend: "pinecone", "weaviate", "milvus", "memory".
 	Driver string `env:"VECTOR_DRIVER" env-default:"pinecone"`
 
 	// Host is the vector service endpoint.
@@ -21,7 +22,7 @@ type Config struct {
 	// ProjectID is the project identifier.
 	ProjectID string `env:"VECTOR_PROJECT_ID"`
 
-	// IndexName is the name of the vector index.
+	// IndexName is the name of the vector index / Weaviate class.
 	IndexName string `env:"VECTOR_INDEX_NAME"`
 
 	// Dimension is the size of the vectors (e.g., 1536 for OpenAI embeddings).
@@ -35,10 +36,23 @@ type Result struct {
 	Metadata map[string]interface{} `json:"metadata"`
 }
 
+// SearchOpts configures a vector search with optional metadata filtering.
+type SearchOpts struct {
+	// Limit is the maximum number of results (required; treated as top-K).
+	Limit int
+
+	// Filter is an exact-match metadata filter. All keys must equal stored values.
+	// Nil or empty means no metadata filtering.
+	Filter map[string]interface{}
+}
+
 // Store defines the interface for vector operations.
 type Store interface {
 	// Search finds the nearest neighbors to the query vector.
 	Search(ctx context.Context, vector []float32, limit int) ([]Result, error)
+
+	// SearchWithOpts finds nearest neighbors with optional metadata filter.
+	SearchWithOpts(ctx context.Context, vector []float32, opts SearchOpts) ([]Result, error)
 
 	// Upsert inserts or updates a vector with metadata.
 	Upsert(ctx context.Context, id string, vector []float32, metadata map[string]interface{}) error
@@ -48,4 +62,25 @@ type Store interface {
 
 	// Close releases resources.
 	Close() error
+}
+
+// MatchFilter reports whether metadata satisfies all exact-match filter keys.
+func MatchFilter(metadata, filter map[string]interface{}) bool {
+	if len(filter) == 0 {
+		return true
+	}
+	if metadata == nil {
+		return false
+	}
+	for k, want := range filter {
+		got, ok := metadata[k]
+		if !ok || !valuesEqual(got, want) {
+			return false
+		}
+	}
+	return true
+}
+
+func valuesEqual(a, b interface{}) bool {
+	return fmt.Sprint(a) == fmt.Sprint(b)
 }

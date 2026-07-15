@@ -4,8 +4,8 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/auth/webauthn"
-	"github.com/chris-alexander-pop/system-design-library/pkg/errors"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/auth/webauthn"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 	gowebauthn "github.com/go-webauthn/webauthn/webauthn"
 )
 

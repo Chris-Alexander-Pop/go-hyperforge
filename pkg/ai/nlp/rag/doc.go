@@ -1,2 +1,3 @@
-// Package rag provides a simple RAG (Retrieval Augmented Generation) orchestrator.
+// Package rag provides a RAG orchestrator backed by pkg/database/vector
+// and optionally pkg/database/rerank.
 package rag

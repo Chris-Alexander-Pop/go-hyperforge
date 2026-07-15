@@ -2,6 +2,12 @@
 
 > System Design Library - Go packages for building production systems
 
+## Readiness
+
+Capability packages are feature-complete enough to define Hyperforge services (interfaces,
+memory adapters, cloud drivers, resilient/evented wrappers, and conformance suites).
+Remaining depth varies by adapter — see [`TODO.md`](./TODO.md) for ✅ / 🔄 / ❌ status.
+
 ---
 
 ## Quick Navigation
@@ -30,7 +36,7 @@
 | `config` | Environment-based configuration loading |
 | `validator` | Input validation and sanitization |
 | `concurrency` | Mutexes, semaphores, worker pools, distributed locks |
-| `resilience` | Circuit breakers, retry with backoff |
+| `resilience` | Circuit breakers, retry, timeout, bulkhead |
 | `events` | Event bus for domain events |
 | `telemetry` | OpenTelemetry setup utilities |
 | `test` | Test suite helpers |
@@ -42,14 +48,14 @@
 | `cache` | memory, redis |
 | `database` | sql, document, vector, kv, graph, timeseries |
 | `storage` | blob, file, block, archive, controller |
-| `data` | search, etl, processing, bigdata |
-| `streaming` | Kafka, Kinesis, EventHubs, Pub/Sub |
+| `data` | search, bigdata (etl/processing planned) |
+| `streaming` | Kinesis, EventHubs (Pub/Sub and Kafka live under `messaging`) |
 
 ### Security
 
 | Package | Subpackages |
 |---------|-------------|
-| `auth` | jwt, oauth2, oidc, mfa, session, webauthn, social, cloud |
+| `auth` | jwt, oauth2 (AS interfaces + memory), oidc (verify + code exchange), mfa, session, webauthn, social, cloud |
 | `security` | iam, crypto, secrets, fraud, captcha, waf, scanning |
 
 ### Infrastructure

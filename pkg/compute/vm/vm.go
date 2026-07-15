@@ -1,17 +1,3 @@
-// Package vm provides a unified interface for virtual machine management.
-//
-// Supported backends:
-//   - Memory: In-memory VM manager for testing
-//   - EC2: AWS EC2 instances
-//   - GCE: Google Compute Engine
-//   - AzureVM: Azure Virtual Machines
-//
-// Usage:
-//
-//	import "github.com/chris-alexander-pop/system-design-library/pkg/compute/vm/adapters/memory"
-//
-//	manager := memory.New()
-//	instance, err := manager.Create(ctx, vm.CreateOptions{Name: "web-1", Image: "ubuntu-22.04"})
 package vm
 
 import (
@@ -24,7 +10,7 @@ const (
 	DriverMemory  = "memory"
 	DriverEC2     = "ec2"
 	DriverGCE     = "gce"
-	DriverAzureVM = "azure-vm"
+	DriverAzureVM = "azure-vm" // scaffold
 )
 
 // InstanceState represents the state of a VM instance.

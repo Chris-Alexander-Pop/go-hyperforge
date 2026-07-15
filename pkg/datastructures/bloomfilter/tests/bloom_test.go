@@ -1,7 +1,7 @@
 package bloomfilter_test
 
 import (
-	"github.com/chris-alexander-pop/system-design-library/pkg/datastructures/bloomfilter"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/datastructures/bloomfilter"
 	"testing"
 )
 

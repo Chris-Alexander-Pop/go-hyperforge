@@ -1,6 +1,6 @@
 package graph
 
-import "github.com/chris-alexander-pop/system-design-library/pkg/errors"
+import "github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 
 var (
 	// ErrVertexNotFound indicates that the vertex was not found.

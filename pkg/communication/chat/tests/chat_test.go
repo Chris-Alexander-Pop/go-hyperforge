@@ -3,9 +3,9 @@ package tests
 import (
 	"testing"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/communication/chat"
-	"github.com/chris-alexander-pop/system-design-library/pkg/communication/chat/adapters/memory"
-	"github.com/chris-alexander-pop/system-design-library/pkg/test"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/communication/chat"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/communication/chat/adapters/memory"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/test"
 )
 
 type ChatTestSuite struct {

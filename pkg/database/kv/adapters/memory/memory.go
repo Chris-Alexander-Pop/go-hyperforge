@@ -4,9 +4,9 @@ import (
 	"context"
 	"time"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/concurrency"
-	"github.com/chris-alexander-pop/system-design-library/pkg/database/kv"
-	"github.com/chris-alexander-pop/system-design-library/pkg/errors"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/concurrency"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/database/kv"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 )
 
 type item struct {

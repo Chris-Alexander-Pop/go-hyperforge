@@ -3,8 +3,8 @@ package memory
 import (
 	"context"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/communication/email"
-	"github.com/chris-alexander-pop/system-design-library/pkg/concurrency"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/communication/email"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/concurrency"
 )
 
 // Sender is an in-memory implementation of the email.Sender interface.

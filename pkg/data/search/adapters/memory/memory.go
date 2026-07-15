@@ -4,12 +4,12 @@ import (
 	"context"
 	"sort"
 	"strings"
-	"sync"
 	"time"
 	"unicode"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/data/search"
-	"github.com/chris-alexander-pop/system-design-library/pkg/errors"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/concurrency"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/data/search"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 )
 
 // document represents a stored document.
@@ -30,13 +30,14 @@ type index struct {
 
 // Engine implements an in-memory search engine for testing.
 type Engine struct {
-	mu      sync.RWMutex
+	mu      *concurrency.SmartRWMutex
 	indexes map[string]*index
 }
 
 // New creates a new in-memory search engine.
 func New() *Engine {
 	return &Engine{
+		mu:      concurrency.NewSmartRWMutex(concurrency.MutexConfig{Name: "search-memory"}),
 		indexes: make(map[string]*index),
 	}
 }
@@ -215,6 +216,80 @@ func (e *Engine) Search(ctx context.Context, indexName string, query search.Quer
 		Took:     time.Since(start),
 		Facets:   e.calculateFacets(idx, query),
 	}, nil
+}
+
+func (e *Engine) Suggest(ctx context.Context, indexName string, query search.SuggestQuery) ([]search.Suggestion, error) {
+	e.mu.RLock()
+	defer e.mu.RUnlock()
+
+	idx, exists := e.indexes[indexName]
+	if !exists {
+		return nil, errors.NotFound("index not found", nil)
+	}
+
+	prefix := strings.ToLower(strings.TrimSpace(query.Prefix))
+	if prefix == "" {
+		return nil, nil
+	}
+
+	size := query.Size
+	if size <= 0 {
+		size = 10
+	}
+
+	seen := make(map[string]float64)
+	for _, doc := range idx.documents {
+		e.collectPrefixMatches(doc.data, query.Field, prefix, seen)
+	}
+
+	suggestions := make([]search.Suggestion, 0, len(seen))
+	for text, score := range seen {
+		suggestions = append(suggestions, search.Suggestion{
+			Text:  text,
+			Score: score,
+		})
+	}
+
+	sort.Slice(suggestions, func(i, j int) bool {
+		if suggestions[i].Score != suggestions[j].Score {
+			return suggestions[i].Score > suggestions[j].Score
+		}
+		return suggestions[i].Text < suggestions[j].Text
+	})
+
+	if len(suggestions) > size {
+		suggestions = suggestions[:size]
+	}
+	return suggestions, nil
+}
+
+func (e *Engine) collectPrefixMatches(data map[string]interface{}, field, prefix string, seen map[string]float64) {
+	consider := func(text string) {
+		for _, token := range e.tokenize(text) {
+			if !strings.HasPrefix(token, prefix) {
+				continue
+			}
+			score := float64(len(prefix)) / float64(len(token)+1)
+			if prev, ok := seen[token]; !ok || score > prev {
+				seen[token] = score
+			}
+		}
+	}
+
+	if field != "" {
+		if v, ok := data[field]; ok {
+			if str, ok := v.(string); ok {
+				consider(str)
+			}
+		}
+		return
+	}
+
+	for _, v := range data {
+		if str, ok := v.(string); ok {
+			consider(str)
+		}
+	}
 }
 
 func (e *Engine) getCandidateIDs(idx *index, queryText string) ([]string, bool) {

@@ -3,8 +3,8 @@ package memory
 import (
 	"context"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/concurrency"
-	"github.com/chris-alexander-pop/system-design-library/pkg/network/sdn"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/concurrency"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/network/sdn"
 	"github.com/google/uuid"
 )
 

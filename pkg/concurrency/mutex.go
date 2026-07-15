@@ -9,7 +9,7 @@
 //
 // Usage:
 //
-//	import "github.com/chris-alexander-pop/system-design-library/pkg/concurrency"
+//	import "github.com/chris-alexander-pop/go-hyperforge/pkg/concurrency"
 //
 //	mu := concurrency.NewSmartRWMutex(concurrency.MutexConfig{Name: "my-mutex"})
 //	mu.Lock()
@@ -24,7 +24,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/logger"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/logger"
 )
 
 // MutexConfig controls the behavior of SmartMutex and SmartRWMutex.

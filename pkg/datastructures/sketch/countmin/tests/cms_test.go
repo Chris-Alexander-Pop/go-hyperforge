@@ -1,7 +1,7 @@
 package countmin_test
 
 import (
-	"github.com/chris-alexander-pop/system-design-library/pkg/datastructures/sketch/countmin"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/datastructures/sketch/countmin"
 )
 
 import "testing"

@@ -1,7 +1,7 @@
 package quicksort_test
 
 import (
-	"github.com/chris-alexander-pop/system-design-library/pkg/algorithms/sort/quicksort"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/algorithms/sort/quicksort"
 	"sort"
 	"testing"
 )

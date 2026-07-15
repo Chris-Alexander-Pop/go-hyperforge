@@ -3,17 +3,16 @@ package memory
 import (
 	"context"
 	"strings"
-	"sync"
 	"time"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/errors"
-	"github.com/chris-alexander-pop/system-design-library/pkg/network/dns"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/concurrency"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/network/dns"
 	"github.com/google/uuid"
 )
 
 // Manager implements an in-memory DNS manager for testing.
 type Manager struct {
-	mu      sync.RWMutex
+	mu      *concurrency.SmartRWMutex
 	zones   map[string]*dns.Zone
 	records map[string]map[string]*dns.Record // zoneID -> recordID -> record
 	config  dns.Config
@@ -22,6 +21,7 @@ type Manager struct {
 // New creates a new in-memory DNS manager.
 func New() *Manager {
 	return &Manager{
+		mu:      concurrency.NewSmartRWMutex(concurrency.MutexConfig{Name: "memory-dns"}),
 		zones:   make(map[string]*dns.Zone),
 		records: make(map[string]map[string]*dns.Record),
 		config:  dns.Config{DefaultTTL: 300 * time.Second},
@@ -42,7 +42,7 @@ func (m *Manager) CreateZone(ctx context.Context, opts dns.CreateZoneOptions) (*
 	// Check if zone already exists
 	for _, zone := range m.zones {
 		if zone.Name == opts.Name {
-			return nil, errors.Conflict("zone already exists", nil)
+			return nil, dns.ErrZoneAlreadyExists
 		}
 	}
 
@@ -69,7 +69,7 @@ func (m *Manager) GetZone(ctx context.Context, zoneID string) (*dns.Zone, error)
 
 	zone, ok := m.zones[zoneID]
 	if !ok {
-		return nil, errors.NotFound("zone not found", nil)
+		return nil, dns.ErrZoneNotFound
 	}
 
 	return zone, nil
@@ -92,7 +92,7 @@ func (m *Manager) DeleteZone(ctx context.Context, zoneID string) error {
 	defer m.mu.Unlock()
 
 	if _, ok := m.zones[zoneID]; !ok {
-		return errors.NotFound("zone not found", nil)
+		return dns.ErrZoneNotFound
 	}
 
 	delete(m.zones, zoneID)
@@ -106,7 +106,7 @@ func (m *Manager) CreateRecord(ctx context.Context, opts dns.CreateRecordOptions
 	defer m.mu.Unlock()
 
 	if _, ok := m.zones[opts.ZoneID]; !ok {
-		return nil, errors.NotFound("zone not found", nil)
+		return nil, dns.ErrZoneNotFound
 	}
 
 	ttl := opts.TTL
@@ -146,12 +146,12 @@ func (m *Manager) GetRecord(ctx context.Context, zoneID, recordID string) (*dns.
 
 	zoneRecords, ok := m.records[zoneID]
 	if !ok {
-		return nil, errors.NotFound("zone not found", nil)
+		return nil, dns.ErrZoneNotFound
 	}
 
 	record, ok := zoneRecords[recordID]
 	if !ok {
-		return nil, errors.NotFound("record not found", nil)
+		return nil, dns.ErrRecordNotFound
 	}
 
 	return record, nil
@@ -163,7 +163,7 @@ func (m *Manager) ListRecords(ctx context.Context, zoneID string, opts dns.ListR
 
 	zoneRecords, ok := m.records[zoneID]
 	if !ok {
-		return nil, errors.NotFound("zone not found", nil)
+		return nil, dns.ErrZoneNotFound
 	}
 
 	result := &dns.ListRecordsResult{
@@ -196,12 +196,12 @@ func (m *Manager) UpdateRecord(ctx context.Context, zoneID, recordID string, opt
 
 	zoneRecords, ok := m.records[zoneID]
 	if !ok {
-		return nil, errors.NotFound("zone not found", nil)
+		return nil, dns.ErrZoneNotFound
 	}
 
 	record, ok := zoneRecords[recordID]
 	if !ok {
-		return nil, errors.NotFound("record not found", nil)
+		return nil, dns.ErrRecordNotFound
 	}
 
 	if opts.Value != "" {
@@ -232,11 +232,11 @@ func (m *Manager) DeleteRecord(ctx context.Context, zoneID, recordID string) err
 
 	zoneRecords, ok := m.records[zoneID]
 	if !ok {
-		return errors.NotFound("zone not found", nil)
+		return dns.ErrZoneNotFound
 	}
 
 	if _, ok := zoneRecords[recordID]; !ok {
-		return errors.NotFound("record not found", nil)
+		return dns.ErrRecordNotFound
 	}
 
 	delete(zoneRecords, recordID)

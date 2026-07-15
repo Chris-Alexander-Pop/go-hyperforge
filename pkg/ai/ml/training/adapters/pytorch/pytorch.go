@@ -2,7 +2,7 @@
 //
 // Usage:
 //
-//	import "github.com/chris-alexander-pop/system-design-library/pkg/ai/ml/training/adapters/pytorch"
+//	import "github.com/chris-alexander-pop/go-hyperforge/pkg/ai/ml/training/adapters/pytorch"
 //
 //	trainer := pytorch.New(pytorch.Config{PythonPath: "/usr/bin/python3"})
 //	job, err := trainer.StartJob(ctx, training.JobConfig{EntryPoint: "train.py"})
@@ -16,12 +16,12 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"sync"
 	"time"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/ai/ml/training"
-	pkgerrors "github.com/chris-alexander-pop/system-design-library/pkg/errors"
-	"github.com/chris-alexander-pop/system-design-library/pkg/validator"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/ai/ml/training"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/concurrency"
+	pkgerrors "github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/validator"
 	"github.com/google/uuid"
 )
 
@@ -53,7 +53,7 @@ type Config struct {
 type Trainer struct {
 	config   Config
 	jobs     map[string]*jobState
-	mu       sync.RWMutex
+	mu       *concurrency.SmartRWMutex
 	callback training.Callback
 }
 
@@ -84,6 +84,7 @@ func New(cfg Config) *Trainer {
 		config:   cfg,
 		jobs:     make(map[string]*jobState),
 		callback: &training.NoOpCallback{},
+		mu:       concurrency.NewSmartRWMutex(concurrency.MutexConfig{Name: "ml-training-pytorch"}),
 	}
 }
 

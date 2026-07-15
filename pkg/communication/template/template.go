@@ -15,7 +15,8 @@ type Engine interface {
 
 // Config holds configuration for the Template Engine.
 type Config struct {
-	// Driver specifies the template backend: "memory", "html", "text".
+	// Driver specifies the template backend: memory, html, or text
+	// (see communication.Driver* constants).
 	Driver string `env:"TEMPLATE_DRIVER" env-default:"memory" validate:"required"`
 
 	// Dir is the directory where templates are stored.

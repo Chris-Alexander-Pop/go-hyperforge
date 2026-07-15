@@ -1,7 +1,7 @@
 package sharding
 
 import (
-	"github.com/chris-alexander-pop/system-design-library/pkg/algorithms/consistenthash/ring"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/algorithms/consistenthash/ring"
 )
 
 // Strategy defines the interface for sharding strategies

@@ -2,7 +2,7 @@
 //
 // Usage:
 //
-//	import "github.com/chris-alexander-pop/system-design-library/pkg/compute/serverless/adapters/lambda"
+//	import "github.com/chris-alexander-pop/go-hyperforge/pkg/compute/serverless/adapters/lambda"
 //
 //	runtime, err := lambda.New(lambda.Config{Region: "us-east-1"})
 //	result, err := runtime.Invoke(ctx, serverless.InvokeOptions{FunctionName: "my-fn", Payload: data})
@@ -18,8 +18,8 @@ import (
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/lambda"
 	"github.com/aws/aws-sdk-go-v2/service/lambda/types"
-	"github.com/chris-alexander-pop/system-design-library/pkg/compute/serverless"
-	pkgerrors "github.com/chris-alexander-pop/system-design-library/pkg/errors"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/compute/serverless"
+	pkgerrors "github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 )
 
 // Config holds AWS Lambda configuration.

@@ -3,7 +3,7 @@ package auth
 import (
 	"context"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/api/middleware"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/api/middleware"
 )
 
 // MiddlewareVerifier adapts an auth.Verifier to the middleware.Verifier interface

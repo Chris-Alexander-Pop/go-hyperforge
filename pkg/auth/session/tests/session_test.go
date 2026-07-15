@@ -4,9 +4,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/auth/session"
-	"github.com/chris-alexander-pop/system-design-library/pkg/auth/session/adapters/memory"
-	"github.com/chris-alexander-pop/system-design-library/pkg/test"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/auth/session"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/auth/session/adapters/memory"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/test"
 )
 
 type SessionTestSuite struct {
@@ -16,7 +16,9 @@ type SessionTestSuite struct {
 
 func (s *SessionTestSuite) SetupTest() {
 	s.Suite.SetupTest()
-	s.manager = memory.New(session.Config{TTL: time.Hour})
+	mgr, err := memory.New(session.Config{TTL: time.Hour})
+	s.Require().NoError(err)
+	s.manager = mgr
 }
 
 func (s *SessionTestSuite) TestCreateGetDelete() {
@@ -35,6 +37,22 @@ func (s *SessionTestSuite) TestCreateGetDelete() {
 
 	_, err = s.manager.Get(s.Ctx, sess.ID)
 	s.Error(err)
+}
+
+func (s *SessionTestSuite) TestEncryptedMetadata() {
+	mgr, err := memory.New(session.Config{
+		TTL:           time.Hour,
+		EncryptionKey: "dev-session-encryption-passphrase",
+	})
+	s.Require().NoError(err)
+
+	sess, err := mgr.Create(s.Ctx, "user-enc", map[string]interface{}{"role": "admin"})
+	s.NoError(err)
+	s.Equal("admin", sess.Metadata["role"])
+
+	got, err := mgr.Get(s.Ctx, sess.ID)
+	s.NoError(err)
+	s.Equal("admin", got.Metadata["role"])
 }
 
 func TestSessionSuite(t *testing.T) {

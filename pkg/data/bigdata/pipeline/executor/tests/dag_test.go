@@ -2,11 +2,11 @@ package executor_test
 
 import (
 	"context"
-	"github.com/chris-alexander-pop/system-design-library/pkg/data/bigdata/pipeline/executor"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/data/bigdata/pipeline/executor"
 	"sync"
 	"testing"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/events"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/events"
 )
 
 type MockBus struct {
@@ -21,7 +21,11 @@ func (m *MockBus) Publish(ctx context.Context, topic string, event events.Event)
 	return nil
 }
 
-func (m *MockBus) Subscribe(ctx context.Context, topic string, handler events.Handler) error {
+func (m *MockBus) Subscribe(ctx context.Context, topic string, handler events.Handler) (events.Subscription, error) {
+	return "", nil
+}
+
+func (m *MockBus) Unsubscribe(ctx context.Context, id events.Subscription) error {
 	return nil
 }
 

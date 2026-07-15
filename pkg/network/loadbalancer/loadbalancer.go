@@ -1,18 +1,3 @@
-// Package loadbalancer provides a unified interface for load balancer management.
-//
-// Supported backends:
-//   - Memory: In-memory load balancer for testing
-//   - ALB: AWS Application Load Balancer
-//   - NLB: AWS Network Load Balancer
-//   - GCLB: Google Cloud Load Balancing
-//   - AzureLB: Azure Load Balancer
-//
-// Usage:
-//
-//	import "github.com/chris-alexander-pop/system-design-library/pkg/network/loadbalancer/adapters/memory"
-//
-//	lb := memory.New()
-//	err := lb.AddTarget(ctx, "pool-1", loadbalancer.Target{Address: "10.0.0.1", Port: 8080})
 package loadbalancer
 
 import (
@@ -331,4 +316,14 @@ type LoadBalancerManager interface {
 
 	// RemoveRule removes a routing rule.
 	RemoveRule(ctx context.Context, listenerID, ruleID string) error
+}
+
+// TargetSelector selects a backend from a target pool using the pool's Algorithm.
+// The memory adapter implements this via pkg/algorithms/loadbalancing.
+type TargetSelector interface {
+	// SelectTarget returns the next target for the pool.
+	SelectTarget(ctx context.Context, poolID string) (*Target, error)
+
+	// ReleaseTarget releases a target after a request completes (least-connections).
+	ReleaseTarget(ctx context.Context, poolID, targetID string) error
 }

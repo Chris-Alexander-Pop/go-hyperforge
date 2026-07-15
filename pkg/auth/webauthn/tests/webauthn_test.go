@@ -3,9 +3,9 @@ package tests
 import (
 	"testing"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/auth/webauthn"
-	"github.com/chris-alexander-pop/system-design-library/pkg/auth/webauthn/adapters/memory"
-	"github.com/chris-alexander-pop/system-design-library/pkg/test"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/auth/webauthn"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/auth/webauthn/adapters/memory"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/test"
 )
 
 type WebAuthnTestSuite struct {
@@ -29,43 +29,70 @@ func (u *mockUser) WebAuthnCredentials() []webauthn.Credential { return u.creden
 
 func (s *WebAuthnTestSuite) SetupTest() {
 	s.Suite.SetupTest()
-	s.service = memory.New(webauthn.Config{})
+	s.service = memory.New(webauthn.Config{
+		RPDisplayName: "TestApp",
+		RPID:          "localhost",
+		RPOrigin:      "http://localhost:8080",
+	})
 }
 
-func (s *WebAuthnTestSuite) TestRegistrationFlow() {
+func sessionFromBegin(s *WebAuthnTestSuite, begin interface{}) memory.SessionData {
+	m, ok := begin.(map[string]interface{})
+	s.True(ok, "begin should return map with options+session")
+	session, ok := m["session"].(memory.SessionData)
+	s.True(ok, "session should be memory.SessionData")
+	return session
+}
+
+func (s *WebAuthnTestSuite) TestRegistrationAndLoginFlow() {
 	user := &mockUser{
 		id:          []byte("user-1"),
 		name:        "testuser",
 		displayName: "Test User",
 	}
 
-	// Begin Registration
-	sessionData, err := s.service.BeginRegistration(s.Ctx, user)
+	begin, err := s.service.BeginRegistration(s.Ctx, user)
 	s.NoError(err)
-	s.NotNil(sessionData)
+	session := sessionFromBegin(s, begin)
 
-	// Finish Registration
-	// In memory adapter, we might need to mock the responseData carefully or it might just accept anything if stubbed loosely.
-	// Let's check memory adapter impl if strictly checking parsing...
-	// For memory adapter often it mocks the validation.
-	// We'll pass nil/empty for now, if it fails we adjust.
-	// Real webauthn requires complex byte structure.
+	cred, err := s.service.FinishRegistration(s.Ctx, user, session, memory.ResponseData{
+		Challenge:    session.Challenge,
+		CredentialID: []byte("cred-1"),
+		PublicKey:    []byte("pubkey-1"),
+	})
+	s.NoError(err)
+	s.Equal([]byte("cred-1"), cred.ID)
 
-	// Assuming memory adapter is lenient or we just test Begin for now as Finish requires browser interaction simulation.
+	user.credentials = []webauthn.Credential{*cred}
+
+	loginBegin, err := s.service.BeginLogin(s.Ctx, user)
+	s.NoError(err)
+	loginSession := sessionFromBegin(s, loginBegin)
+
+	got, err := s.service.FinishLogin(s.Ctx, user, loginSession, memory.ResponseData{
+		Challenge:    loginSession.Challenge,
+		CredentialID: []byte("cred-1"),
+	})
+	s.NoError(err)
+	s.Equal([]byte("cred-1"), got.ID)
 }
 
-func (s *WebAuthnTestSuite) TestLoginFlow() {
+func (s *WebAuthnTestSuite) TestLoginWithoutCredentials() {
 	user := &mockUser{id: []byte("user-1"), name: "testuser"}
-
-	// Begin Login
-	// Note: Login will likely fail in this simple test because we haven't completed registration
-	// with valid cryptographic data that the memory adapter might expect to verify.
-	// For now, we ensure the API at least runs and returns appropriate error for missing user/creds.
 	_, err := s.service.BeginLogin(s.Ctx, user)
-	if err != nil {
-		// Expect error if not registered
-		return
-	}
+	s.Error(err)
+}
+
+func (s *WebAuthnTestSuite) TestChallengeMismatch() {
+	user := &mockUser{id: []byte("user-1"), name: "testuser", displayName: "Test"}
+	begin, err := s.service.BeginRegistration(s.Ctx, user)
+	s.NoError(err)
+	session := sessionFromBegin(s, begin)
+
+	_, err = s.service.FinishRegistration(s.Ctx, user, session, memory.ResponseData{
+		Challenge: "wrong-challenge",
+	})
+	s.Error(err)
 }
 
 func TestWebAuthnSuite(t *testing.T) {

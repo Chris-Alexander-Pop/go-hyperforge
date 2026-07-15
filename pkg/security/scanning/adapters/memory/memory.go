@@ -5,7 +5,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/security/scanning"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/security/scanning"
 )
 
 // Scanner implements scanning.Scanner using simple memory rules.

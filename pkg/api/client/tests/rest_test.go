@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/api/client/rest"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/api/client/rest"
 )
 
 func TestNewRESTClient(t *testing.T) {

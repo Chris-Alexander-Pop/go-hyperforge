@@ -62,8 +62,23 @@ const (
 	VolumeStatusError     VolumeStatus = "error"
 )
 
+// Driver constants for volume controller backends.
+const (
+	DriverMemory = "memory"
+	DriverLVM    = "lvm"
+	DriverLocal  = "local"
+	DriverCeph   = "ceph"
+	DriverCSI    = "csi"
+)
+
 // Config holds configuration for the storage controller.
 type Config struct {
-	// Driver specifies the storage backend: "memory", "ceph", "lvm".
+	// Driver specifies the storage backend: "memory", "lvm", "local", "ceph", "csi".
 	Driver string `env:"STORAGE_DRIVER" env-default:"memory"`
+
+	// Root is used by lvm/local file-backed controllers.
+	Root string `env:"STORAGE_CONTROLLER_ROOT" env-default:"./lvmstore"`
+
+	// VolumeGroup is cosmetic for the lvm adapter.
+	VolumeGroup string `env:"STORAGE_LVM_VG" env-default:"hyperforge"`
 }

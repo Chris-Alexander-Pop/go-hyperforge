@@ -1,19 +1,18 @@
 // Package file provides a unified interface for network file system storage.
 //
-// Supported backends:
-//   - Memory: In-memory file system for testing
-//   - NFS: Network File System (planned)
-//   - EFS: AWS Elastic File System (planned)
-//   - Azure Files: Azure file shares (planned)
-//   - GCS FUSE: Google Cloud Storage FUSE (planned)
+// Shipping backends today:
+//   - Memory: In-memory file system for unit tests
+//   - Local: Real local filesystem adapter (also usable for NFS/EFS mounts)
+//
+// Planned (not implemented): cloud-managed file APIs (AWS EFS control plane,
+// Azure Files SDK, GCS FUSE driver management).
 //
 // Usage:
 //
-//	import "github.com/chris-alexander-pop/system-design-library/pkg/storage/file/adapters/memory"
+//	import "github.com/chris-alexander-pop/go-hyperforge/pkg/storage/file/adapters/local"
 //
-//	store := memory.New()
-//	err := store.Write(ctx, "/path/to/file.txt", reader)
-//	reader, err := store.Read(ctx, "/path/to/file.txt")
+//	store, err := local.New("/mnt/data")
+//	err = store.Write(ctx, "/path/to/file.txt", reader)
 package file
 
 import (
@@ -25,6 +24,7 @@ import (
 // Driver constants for file storage backends
 const (
 	DriverMemory     = "memory"
+	DriverLocal      = "local"
 	DriverNFS        = "nfs"
 	DriverEFS        = "efs"
 	DriverAzureFiles = "azure-files"

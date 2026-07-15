@@ -4,7 +4,7 @@
 //
 // Usage:
 //
-//	import "github.com/chris-alexander-pop/system-design-library/pkg/ai/ml/training/presets/meta"
+//	import "github.com/chris-alexander-pop/go-hyperforge/pkg/ai/ml/training/presets/meta"
 //
 //	config := meta.NewMAMLConfig("omniglot", 5, 1) // 5-way 1-shot
 package meta
@@ -12,7 +12,7 @@ package meta
 import (
 	"fmt"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/ai/ml/training"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/ai/ml/training"
 )
 
 // Algorithm defines the meta-learning algorithm.

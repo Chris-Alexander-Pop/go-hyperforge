@@ -2,12 +2,13 @@ package loadbalancing
 
 import (
 	"context"
-	"errors"
+
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 )
 
 var (
 	// ErrNoNodes is returned when no nodes are available to handle the request.
-	ErrNoNodes = errors.New("no nodes available")
+	ErrNoNodes = errors.FailedPrecondition("no nodes available", nil)
 )
 
 // Balancer chooses a node from a list of available nodes.

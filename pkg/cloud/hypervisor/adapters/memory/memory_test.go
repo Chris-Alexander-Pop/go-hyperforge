@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/cloud"
-	"github.com/chris-alexander-pop/system-design-library/pkg/cloud/hypervisor"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/cloud"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/cloud/hypervisor"
 )
 
 func BenchmarkCreateVM_DuplicateCheck(b *testing.B) {

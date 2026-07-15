@@ -3,17 +3,16 @@ package memory
 import (
 	"context"
 	"fmt"
-	"sync"
 	"time"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/compute/vm"
-	"github.com/chris-alexander-pop/system-design-library/pkg/errors"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/compute/vm"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/concurrency"
 	"github.com/google/uuid"
 )
 
 // Manager implements an in-memory VM manager for testing.
 type Manager struct {
-	mu        sync.RWMutex
+	mu        *concurrency.SmartRWMutex
 	instances map[string]*vm.Instance
 	config    vm.Config
 }
@@ -21,6 +20,9 @@ type Manager struct {
 // New creates a new in-memory VM manager.
 func New() *Manager {
 	return &Manager{
+		mu: concurrency.NewSmartRWMutex(concurrency.MutexConfig{
+			Name: "compute-vm-memory",
+		}),
 		instances: make(map[string]*vm.Instance),
 		config:    vm.Config{DefaultInstanceType: "t3.medium"},
 	}
@@ -68,7 +70,7 @@ func (m *Manager) Get(ctx context.Context, instanceID string) (*vm.Instance, err
 
 	instance, ok := m.instances[instanceID]
 	if !ok {
-		return nil, errors.NotFound("instance not found", nil)
+		return nil, vm.ErrInstanceNotFound
 	}
 
 	return instance, nil
@@ -83,12 +85,10 @@ func (m *Manager) List(ctx context.Context, opts vm.ListOptions) (*vm.ListResult
 	}
 
 	for _, instance := range m.instances {
-		// Filter by state
 		if opts.State != "" && instance.State != opts.State {
 			continue
 		}
 
-		// Filter by tags
 		if len(opts.Tags) > 0 {
 			match := true
 			for k, v := range opts.Tags {
@@ -105,7 +105,6 @@ func (m *Manager) List(ctx context.Context, opts vm.ListOptions) (*vm.ListResult
 		result.Instances = append(result.Instances, instance)
 	}
 
-	// Apply limit
 	if opts.Limit > 0 && len(result.Instances) > opts.Limit {
 		result.Instances = result.Instances[:opts.Limit]
 		result.NextPageToken = "more"
@@ -120,11 +119,11 @@ func (m *Manager) Start(ctx context.Context, instanceID string) error {
 
 	instance, ok := m.instances[instanceID]
 	if !ok {
-		return errors.NotFound("instance not found", nil)
+		return vm.ErrInstanceNotFound
 	}
 
 	if instance.State != vm.InstanceStateStopped {
-		return errors.Conflict("instance must be stopped to start", nil)
+		return vm.ErrInvalidState
 	}
 
 	instance.State = vm.InstanceStateRunning
@@ -137,11 +136,11 @@ func (m *Manager) Stop(ctx context.Context, instanceID string) error {
 
 	instance, ok := m.instances[instanceID]
 	if !ok {
-		return errors.NotFound("instance not found", nil)
+		return vm.ErrInstanceNotFound
 	}
 
 	if instance.State != vm.InstanceStateRunning {
-		return errors.Conflict("instance must be running to stop", nil)
+		return vm.ErrInvalidState
 	}
 
 	instance.State = vm.InstanceStateStopped
@@ -154,14 +153,13 @@ func (m *Manager) Reboot(ctx context.Context, instanceID string) error {
 
 	instance, ok := m.instances[instanceID]
 	if !ok {
-		return errors.NotFound("instance not found", nil)
+		return vm.ErrInstanceNotFound
 	}
 
 	if instance.State != vm.InstanceStateRunning {
-		return errors.Conflict("instance must be running to reboot", nil)
+		return vm.ErrInvalidState
 	}
 
-	// Simulated reboot - state stays running
 	return nil
 }
 
@@ -171,11 +169,11 @@ func (m *Manager) Terminate(ctx context.Context, instanceID string) error {
 
 	instance, ok := m.instances[instanceID]
 	if !ok {
-		return errors.NotFound("instance not found", nil)
+		return vm.ErrInstanceNotFound
 	}
 
 	if instance.State == vm.InstanceStateTerminated {
-		return errors.Conflict("instance already terminated", nil)
+		return vm.ErrInvalidState
 	}
 
 	instance.State = vm.InstanceStateTerminated
@@ -188,7 +186,7 @@ func (m *Manager) UpdateTags(ctx context.Context, instanceID string, tags map[st
 
 	instance, ok := m.instances[instanceID]
 	if !ok {
-		return errors.NotFound("instance not found", nil)
+		return vm.ErrInstanceNotFound
 	}
 
 	if instance.Tags == nil {
@@ -208,7 +206,7 @@ func (m *Manager) GetConsoleOutput(ctx context.Context, instanceID string) (stri
 
 	_, ok := m.instances[instanceID]
 	if !ok {
-		return "", errors.NotFound("instance not found", nil)
+		return "", vm.ErrInstanceNotFound
 	}
 
 	return fmt.Sprintf("[%s] Instance %s booted successfully\n", time.Now().Format(time.RFC3339), instanceID), nil

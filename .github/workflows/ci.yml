@@ -34,11 +34,13 @@ jobs:
       - name: Run go vet
         run: go vet ./...
 
+      # Install from source so the binary is built with the same Go as go.mod
+      # (official release binaries lag Go minors and fail the version check).
+      - name: Install golangci-lint
+        run: go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.64.8
+
       - name: Run golangci-lint
-        uses: golangci/golangci-lint-action@v6
-        with:
-          version: latest
-          args: --timeout=10m
+        run: golangci-lint run --timeout=10m
 
   test:
     name: Build & Test

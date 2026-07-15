@@ -1,14 +1,3 @@
-// Package pqc provides post-quantum cryptographic primitives.
-//
-// This package implements hybrid encryption schemes that combine:
-// - Classical algorithms (AES, ECDH) for current security
-// - Post-quantum algorithms for future quantum resistance
-//
-// Supported algorithms:
-// - Kyber (ML-KEM): Key encapsulation mechanism (NIST standardized)
-// - Dilithium (ML-DSA): Digital signatures (NIST standardized)
-//
-// Hybrid approach ensures security against both classical and quantum attacks.
 package pqc
 
 import (
@@ -16,18 +5,21 @@ import (
 	"crypto/cipher"
 	"crypto/rand"
 	"crypto/sha256"
-	"errors"
 	"io"
 
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 	"golang.org/x/crypto/hkdf"
 )
 
-// Errors
+// Errors (pkg/errors).
 var (
-	ErrInvalidPublicKey    = errors.New("pqc: invalid public key")
-	ErrInvalidPrivateKey   = errors.New("pqc: invalid private key")
-	ErrDecapsulationFailed = errors.New("pqc: decapsulation failed")
-	ErrInvalidCiphertext   = errors.New("pqc: invalid ciphertext")
+	ErrInvalidPublicKey    = errors.InvalidArgument("invalid public key", nil)
+	ErrInvalidPrivateKey   = errors.InvalidArgument("invalid private key", nil)
+	ErrDecapsulationFailed = errors.Internal("decapsulation failed", nil)
+	ErrInvalidCiphertext   = errors.InvalidArgument("invalid ciphertext", nil)
+	ErrInvalidSignature    = errors.InvalidArgument("invalid signature", nil)
+	ErrSignFailed          = errors.Internal("signature generation failed", nil)
+	ErrVerifyFailed        = errors.InvalidArgument("signature verification failed", nil)
 )
 
 // =========================================================================
@@ -67,7 +59,7 @@ type KEM interface {
 func NewHybridKEM() *HybridKEM {
 	return &HybridKEM{
 		classicalKEM: &X25519KEM{},
-		pqKEM:        NewKyberKEM(KyberLevel768), // Kyber-768 (NIST Level 3)
+		pqKEM:        NewKyberKEM(KyberLevel768), // ML-KEM-768 (NIST Level 3)
 	}
 }
 
@@ -277,11 +269,11 @@ func appendLengthPrefixed(dst, data []byte) []byte {
 
 func readLengthPrefixed(data []byte) ([]byte, []byte, error) {
 	if len(data) < 4 {
-		return nil, nil, errors.New("data too short")
+		return nil, nil, ErrInvalidCiphertext
 	}
 	length := uint32(data[0])<<24 | uint32(data[1])<<16 | uint32(data[2])<<8 | uint32(data[3])
 	if len(data) < int(4+length) {
-		return nil, nil, errors.New("data too short for length")
+		return nil, nil, ErrInvalidCiphertext
 	}
 	return data[4 : 4+length], data[4+length:], nil
 }

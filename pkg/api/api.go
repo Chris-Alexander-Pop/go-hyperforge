@@ -1,25 +1,14 @@
-// Package api provides unified API server abstractions for multiple transports.
-//
-// Supported transports:
-//   - REST: HTTP/JSON APIs using Echo framework
-//   - gRPC: High-performance RPC using Protocol Buffers
-//   - GraphQL: Query language for APIs
-//
-// Usage:
-//
-//	import "github.com/chris-alexander-pop/system-design-library/pkg/api"
-//
-//	server, err := api.New(api.Config{Protocol: api.ProtocolREST, Port: "8080"})
-//	server.Start()
 package api
 
 import (
 	"context"
 	"fmt"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/api/grpc"
-	"github.com/chris-alexander-pop/system-design-library/pkg/api/rest"
-	"github.com/chris-alexander-pop/system-design-library/pkg/errors"
+	"github.com/99designs/gqlgen/graphql"
+	apigraphql "github.com/chris-alexander-pop/go-hyperforge/pkg/api/graphql"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/api/grpc"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/api/rest"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 	"github.com/labstack/echo/v4"
 )
 
@@ -31,22 +20,29 @@ const (
 	ProtocolGraphQL Protocol = "graphql"
 )
 
-// Config for the unified API Server
+// Config for the unified API Server.
 type Config struct {
 	Protocol Protocol `env:"API_PROTOCOL" env-default:"rest"`
 	Port     string   `env:"PORT" env-default:"8080"`
 
-	// Server specific configs could be nested or flattened.
-	// For simplicity, we reuse Port. Real world might differ.
+	// GraphQLSchema is required when Protocol is ProtocolGraphQL.
+	// Typically produced by gqlgen codegen (ExecutableSchema).
+	GraphQLSchema graphql.ExecutableSchema
+
+	// GraphQLPath is the HTTP path for the GraphQL endpoint (default "/query").
+	GraphQLPath string
+
+	// GraphQLPlaygroundPath, when non-empty, mounts the GraphQL playground at that path.
+	GraphQLPlaygroundPath string
 }
 
-// Server interface for any transport
+// Server interface for any transport.
 type Server interface {
 	Start() error
 	Shutdown(ctx context.Context) error
 }
 
-// New creates a new API server based on configuration
+// New creates a new API server based on configuration.
 func New(cfg Config) (Server, error) {
 	switch cfg.Protocol {
 	case ProtocolREST:
@@ -57,12 +53,18 @@ func New(cfg Config) (Server, error) {
 		return &grpcServerWrapper{g}, nil
 
 	case ProtocolGraphQL:
-		// GraphQL is typically REST (HTTP) serving a Handler.
-		// We use REST server but mount GraphQL handler.
-		// Specialized setup requires schemas here, which this factory doesn't know.
-		// So this is a stub or we assume simple playground for now.
+		if cfg.GraphQLSchema == nil {
+			return nil, errors.InvalidArgument("GraphQLSchema is required for ProtocolGraphQL", nil)
+		}
+		path := cfg.GraphQLPath
+		if path == "" {
+			path = "/query"
+		}
 		r := rest.New(rest.Config{Port: cfg.Port})
-		r.Echo().Any("/query", func(c echo.Context) error { return nil }) // Stub
+		r.Echo().Any(path, echo.WrapHandler(apigraphql.NewHandler(cfg.GraphQLSchema)))
+		if cfg.GraphQLPlaygroundPath != "" {
+			r.Echo().GET(cfg.GraphQLPlaygroundPath, echo.WrapHandler(apigraphql.NewPlaygroundHandler(path)))
+		}
 		return r, nil
 
 	default:
@@ -70,7 +72,7 @@ func New(cfg Config) (Server, error) {
 	}
 }
 
-// Wrapper for gRPC to match Server interface (Stop vs Shutdown)
+// grpcServerWrapper adapts grpc.Server to the Server interface (Stop vs Shutdown).
 type grpcServerWrapper struct {
 	s *grpc.Server
 }
@@ -80,8 +82,15 @@ func (w *grpcServerWrapper) Start() error {
 }
 
 func (w *grpcServerWrapper) Shutdown(ctx context.Context) error {
-	// graceful stop doesn't take context in basic grpc, but we can simulate or just call it.
-	// Assuming w.s.Stop() does graceful.
-	w.s.Stop()
-	return nil
+	done := make(chan struct{})
+	go func() {
+		w.s.Stop()
+		close(done)
+	}()
+	select {
+	case <-done:
+		return nil
+	case <-ctx.Done():
+		return ctx.Err()
+	}
 }

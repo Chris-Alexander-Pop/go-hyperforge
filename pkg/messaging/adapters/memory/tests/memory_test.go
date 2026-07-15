@@ -3,8 +3,8 @@ package messaging_test
 import (
 	"testing"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/messaging/adapters/memory"
-	"github.com/chris-alexander-pop/system-design-library/pkg/messaging/testsuite"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/messaging/adapters/memory"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/messaging/testsuite"
 )
 
 // TestMemoryBroker runs the test suite against the in-memory broker.

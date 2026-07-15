@@ -1,7 +1,7 @@
 package quad_test
 
 import (
-	"github.com/chris-alexander-pop/system-design-library/pkg/datastructures/tree/quad"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/datastructures/tree/quad"
 )
 
 import "testing"

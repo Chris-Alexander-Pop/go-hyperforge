@@ -4,10 +4,10 @@ import (
 	"context"
 	"time"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/resilience"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/resilience"
 )
 
-// ResilientBrokerConfig configures the resilient broker wrapper.
+// ResilientBrokerConfig configures resilient produce/consume wrappers.
 type ResilientBrokerConfig struct {
 	// Circuit breaker settings
 	CircuitBreakerEnabled   bool          `env:"MSG_CB_ENABLED" env-default:"true"`
@@ -21,6 +21,7 @@ type ResilientBrokerConfig struct {
 }
 
 // ResilientBroker wraps a Broker with circuit breaker and retry support.
+// Producers retry publish failures; consumers wrap handlers via ResilientConsumer.
 type ResilientBroker struct {
 	broker   Broker
 	cb       *resilience.CircuitBreaker
@@ -72,7 +73,15 @@ func (rb *ResilientBroker) Producer(topic string) (Producer, error) {
 }
 
 func (rb *ResilientBroker) Consumer(topic string, group string) (Consumer, error) {
-	return rb.broker.Consumer(topic, group)
+	consumer, err := rb.broker.Consumer(topic, group)
+	if err != nil {
+		return nil, err
+	}
+	return &ResilientConsumer{
+		consumer: consumer,
+		cb:       rb.cb,
+		retryCfg: rb.retryCfg,
+	}, nil
 }
 
 func (rb *ResilientBroker) Close() error {
@@ -121,3 +130,71 @@ func (rp *resilientProducer) PublishBatch(ctx context.Context, msgs []*Message) 
 func (rp *resilientProducer) Close() error {
 	return rp.producer.Close()
 }
+
+// ResilientConsumer wraps a Consumer so handler failures are retried under
+// the same circuit-breaker / retry policy as producers.
+type ResilientConsumer struct {
+	consumer Consumer
+	cb       *resilience.CircuitBreaker
+	retryCfg resilience.RetryConfig
+}
+
+// NewResilientConsumer wraps a consumer with retry/CB on handler failures.
+func NewResilientConsumer(consumer Consumer, cfg ResilientBrokerConfig) *ResilientConsumer {
+	rc := &ResilientConsumer{consumer: consumer}
+
+	if cfg.CircuitBreakerEnabled {
+		rc.cb = resilience.NewCircuitBreaker(resilience.CircuitBreakerConfig{
+			Name:             "messaging-consumer",
+			FailureThreshold: cfg.CircuitBreakerThreshold,
+			SuccessThreshold: 2,
+			Timeout:          cfg.CircuitBreakerTimeout,
+		})
+	}
+
+	if cfg.RetryEnabled {
+		rc.retryCfg = resilience.RetryConfig{
+			MaxAttempts:    cfg.RetryMaxAttempts,
+			InitialBackoff: cfg.RetryBackoff,
+			MaxBackoff:     5 * time.Second,
+			Multiplier:     2.0,
+		}
+	}
+
+	return rc
+}
+
+func (rc *ResilientConsumer) Consume(ctx context.Context, handler MessageHandler) error {
+	return rc.consumer.Consume(ctx, func(ctx context.Context, msg *Message) error {
+		return rc.execute(ctx, func(ctx context.Context) error {
+			return handler(ctx, msg)
+		})
+	})
+}
+
+func (rc *ResilientConsumer) Close() error {
+	return rc.consumer.Close()
+}
+
+func (rc *ResilientConsumer) execute(ctx context.Context, fn resilience.Executor) error {
+	operation := fn
+
+	if rc.cb != nil {
+		cbFn := operation
+		operation = func(ctx context.Context) error {
+			return rc.cb.Execute(ctx, cbFn)
+		}
+	}
+
+	if rc.retryCfg.MaxAttempts > 0 {
+		return resilience.Retry(ctx, rc.retryCfg, operation)
+	}
+
+	return operation(ctx)
+}
+
+var (
+	_ Broker   = (*ResilientBroker)(nil)
+	_ Producer = (*resilientProducer)(nil)
+	_ Consumer = (*ResilientConsumer)(nil)
+)

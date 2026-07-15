@@ -12,7 +12,7 @@
 //
 //   - Secret: The shared secret key for signing tokens (Required, env: JWT_SECRET)
 //   - Expiration: Duration until token expiry (Default: 24h, env: JWT_EXPIRATION)
-//   - Issuer: The issuer claim value (Default: system-design-library, env: JWT_ISSUER)
+//   - Issuer: The issuer claim value (Default: go-hyperforge, env: JWT_ISSUER)
 //
 // # Usage
 //

@@ -2,17 +2,24 @@
 //
 // Supported backends:
 //   - Memory: In-memory registry for testing
-//   - Consul: HashiCorp Consul
-//   - Etcd: etcd key-value store
-//   - Kubernetes: Kubernetes service discovery
-//   - Eureka: Netflix Eureka
+//   - Consul: HashiCorp Consul HTTP agent/health API (adapters/consul)
+//   - Etcd: etcd v3 HTTP KV gateway (adapters/etcd)
+//   - Kubernetes: Endpoints/EndpointSlice thin client (adapters/kubernetes)
+//
+// Planned / not yet implemented as adapters:
+//   - Eureka (Driver* constant reserved)
+//
+// Optional mTLS for HTTP discovery clients: WithMTLS / servicemesh.MTLSConfig.
+// Transient retries belong in pkg/resilience, not in adapters.
 //
 // Usage:
 //
-//	import "github.com/chris-alexander-pop/system-design-library/pkg/servicemesh/discovery/adapters/memory"
+//	import "github.com/chris-alexander-pop/go-hyperforge/pkg/servicemesh/discovery/adapters/memory"
 //
 //	registry := memory.New()
 //	err := registry.Register(ctx, discovery.Service{Name: "api", Address: "10.0.0.1", Port: 8080})
+//
+// Consul HTTP adapter: adapters/consul (agent/health API; httptest-tested).
 package discovery
 
 import (

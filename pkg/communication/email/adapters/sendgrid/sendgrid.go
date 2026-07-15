@@ -2,23 +2,25 @@ package sendgrid
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/communication/email"
-	"github.com/chris-alexander-pop/system-design-library/pkg/errors"
-	"github.com/chris-alexander-pop/system-design-library/pkg/validator"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/communication/email"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/validator"
 	"github.com/sendgrid/sendgrid-go"
 	"github.com/sendgrid/sendgrid-go/helpers/mail"
 )
 
 // Sender implements email.Sender for SendGrid.
 type Sender struct {
-	apiKey string
+	client      *sendgrid.Client
+	defaultFrom string
 }
 
 // New creates a new SendGrid sender.
 func New(cfg email.Config) (*Sender, error) {
-	if err := validator.New().ValidateStruct(cfg); err != nil {
+	if err := validator.New().ValidateStruct(context.Background(), cfg); err != nil {
 		return nil, errors.InvalidArgument("invalid config", err)
 	}
 
@@ -27,17 +29,29 @@ func New(cfg email.Config) (*Sender, error) {
 	}
 
 	return &Sender{
-		apiKey: cfg.SendGridAPIKey,
+		client:      sendgrid.NewSendClient(cfg.SendGridAPIKey),
+		defaultFrom: cfg.DefaultFrom,
 	}, nil
 }
 
 // Send implements email.Sender.
 func (s *Sender) Send(ctx context.Context, msg *email.Message) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	if msg == nil {
+		return errors.InvalidArgument("message is required", nil)
+	}
+	if len(msg.To) == 0 {
+		return errors.InvalidArgument("at least one recipient is required", nil)
+	}
+
 	m := mail.NewV3Mail()
 
 	fromEmail := msg.From
-	// In a real scenario, we might fallback to a default from config
-	// For now, allow SendGrid to validation error if empty
+	if fromEmail == "" {
+		fromEmail = s.defaultFrom
+	}
 	m.SetFrom(mail.NewEmail("", fromEmail))
 
 	p := mail.NewPersonalization()
@@ -54,6 +68,10 @@ func (s *Sender) Send(ctx context.Context, msg *email.Message) error {
 
 	m.Subject = msg.Subject
 
+	if msg.ReplyTo != "" {
+		m.SetReplyTo(mail.NewEmail("", msg.ReplyTo))
+	}
+
 	if msg.Body.PlainText != "" {
 		m.AddContent(mail.NewContent("text/plain", msg.Body.PlainText))
 	}
@@ -61,14 +79,31 @@ func (s *Sender) Send(ctx context.Context, msg *email.Message) error {
 		m.AddContent(mail.NewContent("text/html", msg.Body.HTML))
 	}
 
-	client := sendgrid.NewSendClient(s.apiKey)
-	resp, err := client.Send(m)
+	for _, att := range msg.Attachments {
+		a := mail.NewAttachment()
+		a.SetContent(base64.StdEncoding.EncodeToString(att.Content))
+		a.SetFilename(att.Filename)
+		if att.ContentType != "" {
+			a.SetType(att.ContentType)
+		}
+		if att.Inline {
+			a.SetDisposition("inline")
+		} else {
+			a.SetDisposition("attachment")
+		}
+		if att.ContentID != "" {
+			a.SetContentID(att.ContentID)
+		}
+		m.AddAttachment(a)
+	}
+
+	resp, err := s.client.SendWithContext(ctx, m)
 	if err != nil {
 		return errors.Internal("failed to send email via sendgrid", err)
 	}
 
 	if resp.StatusCode >= 400 {
-		return errors.Internal("sendgrid api error", fmt.Errorf("status code: %d, body: %s", resp.StatusCode, resp.Body))
+		return errors.Internal("sendgrid api error", errors.New(errors.CodeInternal, fmt.Sprintf("status code: %d, body: %s", resp.StatusCode, resp.Body), nil))
 	}
 
 	return nil

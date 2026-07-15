@@ -2,7 +2,8 @@ package merkle
 
 import (
 	"crypto/sha256"
-	"errors"
+
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 )
 
 // Tree represents a Merkle Tree.
@@ -25,7 +26,7 @@ type Node struct {
 // New creates a new Merkle Tree from the given data blocks.
 func New(data [][]byte) (*Tree, error) {
 	if len(data) == 0 {
-		return nil, errors.New("cannot create tree with no data")
+		return nil, errors.InvalidArgument("cannot create tree with no data", nil)
 	}
 
 	leaves := make([]*Node, len(data))
@@ -115,7 +116,7 @@ func VerifyProof(rootHash, data []byte, proof [][]byte, index int) bool {
 // GetProof generates a Merkle proof for a leaf at the given index.
 func (t *Tree) GetProof(index int) ([][]byte, error) {
 	if index < 0 || index >= len(t.Leaves) {
-		return nil, errors.New("index out of bounds")
+		return nil, errors.InvalidArgument("index out of bounds", nil)
 	}
 
 	var proof [][]byte

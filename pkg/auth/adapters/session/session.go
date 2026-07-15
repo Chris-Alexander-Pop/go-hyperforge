@@ -4,9 +4,9 @@ import (
 	"context"
 	"time"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/auth"
-	"github.com/chris-alexander-pop/system-design-library/pkg/cache"
-	"github.com/chris-alexander-pop/system-design-library/pkg/errors"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/auth"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/cache"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 	"github.com/google/uuid"
 )
 

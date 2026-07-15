@@ -5,7 +5,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/data/bigdata/adapters/bigquery"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/data/bigdata/adapters/bigquery"
 )
 
 func TestBigQuery_Init(t *testing.T) {

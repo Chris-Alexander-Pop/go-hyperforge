@@ -3,9 +3,9 @@ package slack
 import (
 	"context"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/communication/chat"
-	"github.com/chris-alexander-pop/system-design-library/pkg/errors"
-	"github.com/chris-alexander-pop/system-design-library/pkg/validator"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/communication/chat"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/validator"
 	"github.com/slack-go/slack"
 )
 
@@ -16,7 +16,7 @@ type Sender struct {
 
 // New creates a new Slack sender.
 func New(cfg chat.Config) (chat.Sender, error) {
-	if err := validator.New().ValidateStruct(cfg); err != nil {
+	if err := validator.New().ValidateStruct(context.Background(), cfg); err != nil {
 		return nil, errors.InvalidArgument("invalid config", err)
 	}
 
@@ -31,9 +31,16 @@ func New(cfg chat.Config) (chat.Sender, error) {
 
 // Send implements chat.Sender.
 func (s *Sender) Send(ctx context.Context, msg *chat.Message) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	if msg == nil {
+		return errors.InvalidArgument("message is required", nil)
+	}
+
 	channelID := msg.ChannelID
 	if channelID == "" {
-		channelID = msg.UserID // Fallback to UserID if ChannelID is empty, though Slack API treats them similarly often.
+		channelID = msg.UserID
 	}
 	if channelID == "" {
 		return errors.InvalidArgument("ChannelID or UserID required", nil)

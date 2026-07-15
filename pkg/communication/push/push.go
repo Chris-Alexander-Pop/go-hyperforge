@@ -49,7 +49,8 @@ type Message struct {
 
 // Config holds configuration for the Push Sender.
 type Config struct {
-	// Driver specifies the push backend: "memory", "fcm", "apns".
+	// Driver specifies the push backend: memory, fcm, or apns
+	// (see communication.Driver* constants).
 	Driver string `env:"PUSH_DRIVER" env-default:"memory" validate:"required"`
 
 	// RetryConfig configures the retry behavior for failed sends.

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/ai/genai/llm"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/ai/genai/llm"
 )
 
 type MockTool struct {
@@ -34,6 +34,10 @@ func (m MockClient) Chat(ctx context.Context, history []llm.Message, opts ...llm
 			Content: "mock response",
 		},
 	}, nil
+}
+
+func (m MockClient) StreamChat(ctx context.Context, history []llm.Message, opts ...llm.GenerateOption) (<-chan llm.GenerationChunk, error) {
+	return llm.StreamFromChat(ctx, m.Chat, history, opts...)
 }
 
 func BenchmarkBuildSystemPrompt(b *testing.B) {

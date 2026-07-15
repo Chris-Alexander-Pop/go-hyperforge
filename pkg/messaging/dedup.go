@@ -3,8 +3,8 @@ package messaging
 import (
 	"context"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/concurrency"
-	"github.com/chris-alexander-pop/system-design-library/pkg/datastructures/bloomfilter"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/concurrency"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/datastructures/bloomfilter"
 )
 
 // DeduplicatingConsumer wraps a Consumer with message deduplication using a Bloom filter.
@@ -15,6 +15,7 @@ import (
 type DeduplicatingConsumer struct {
 	consumer Consumer
 	bloom    *bloomfilter.BloomFilter
+	inFlight map[string]struct{}
 	mu       *concurrency.SmartRWMutex
 }
 
@@ -30,40 +31,48 @@ type DeduplicationConfig struct {
 
 // NewDeduplicatingConsumer wraps a consumer with Bloom filter deduplication.
 func NewDeduplicatingConsumer(consumer Consumer, cfg DeduplicationConfig) *DeduplicatingConsumer {
+	if cfg.ExpectedMessages == 0 {
+		cfg.ExpectedMessages = 1000000
+	}
+	if cfg.FalsePositiveRate <= 0 {
+		cfg.FalsePositiveRate = 0.001
+	}
 	return &DeduplicatingConsumer{
 		consumer: consumer,
 		bloom:    bloomfilter.New(cfg.ExpectedMessages, cfg.FalsePositiveRate),
+		inFlight: make(map[string]struct{}),
 		mu:       concurrency.NewSmartRWMutex(concurrency.MutexConfig{Name: "DeduplicatingConsumer"}),
 	}
 }
 
 func (dc *DeduplicatingConsumer) Consume(ctx context.Context, handler MessageHandler) error {
 	return dc.consumer.Consume(ctx, func(ctx context.Context, msg *Message) error {
-		// Generate deduplication key (use message ID or hash of payload)
 		dedupKey := dc.getDeduplicationKey(msg)
 
-		// Check if we've seen this message
-		dc.mu.RLock()
-		seen := dc.bloom.ContainsString(dedupKey)
-		dc.mu.RUnlock()
-
-		if seen {
-			// Already processed (or false positive), skip
+		// Claim under write lock to close the check-then-act TOCTOU window
+		// between concurrent handlers seeing the same unseen key.
+		dc.mu.Lock()
+		if dc.bloom.ContainsString(dedupKey) {
+			dc.mu.Unlock()
 			return nil
 		}
-
-		// Process the message
-		err := handler(ctx, msg)
-		if err != nil {
-			return err
+		if _, busy := dc.inFlight[dedupKey]; busy {
+			dc.mu.Unlock()
+			return nil
 		}
-
-		// Mark as processed
-		dc.mu.Lock()
-		dc.bloom.AddString(dedupKey)
+		dc.inFlight[dedupKey] = struct{}{}
 		dc.mu.Unlock()
 
-		return nil
+		err := handler(ctx, msg)
+
+		dc.mu.Lock()
+		delete(dc.inFlight, dedupKey)
+		if err == nil {
+			dc.bloom.AddString(dedupKey)
+		}
+		dc.mu.Unlock()
+
+		return err
 	})
 }
 
@@ -72,7 +81,6 @@ func (dc *DeduplicatingConsumer) Close() error {
 }
 
 func (dc *DeduplicatingConsumer) getDeduplicationKey(msg *Message) string {
-	// Prefer message ID, fall back to topic+payload hash
 	if msg.ID != "" {
 		return msg.ID
 	}
@@ -101,4 +109,7 @@ func (dc *DeduplicatingConsumer) Reset() {
 	dc.mu.Lock()
 	defer dc.mu.Unlock()
 	dc.bloom.Clear()
+	dc.inFlight = make(map[string]struct{})
 }
+
+var _ Consumer = (*DeduplicatingConsumer)(nil)

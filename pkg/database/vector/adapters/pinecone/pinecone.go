@@ -9,8 +9,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/database/vector"
-	"github.com/chris-alexander-pop/system-design-library/pkg/errors"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/database/vector"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 )
 
 // Store implements vector.Store for Pinecone.
@@ -40,12 +40,25 @@ func New(cfg vector.Config) (*Store, error) {
 
 // Search finds the nearest neighbors to the query vector.
 func (s *Store) Search(ctx context.Context, queryVector []float32, limit int) ([]vector.Result, error) {
+	return s.SearchWithOpts(ctx, queryVector, vector.SearchOpts{Limit: limit})
+}
+
+// SearchWithOpts finds nearest neighbors with optional metadata filter (Pinecone filter).
+func (s *Store) SearchWithOpts(ctx context.Context, queryVector []float32, opts vector.SearchOpts) ([]vector.Result, error) {
 	url := fmt.Sprintf("%s/query", s.baseURL)
+
+	limit := opts.Limit
+	if limit <= 0 {
+		limit = 10
+	}
 
 	reqBody := map[string]interface{}{
 		"vector":          queryVector,
 		"topK":            limit,
 		"includeMetadata": true,
+	}
+	if len(opts.Filter) > 0 {
+		reqBody["filter"] = opts.Filter
 	}
 
 	resp, err := s.doRequest(ctx, "POST", url, reqBody)

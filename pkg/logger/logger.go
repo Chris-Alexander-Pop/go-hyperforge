@@ -1,20 +1,3 @@
-// Package logger provides structured logging with OpenTelemetry trace correlation.
-//
-// This package provides:
-//   - slog-based structured logging (JSON or TEXT format)
-//   - Automatic trace_id and span_id injection from OpenTelemetry context
-//   - Global logger accessor via L()
-//
-// Usage:
-//
-//	import "github.com/chris-alexander-pop/system-design-library/pkg/logger"
-//
-//	// Initialize (typically in main)
-//	logger.Init(logger.Config{Level: "INFO", Format: "JSON"})
-//
-//	// Use anywhere via global accessor
-//	logger.L().InfoContext(ctx, "message", "key", value)
-//	logger.L().ErrorContext(ctx, "failed", "error", err)
 package logger
 
 import (
@@ -28,8 +11,9 @@ import (
 )
 
 var (
+	mu            sync.RWMutex
 	defaultLogger *slog.Logger
-	once          sync.Once
+	asyncHandler  *AsyncHandler
 )
 
 // Config holds configuration for the logger.
@@ -50,13 +34,21 @@ type Config struct {
 	Redact bool `env:"LOG_REDACT" env-default:"true"`
 }
 
-// Init initializes the global logger
+// Init initializes the global logger and returns it.
+//
+// Handler stack (outer → inner), built exactly once:
+//
+//	Sampling → Redact → Trace → Async → JSON/Text
+//
+// Trace sits outside Async so span attrs are copied onto the record while the
+// request context is still available; Async then queues the already-enriched
+// record and processes it with a background context.
+//
+// Call Shutdown before process exit when Async is enabled to flush buffered logs.
 func Init(cfg Config) *slog.Logger {
-	var handler slog.Handler
 	opts := &slog.HandlerOptions{
 		Level: parseLevel(cfg.Level),
 		ReplaceAttr: func(groups []string, a slog.Attr) slog.Attr {
-			// standard time format
 			if a.Key == slog.TimeKey {
 				t := a.Value.Time()
 				a.Value = slog.StringValue(t.Format(time.RFC3339))
@@ -65,56 +57,22 @@ func Init(cfg Config) *slog.Logger {
 		},
 	}
 
+	var h slog.Handler
 	if cfg.Format == "TEXT" {
-		handler = slog.NewTextHandler(os.Stdout, opts)
+		h = slog.NewTextHandler(os.Stdout, opts)
 	} else {
-		handler = slog.NewJSONHandler(os.Stdout, opts)
+		h = slog.NewJSONHandler(os.Stdout, opts)
 	}
 
-	// 1. Trace Injection (always inner layer, close to output)
-	handler = NewTraceHandler(handler)
-
-	// 2. Async Buffer (optional)
+	var async *AsyncHandler
 	if cfg.Async {
-		handler = NewAsyncHandler(handler, 4096, true)
+		async = NewAsyncHandler(h, 4096, true)
+		h = async
 	}
 
-	// 3. Sampling (optional, outer layer to drop early)
-	if cfg.SamplingRate < 1.0 && cfg.SamplingRate > 0.0 {
-		handler = NewSamplingHandler(handler, cfg.SamplingRate)
-	}
-
-	// 4. Redaction (optional, expensive so do before output but after sampling?)
-	// Actually better to Redact *after* sampling (waste of cpu to redact dropped logs),
-	// but *before* Async (to keep buffer clean? Or after async to offload CPU?)
-	// Let's do Redact -> Async -> Output. So Redact is BEFORE Async.
-	// Order: Sampling (Drop first) -> Redact (Clean) -> Async (Buffer) -> Trace -> Output.
-	// Wait, TraceHandler just adds attrs.
-
-	// Updated Order:
-	// Sampling -> Redact -> Async -> Trace -> Output
-
-	if cfg.Redact {
-		handler = NewRedactHandler(handler)
-	}
-
-	// Re-wrap Async if it was added? No, handler is strictly layered.
-	// Correct layering:
-	// Output = JSONHandler
-	// L1 = TraceHandler(Output)
-	// L2 = AsyncHandler(L1)
-	// L3 = RedactHandler(L2)
-	// L4 = SamplingHandler(L3)
-
-	// My previous logic was purely additive, which puts outer layers last.
-	// Let's reconstruct cleanly.
-
-	var h slog.Handler = handler // JSON/Text
+	// Trace must wrap Async (not the reverse) so correlation attrs are attached
+	// before the record is queued.
 	h = NewTraceHandler(h)
-
-	if cfg.Async {
-		h = NewAsyncHandler(h, 4096, true)
-	}
 
 	if cfg.Redact {
 		h = NewRedactHandler(h)
@@ -124,23 +82,53 @@ func Init(cfg Config) *slog.Logger {
 		h = NewSamplingHandler(h, cfg.SamplingRate)
 	}
 
-	logger := slog.New(h)
-	slog.SetDefault(logger)
+	l := slog.New(h)
+	slog.SetDefault(l)
 
-	once.Do(func() {
-		defaultLogger = logger
-	})
+	mu.Lock()
+	defaultLogger = l
+	asyncHandler = async
+	mu.Unlock()
 
-	return logger
+	return l
 }
 
-// Global accessor, though we prefer passing logger or using FromContext if we attach it
+// L returns the global logger. If Init has not been called, it returns slog.Default().
 func L() *slog.Logger {
+	mu.RLock()
+	defer mu.RUnlock()
 	if defaultLogger == nil {
-		// Fallback if not initialized
 		return slog.Default()
 	}
 	return defaultLogger
+}
+
+// Shutdown flushes the AsyncHandler buffer (if Async was enabled in Init) and
+// waits for pending records to be written. It is safe to call when Async is
+// disabled. Respects ctx cancellation; a cancelled context may leave some
+// records unflushed.
+func Shutdown(ctx context.Context) error {
+	mu.Lock()
+	ah := asyncHandler
+	asyncHandler = nil
+	mu.Unlock()
+
+	if ah == nil {
+		return nil
+	}
+
+	done := make(chan struct{})
+	go func() {
+		ah.Shutdown()
+		close(done)
+	}()
+
+	select {
+	case <-done:
+		return nil
+	case <-ctx.Done():
+		return ctx.Err()
+	}
 }
 
 func parseLevel(level string) slog.Level {
@@ -158,11 +146,14 @@ func parseLevel(level string) slog.Level {
 	}
 }
 
-// TraceHandler adds trace_id and span_id to logs
+// TraceHandler adds trace_id and span_id to logs from the OpenTelemetry span
+// in context. It must sit outside AsyncHandler so attrs are attached before
+// the record is queued (Async processes with context.Background).
 type TraceHandler struct {
 	next slog.Handler
 }
 
+// NewTraceHandler wraps next with OpenTelemetry trace/span ID injection.
 func NewTraceHandler(next slog.Handler) *TraceHandler {
 	return &TraceHandler{next: next}
 }

@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/resilience"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/resilience"
 )
 
 func ExampleCircuitBreaker() {

@@ -6,17 +6,16 @@ import (
 	"fmt"
 	"io"
 	"strings"
-	"sync"
 	"time"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/compute/container"
-	"github.com/chris-alexander-pop/system-design-library/pkg/errors"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/compute/container"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/concurrency"
 	"github.com/google/uuid"
 )
 
 // Runtime implements an in-memory container runtime for testing.
 type Runtime struct {
-	mu         sync.RWMutex
+	mu         *concurrency.SmartRWMutex
 	containers map[string]*container.Container
 	logs       map[string]*bytes.Buffer
 	config     container.Config
@@ -25,6 +24,9 @@ type Runtime struct {
 // New creates a new in-memory container runtime.
 func New() *Runtime {
 	return &Runtime{
+		mu: concurrency.NewSmartRWMutex(concurrency.MutexConfig{
+			Name: "compute-container-memory",
+		}),
 		containers: make(map[string]*container.Container),
 		logs:       make(map[string]*bytes.Buffer),
 		config:     container.Config{DefaultMemory: 512, DefaultCPU: 0.5},
@@ -35,11 +37,10 @@ func (r *Runtime) Create(ctx context.Context, opts container.CreateOptions) (*co
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	// Check for name conflict
 	if opts.Name != "" {
 		for _, c := range r.containers {
 			if c.Name == opts.Name {
-				return nil, errors.Conflict("container name already in use", nil)
+				return nil, container.ErrNameConflict
 			}
 		}
 	}
@@ -86,7 +87,7 @@ func (r *Runtime) Get(ctx context.Context, containerID string) (*container.Conta
 
 	ctr, ok := r.containers[containerID]
 	if !ok {
-		return nil, errors.NotFound("container not found", nil)
+		return nil, container.ErrContainerNotFound
 	}
 
 	return ctr, nil
@@ -99,12 +100,10 @@ func (r *Runtime) List(ctx context.Context, opts container.ListOptions) ([]*cont
 	result := make([]*container.Container, 0, len(r.containers))
 
 	for _, ctr := range r.containers {
-		// Filter out stopped if not All
 		if !opts.All && ctr.State == container.ContainerStateExited {
 			continue
 		}
 
-		// Filter by labels
 		if len(opts.Labels) > 0 {
 			match := true
 			for k, v := range opts.Labels {
@@ -121,7 +120,6 @@ func (r *Runtime) List(ctx context.Context, opts container.ListOptions) ([]*cont
 		result = append(result, ctr)
 	}
 
-	// Apply limit
 	if opts.Limit > 0 && len(result) > opts.Limit {
 		result = result[:opts.Limit]
 	}
@@ -135,11 +133,11 @@ func (r *Runtime) Start(ctx context.Context, containerID string) error {
 
 	ctr, ok := r.containers[containerID]
 	if !ok {
-		return errors.NotFound("container not found", nil)
+		return container.ErrContainerNotFound
 	}
 
 	if ctr.State == container.ContainerStateRunning {
-		return errors.Conflict("container is already running", nil)
+		return container.ErrContainerAlreadyRunning
 	}
 
 	ctr.State = container.ContainerStateRunning
@@ -155,11 +153,11 @@ func (r *Runtime) Stop(ctx context.Context, containerID string, timeout time.Dur
 
 	ctr, ok := r.containers[containerID]
 	if !ok {
-		return errors.NotFound("container not found", nil)
+		return container.ErrContainerNotFound
 	}
 
 	if ctr.State != container.ContainerStateRunning {
-		return errors.Conflict("container is not running", nil)
+		return container.ErrContainerNotRunning
 	}
 
 	ctr.State = container.ContainerStateExited
@@ -176,16 +174,16 @@ func (r *Runtime) Kill(ctx context.Context, containerID string, signal string) e
 
 	ctr, ok := r.containers[containerID]
 	if !ok {
-		return errors.NotFound("container not found", nil)
+		return container.ErrContainerNotFound
 	}
 
 	if ctr.State != container.ContainerStateRunning {
-		return errors.Conflict("container is not running", nil)
+		return container.ErrContainerNotRunning
 	}
 
 	ctr.State = container.ContainerStateExited
 	ctr.FinishedAt = time.Now()
-	ctr.ExitCode = 137 // Killed
+	ctr.ExitCode = 137
 	r.logs[containerID].WriteString(fmt.Sprintf("[%s] Container killed with %s\n", time.Now().Format(time.RFC3339), signal))
 
 	return nil
@@ -197,11 +195,11 @@ func (r *Runtime) Remove(ctx context.Context, containerID string, force bool) er
 
 	ctr, ok := r.containers[containerID]
 	if !ok {
-		return errors.NotFound("container not found", nil)
+		return container.ErrContainerNotFound
 	}
 
 	if !force && ctr.State == container.ContainerStateRunning {
-		return errors.Conflict("container is running, use force to remove", nil)
+		return container.ErrContainerAlreadyRunning
 	}
 
 	delete(r.containers, containerID)
@@ -215,12 +213,12 @@ func (r *Runtime) Logs(ctx context.Context, containerID string, follow bool) (io
 	defer r.mu.RUnlock()
 
 	if _, ok := r.containers[containerID]; !ok {
-		return nil, errors.NotFound("container not found", nil)
+		return nil, container.ErrContainerNotFound
 	}
 
 	logs, ok := r.logs[containerID]
 	if !ok {
-		return nil, errors.NotFound("logs not found", nil)
+		return nil, container.ErrContainerNotFound
 	}
 
 	return io.NopCloser(strings.NewReader(logs.String())), nil
@@ -232,14 +230,13 @@ func (r *Runtime) Exec(ctx context.Context, containerID string, opts container.E
 	r.mu.RUnlock()
 
 	if !ok {
-		return nil, errors.NotFound("container not found", nil)
+		return nil, container.ErrContainerNotFound
 	}
 
 	if ctr.State != container.ContainerStateRunning {
-		return nil, errors.Conflict("container is not running", nil)
+		return nil, container.ErrContainerNotRunning
 	}
 
-	// Simulate command execution
 	stdout := fmt.Sprintf("Executed: %s\n", strings.Join(opts.Command, " "))
 
 	return &container.ExecResult{
@@ -255,10 +252,9 @@ func (r *Runtime) Wait(ctx context.Context, containerID string) (int, error) {
 	r.mu.RUnlock()
 
 	if !ok {
-		return -1, errors.NotFound("container not found", nil)
+		return -1, container.ErrContainerNotFound
 	}
 
-	// Simulate waiting
 	if ctr.State == container.ContainerStateRunning {
 		<-ctx.Done()
 		return -1, ctx.Err()
@@ -273,16 +269,16 @@ func (r *Runtime) Stats(ctx context.Context, containerID string) (*container.Con
 
 	ctr, ok := r.containers[containerID]
 	if !ok {
-		return nil, errors.NotFound("container not found", nil)
+		return nil, container.ErrContainerNotFound
 	}
 
 	if ctr.State != container.ContainerStateRunning {
-		return nil, errors.Conflict("container is not running", nil)
+		return nil, container.ErrContainerNotRunning
 	}
 
 	return &container.ContainerStats{
 		CPUPercent:  15.5,
-		MemoryUsage: ctr.Memory * 1024 * 1024 / 2, // 50% usage
+		MemoryUsage: ctr.Memory * 1024 * 1024 / 2,
 		MemoryLimit: ctr.Memory * 1024 * 1024,
 		NetworkRx:   1024 * 100,
 		NetworkTx:   512 * 100,

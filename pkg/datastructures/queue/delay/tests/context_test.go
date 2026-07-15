@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/datastructures/queue/delay"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/datastructures/queue/delay"
 )
 
 func TestDequeueContext(t *testing.T) {

@@ -4,7 +4,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/streaming/adapters/eventhubs"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/streaming/adapters/eventhubs"
 )
 
 func TestEventHubs_Init(t *testing.T) {

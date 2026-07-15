@@ -1,8 +1,9 @@
 package crdt
 
 import (
-	"sync"
 	"time"
+
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/concurrency"
 )
 
 // LWWRegister is a Last-Writer-Wins Register CRDT.
@@ -11,7 +12,7 @@ type LWWRegister[T any] struct {
 	value     T
 	timestamp int64 // unix nanos
 	id        string
-	mu        sync.RWMutex
+	mu        *concurrency.SmartRWMutex
 }
 
 func NewLWWRegister[T any](id string, initial T) *LWWRegister[T] {
@@ -19,6 +20,7 @@ func NewLWWRegister[T any](id string, initial T) *LWWRegister[T] {
 		value:     initial,
 		timestamp: time.Now().UnixNano(),
 		id:        id,
+		mu:        concurrency.NewSmartRWMutex(concurrency.MutexConfig{Name: "LWWRegister"}),
 	}
 }
 
@@ -45,6 +47,9 @@ func (r *LWWRegister[T]) Get() T {
 
 // Merge merges another register.
 func (r *LWWRegister[T]) Merge(other *LWWRegister[T]) {
+	if other == nil {
+		return
+	}
 	r.mu.Lock()
 	defer r.mu.Unlock()
 

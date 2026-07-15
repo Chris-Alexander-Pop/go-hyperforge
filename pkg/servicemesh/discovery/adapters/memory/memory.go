@@ -2,17 +2,17 @@ package memory
 
 import (
 	"context"
-	"sync"
 	"time"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/errors"
-	"github.com/chris-alexander-pop/system-design-library/pkg/servicemesh/discovery"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/concurrency"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/servicemesh/discovery"
 	"github.com/google/uuid"
 )
 
 // Registry implements an in-memory service registry for testing.
 type Registry struct {
-	mu       sync.RWMutex
+	mu       *concurrency.SmartRWMutex
 	services map[string]*discovery.Service
 	byName   map[string][]string // name -> []serviceID
 	watchers map[string][]chan []*discovery.Service
@@ -27,6 +27,7 @@ func New() *Registry {
 		byName:   make(map[string][]string),
 		watchers: make(map[string][]chan []*discovery.Service),
 		config:   discovery.Config{TTL: 30 * time.Second, Namespace: "default"},
+		mu:       concurrency.NewSmartRWMutex(concurrency.MutexConfig{Name: "discovery-memory"}),
 	}
 }
 

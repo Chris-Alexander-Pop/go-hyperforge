@@ -2,7 +2,7 @@
 //
 // Usage:
 //
-//	import "github.com/chris-alexander-pop/system-design-library/pkg/ai/ml/sagemaker"
+//	import "github.com/chris-alexander-pop/go-hyperforge/pkg/ai/ml/sagemaker"
 //
 //	trainer, err := sagemaker.New(sagemaker.Config{Region: "us-east-1"})
 //	job, err := trainer.StartJob(ctx, training.JobConfig{...})
@@ -18,8 +18,8 @@ import (
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/sagemaker"
 	"github.com/aws/aws-sdk-go-v2/service/sagemaker/types"
-	"github.com/chris-alexander-pop/system-design-library/pkg/ai/ml/training"
-	pkgerrors "github.com/chris-alexander-pop/system-design-library/pkg/errors"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/ai/ml/training"
+	pkgerrors "github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 )
 
 // Config holds SageMaker configuration.

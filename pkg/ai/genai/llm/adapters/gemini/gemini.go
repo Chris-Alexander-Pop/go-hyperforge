@@ -5,8 +5,8 @@ import (
 	"context"
 	"strings"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/ai/genai/llm"
-	pkgerrors "github.com/chris-alexander-pop/system-design-library/pkg/errors"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/ai/genai/llm"
+	pkgerrors "github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 	"github.com/google/generative-ai-go/genai"
 	"google.golang.org/api/option"
 )
@@ -108,6 +108,11 @@ func (c *Client) Chat(ctx context.Context, messages []llm.Message, opts ...llm.G
 		FinishReason: string(resp.Candidates[0].FinishReason),
 		// Token usage is in resp.UsageMetadata
 	}, nil
+}
+
+// StreamChat adapts Chat into a single-chunk stream until native streaming is wired.
+func (c *Client) StreamChat(ctx context.Context, messages []llm.Message, opts ...llm.GenerateOption) (<-chan llm.GenerationChunk, error) {
+	return llm.StreamFromChat(ctx, c.Chat, messages, opts...)
 }
 
 func (c *Client) Close() {
