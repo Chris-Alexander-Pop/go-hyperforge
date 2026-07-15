@@ -23,7 +23,8 @@ Landed foundation/reuse/domain hardening (scores above are the *pre-fix* snapsho
 - ✅ `algorithms`: binarysearch, bfs/dfs, DistLimiter store-backed, sliding-window counter, educational stub docs, heap reuse in dijkstra/astar
 - ✅ `storage` root drivers, blob errors/resilience, GCS/Azure `blob.Store`, S3 miss→NotFound, SmartRWMutex memory adapters
 - ✅ `security`: root/errors, crypto harden + memory KeyProvider, secrets Rotate/events, reCAPTCHA adapter, honest docs + auth bridge
-- 🔄 Remaining large gaps still listed below (auth OAuth2 AS, commerce depth, AI gateway, cloud IaaS adapters, security Vault/cloud KMS/WAF, etc.)
+- 🔄 `auth`: OAuth2 AS interfaces + memory; Cognito/Entra/GCP Verify/Login; OIDC exchange; EncryptionKey; root errors.go
+- 🔄 Remaining large gaps still listed below (commerce depth, AI gateway, cloud IaaS adapters, security Vault/cloud KMS/WAF, etc.)
 
 ---
 
@@ -228,11 +229,11 @@ Landed foundation/reuse/domain hardening (scores above are the *pre-fix* snapsho
 ## 4. Security & auth
 
 ### `pkg/auth` (~57)
-- [ ] ❌ OAuth2 authorization server (README/catalog promise)
-- [ ] ❌ Complete Cognito/Entra/GCP Verify/Login; OIDC code exchange
+- [x] ✅ OAuth2 authorization server interfaces + memory adapter (auth code / client credentials / refresh; not full OpenID Provider)
+- [x] ✅ Cognito/Entra Verify via OIDC JWKS; GCP Login via Identity Toolkit REST; OIDC code exchange + memory exchanger
 - [ ] ❌ SMS/email MFA; Apple social; SAML client
-- [ ] ❌ `errors.go` + unify cloud vs root IdP adapters
-- [ ] ❌ Use EncryptionKey fields; WebAuthn memory real path
+- [x] ✅ Root `errors.go` sentinels; cloud vs root IdP adapters remain dual surfaces (documented)
+- [x] ✅ EncryptionKey wired for session/MFA memory+redis; WebAuthn memory still stub (library adapter is real path)
 
 ### `pkg/security` (~30 → improved)
 - [x] ✅ Root `security.go` + domain `errors.go` (fraud/captcha/waf/scanning/secrets/kms/crypto) via `pkg/errors`

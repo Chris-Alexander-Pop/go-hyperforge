@@ -7,9 +7,11 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/chris-alexander-pop/system-design-library/pkg/auth"
 	"github.com/chris-alexander-pop/system-design-library/pkg/auth/mfa"
 	"github.com/chris-alexander-pop/system-design-library/pkg/auth/mfa/otp"
 	"github.com/chris-alexander-pop/system-design-library/pkg/errors"
+	"github.com/chris-alexander-pop/system-design-library/pkg/security/crypto"
 	"github.com/redis/go-redis/v9"
 )
 
@@ -17,10 +19,16 @@ import (
 type MFAProvider struct {
 	client     *redis.Client
 	totpConfig otp.TOTPConfig
+	encryptor  *crypto.AESEncryptor
 }
 
 // New creates a new Redis MFA provider.
-func New(client *redis.Client, cfg mfa.Config) *MFAProvider {
+// When cfg.EncryptionKey is set, TOTP secrets are encrypted at rest.
+func New(client *redis.Client, cfg mfa.Config) (*MFAProvider, error) {
+	enc, err := auth.NewAESEncryptorFromKey(cfg.EncryptionKey)
+	if err != nil {
+		return nil, err
+	}
 	return &MFAProvider{
 		client: client,
 		totpConfig: otp.TOTPConfig{
@@ -28,7 +36,8 @@ func New(client *redis.Client, cfg mfa.Config) *MFAProvider {
 			Digits: cfg.TOTPDigits,
 			Period: cfg.TOTPPeriod,
 		},
-	}
+		encryptor: enc,
+	}, nil
 }
 
 func (p *MFAProvider) key(userID string) string {
@@ -94,10 +103,14 @@ func (p *MFAProvider) Enroll(ctx context.Context, userID string) (string, []stri
 	}
 
 	// 3. Store Enrollment (Enabled=false)
+	storedSecret, err := p.sealSecret(secret)
+	if err != nil {
+		return "", nil, err
+	}
 	enrollment := &mfa.Enrollment{
 		UserID:    userID,
 		Type:      "totp",
-		Secret:    secret,
+		Secret:    storedSecret,
 		Enabled:   false,
 		Recovery:  hashedCodes,
 		CreatedAt: time.Now(),
@@ -138,8 +151,13 @@ func (p *MFAProvider) CompleteEnrollment(ctx context.Context, userID, code strin
 			return errors.Conflict("mfa already enabled", nil)
 		}
 
+		plainSecret, err := p.openSecret(enrollment.Secret)
+		if err != nil {
+			return err
+		}
+
 		totp := otp.NewTOTP(p.totpConfig)
-		valid, counter := totp.ValidateReturningCounter(enrollment.Secret, code)
+		valid, counter := totp.ValidateReturningCounter(plainSecret, code)
 		if !valid {
 			return errors.InvalidArgument("invalid validation code", nil)
 		}
@@ -210,8 +228,13 @@ func (p *MFAProvider) Verify(ctx context.Context, userID, code string) (bool, er
 		return false, errors.Forbidden("mfa not enabled", nil)
 	}
 
+	plainSecret, err := p.openSecret(enrollment.Secret)
+	if err != nil {
+		return false, err
+	}
+
 	totp := otp.NewTOTP(p.totpConfig)
-	valid, counter := totp.ValidateReturningCounter(enrollment.Secret, code)
+	valid, counter := totp.ValidateReturningCounter(plainSecret, code)
 	if !valid {
 		return false, nil
 	}
@@ -309,4 +332,26 @@ func (p *MFAProvider) Recover(ctx context.Context, userID, code string) (bool, e
 
 func (p *MFAProvider) Disable(ctx context.Context, userID string) error {
 	return p.client.Del(ctx, p.key(userID)).Err()
+}
+
+func (p *MFAProvider) sealSecret(secret string) (string, error) {
+	if p.encryptor == nil {
+		return secret, nil
+	}
+	enc, err := p.encryptor.EncryptString(secret)
+	if err != nil {
+		return "", errors.Internal("failed to encrypt mfa secret", err)
+	}
+	return enc, nil
+}
+
+func (p *MFAProvider) openSecret(stored string) (string, error) {
+	if p.encryptor == nil {
+		return stored, nil
+	}
+	plain, err := p.encryptor.DecryptString(stored)
+	if err != nil {
+		return "", errors.Internal("failed to decrypt mfa secret", err)
+	}
+	return plain, nil
 }

@@ -20,7 +20,7 @@
 | **Distributed Lock** | `pkg/concurrency/distlock/*` |
 | **Vector Search** | `pkg/database/vector/*`, `pkg/database/rerank/*` |
 | **Big Data** | `pkg/data/bigdata/*` (MapReduce, Spark, Parquet, Avro, DuckDB) |
-| **Auth** | `pkg/auth/*` (JWT, OAuth2, OIDC, MFA, Social) |
+| **Auth** | `pkg/auth/*` (JWT, OAuth2 AS memory, OIDC verify/exchange, MFA, Social) |
 | **Messaging** | `pkg/messaging/*` (Kafka, NATS, RabbitMQ, SQS, SNS, Pub/Sub) |
 | **Cache** | `pkg/cache/*` (Redis, memory) |
 | **Blob** | `pkg/blob/*` (S3, GCS, Azure) |

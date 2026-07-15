@@ -44,5 +44,5 @@ This library includes:
 
 - **`pkg/security/crypto`** - AES-GCM encryption, secure hashing
 - **`pkg/security/secrets`** - Secrets management (Vault, AWS, GCP, Azure)
-- **`pkg/auth`** - JWT, OAuth2, MFA, WebAuthn
+- **`pkg/auth`** - JWT, OAuth2 AS (memory token issuance), OIDC verify/exchange, MFA, WebAuthn
 - **`pkg/validator`** - Input validation and sanitization

@@ -2,6 +2,9 @@ package cognito
 
 import (
 	"context"
+	"fmt"
+	"strings"
+	"sync"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
@@ -9,6 +12,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/cognitoidentityprovider/types"
 	"github.com/chris-alexander-pop/system-design-library/pkg/auth"
 	"github.com/chris-alexander-pop/system-design-library/pkg/errors"
+	"github.com/coreos/go-oidc/v3/oidc"
 )
 
 // Config holds configuration for AWS Cognito.
@@ -23,26 +27,46 @@ type Adapter struct {
 	client     *cognitoidentityprovider.Client
 	userPoolID string
 	clientID   string
+	region     string
+	issuer     string
+
+	verifierOnce sync.Once
+	verifier     *oidc.IDTokenVerifier
+	verifierErr  error
 }
 
 // New creates a new Cognito adapter.
-func New(ctx context.Context, cfg Config) (auth.IdentityProvider, error) {
+func New(ctx context.Context, cfg Config) (*Adapter, error) {
+	if cfg.UserPoolID == "" || cfg.ClientID == "" {
+		return nil, auth.ErrInvalidConfigMsg("UserPoolID and ClientID are required", nil)
+	}
+	if cfg.Region == "" {
+		cfg.Region = "us-east-1"
+	}
+
 	awsCfg, err := config.LoadDefaultConfig(ctx, config.WithRegion(cfg.Region))
 	if err != nil {
 		return nil, errors.Internal("failed to load aws config", err)
 	}
 
 	client := cognitoidentityprovider.NewFromConfig(awsCfg)
+	issuer := fmt.Sprintf("https://cognito-idp.%s.amazonaws.com/%s", cfg.Region, cfg.UserPoolID)
 
 	return &Adapter{
 		client:     client,
 		userPoolID: cfg.UserPoolID,
 		clientID:   cfg.ClientID,
+		region:     cfg.Region,
+		issuer:     issuer,
 	}, nil
 }
 
-// Login authenticates a user with username and password.
+// Login authenticates a user with username and password via USER_PASSWORD_AUTH.
 func (a *Adapter) Login(ctx context.Context, username, password string) (*auth.Claims, error) {
+	if username == "" || password == "" {
+		return nil, auth.ErrInvalidCredentials
+	}
+
 	input := &cognitoidentityprovider.InitiateAuthInput{
 		AuthFlow: types.AuthFlowTypeUserPasswordAuth,
 		ClientId: aws.String(a.clientID),
@@ -58,38 +82,100 @@ func (a *Adapter) Login(ctx context.Context, username, password string) (*auth.C
 	}
 
 	if output.AuthenticationResult == nil {
-		return nil, errors.Unauthorized("no authentication result returned", nil)
+		return nil, errors.Unauthorized("no authentication result returned (challenge required)", nil)
 	}
 
-	// In a real implementation, we would parse the ID Token to get claims.
-	// For now, we return basic claims derived from the success.
-	// Note: output.AuthenticationResult.IdToken contains the JWT.
-
-	// We should ideally verify this token.
-	// But sticking to the interface:
+	idToken := aws.ToString(output.AuthenticationResult.IdToken)
+	if idToken != "" {
+		claims, verr := a.Verify(ctx, idToken)
+		if verr == nil {
+			if claims.Metadata == nil {
+				claims.Metadata = map[string]interface{}{}
+			}
+			claims.Metadata["access_token"] = aws.ToString(output.AuthenticationResult.AccessToken)
+			claims.Metadata["refresh_token"] = aws.ToString(output.AuthenticationResult.RefreshToken)
+			return claims, nil
+		}
+		// Fall through to basic claims if JWKS verification is unavailable offline.
+	}
 
 	return &auth.Claims{
-		Subject: username, // Cognito uses UUIDs usually, but we don't have it easily without parsing token
-		Issuer:  "cognito",
-		// We'd parse the token here normally.
+		Subject: username,
+		Issuer:  a.issuer,
+		Metadata: map[string]interface{}{
+			"access_token":  aws.ToString(output.AuthenticationResult.AccessToken),
+			"refresh_token": aws.ToString(output.AuthenticationResult.RefreshToken),
+			"id_token":      idToken,
+		},
 	}, nil
 }
 
-// Verify validates a Cognito token.
-// Note: This requires a JWK Set implementation (e.g. micahparks/keyfunc) which is not in the imports list.
-// We will stub this validation using the AWS SDK if possible or just return not implemented if strict validation required.
-// Actually, AWS SDK doesn't provide token validation (it's a client).
-// We'd need to fetch JWKS from https://cognito-idp.{region}.amazonaws.com/{userPoolId}/.well-known/jwks.json
-// Since we don't have a distinct JWKS library in the import list explicitly for this file (maybe go-oidc?),
-// I'll check if `github.com/coreos/go-oidc/v3` is available. It is.
+// Verify validates a Cognito JWT (ID token) via OIDC discovery + JWKS.
 func (a *Adapter) Verify(ctx context.Context, token string) (*auth.Claims, error) {
-	// Using generic verifier or stubbing for now as integrating go-oidc with Cognito requires provider discovery.
+	token = strings.TrimSpace(token)
+	if token == "" {
+		return nil, auth.ErrInvalidToken
+	}
 
-	// Implementation note: Ideally we use go-oidc NewProvider with the cognito issuer URL.
-	// issuer := fmt.Sprintf("https://cognito-idp.%s.amazonaws.com/%s", a.region, a.userPoolID)
-	// provider, err := oidc.NewProvider(ctx, issuer)
-	// verifier := provider.Verifier(&oidc.Config{ClientID: a.clientID})
-	// idToken, err := verifier.Verify(ctx, token)
+	verifier, err := a.getVerifier(ctx)
+	if err != nil {
+		return nil, errors.Internal("failed to initialize cognito oidc verifier", err)
+	}
 
-	return nil, errors.Unimplemented("cognito token verification not yet implemented", nil)
+	idToken, err := verifier.Verify(ctx, token)
+	if err != nil {
+		return nil, auth.ErrInvalidTokenWrap(err)
+	}
+
+	return claimsFromOIDC(idToken)
 }
+
+func (a *Adapter) getVerifier(ctx context.Context) (*oidc.IDTokenVerifier, error) {
+	a.verifierOnce.Do(func() {
+		provider, err := oidc.NewProvider(ctx, a.issuer)
+		if err != nil {
+			a.verifierErr = err
+			return
+		}
+		a.verifier = provider.Verifier(&oidc.Config{ClientID: a.clientID})
+	})
+	return a.verifier, a.verifierErr
+}
+
+func claimsFromOIDC(idToken *oidc.IDToken) (*auth.Claims, error) {
+	var raw struct {
+		Email           string   `json:"email"`
+		CognitoUsername string   `json:"cognito:username"`
+		CognitoGroups   []string `json:"cognito:groups"`
+		Role            string   `json:"role"`
+		Roles           []string `json:"roles"`
+	}
+	if err := idToken.Claims(&raw); err != nil {
+		return nil, errors.Internal("failed to parse cognito claims", err)
+	}
+
+	roles := append([]string{}, raw.CognitoGroups...)
+	if raw.Role != "" {
+		roles = append(roles, raw.Role)
+	}
+	roles = append(roles, raw.Roles...)
+
+	return &auth.Claims{
+		Subject:   idToken.Subject,
+		Issuer:    idToken.Issuer,
+		Audience:  idToken.Audience,
+		ExpiresAt: idToken.Expiry.Unix(),
+		IssuedAt:  idToken.IssuedAt.Unix(),
+		Email:     raw.Email,
+		Roles:     roles,
+		Metadata: map[string]interface{}{
+			"cognito:username": raw.CognitoUsername,
+		},
+	}, nil
+}
+
+// Ensure interface conformance.
+var (
+	_ auth.IdentityProvider = (*Adapter)(nil)
+	_ auth.Verifier         = (*Adapter)(nil)
+)

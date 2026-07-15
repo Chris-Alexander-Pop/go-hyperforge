@@ -54,7 +54,7 @@ See the root backlog: [`/MISSING_CAPABILITIES.md`](../MISSING_CAPABILITIES.md). 
 
 | Package | Subpackages |
 |---------|-------------|
-| `auth` | jwt, oauth2, oidc, mfa, session, webauthn, social, cloud |
+| `auth` | jwt, oauth2 (AS interfaces + memory), oidc (verify + code exchange), mfa, session, webauthn, social, cloud |
 | `security` | iam, crypto, secrets, fraud, captcha, waf, scanning |
 
 ### Infrastructure

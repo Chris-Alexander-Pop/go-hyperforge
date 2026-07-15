@@ -7,7 +7,7 @@
 //
 // Usage:
 //
-//	mfaService := memory.New()
-//	qrCode, secret, err := mfaService.Enroll(ctx, userID, mfa.TOTP)
-//	err = mfaService.Verify(ctx, userID, code)
+//	mfaService, err := memory.New(mfa.Config{TOTPIssuer: "MyApp"})
+//	secret, recovery, err := mfaService.Enroll(ctx, userID)
+//	ok, err := mfaService.Verify(ctx, userID, code)
 package mfa

@@ -2,9 +2,11 @@ package tests
 
 import (
 	"testing"
+	"time"
 
 	"github.com/chris-alexander-pop/system-design-library/pkg/auth/mfa"
 	"github.com/chris-alexander-pop/system-design-library/pkg/auth/mfa/adapters/memory"
+	"github.com/chris-alexander-pop/system-design-library/pkg/auth/mfa/otp"
 	"github.com/chris-alexander-pop/system-design-library/pkg/test"
 )
 
@@ -15,35 +17,62 @@ type MFATestSuite struct {
 
 func (s *MFATestSuite) SetupTest() {
 	s.Suite.SetupTest()
-	s.provider = memory.New(mfa.Config{
+	p, err := memory.New(mfa.Config{
 		TOTPIssuer: "TestApp",
 		TOTPDigits: 6,
 		TOTPPeriod: 30,
 	})
+	s.Require().NoError(err)
+	s.provider = p
 }
 
 func (s *MFATestSuite) TestEnrollmentFlow() {
 	userID := "user-123"
 
-	// 1. Enroll
 	secret, codes, err := s.provider.Enroll(s.Ctx, userID)
 	s.NoError(err)
 	s.NotEmpty(secret)
 	s.NotEmpty(codes)
 
-	// 2. Complete Enrollment (using mock logic, code validation might fail without real TOTP gen,
-	// but memory adapter might need valid TOTP.
-	// Checking memory adapter... it calls otp.NewTOTP... so we need a valid TOTP.
-	// However, usually we can skip heavy validation in tests or use a helper.
-	// For now let's just assert enrollment happened.)
-
-	// We won't complete enrollment fully because we don't have a TOTP generator helper in this test file yet,
-	// unless we import it given it's in pkg/auth/mfa/otp probably?
-	// But let's at least check we can't Verify before enabling.
-
 	valid, err := s.provider.Verify(s.Ctx, userID, "123456")
-	s.Error(err) // Should be Forbidden (not enabled) or NotFound
+	s.Error(err) // Forbidden (not enabled)
 	s.False(valid)
+
+	totp := otp.NewTOTP(otp.TOTPConfig{Issuer: "TestApp", Digits: 6, Period: 30})
+	code, err := totp.GenerateCode(secret)
+	s.NoError(err)
+	s.NoError(s.provider.CompleteEnrollment(s.Ctx, userID, code))
+
+	// Use next period code to avoid enrollment replay collision.
+	code2, err := totp.GenerateCodeAt(secret, time.Now().Add(30*time.Second))
+	s.NoError(err)
+	ok, err := s.provider.Verify(s.Ctx, userID, code2)
+	s.NoError(err)
+	s.True(ok)
+}
+
+func (s *MFATestSuite) TestEncryptedSecretRoundTrip() {
+	p, err := memory.New(mfa.Config{
+		TOTPIssuer:    "TestApp",
+		TOTPDigits:    6,
+		TOTPPeriod:    30,
+		EncryptionKey: "dev-mfa-encryption-passphrase",
+	})
+	s.Require().NoError(err)
+
+	secret, _, err := p.Enroll(s.Ctx, "enc-user")
+	s.NoError(err)
+
+	totp := otp.NewTOTP(otp.TOTPConfig{Issuer: "TestApp", Digits: 6, Period: 30})
+	code, err := totp.GenerateCode(secret)
+	s.NoError(err)
+	s.NoError(p.CompleteEnrollment(s.Ctx, "enc-user", code))
+
+	code2, err := totp.GenerateCodeAt(secret, time.Now().Add(30*time.Second))
+	s.NoError(err)
+	ok, err := p.Verify(s.Ctx, "enc-user", code2)
+	s.NoError(err)
+	s.True(ok)
 }
 
 func (s *MFATestSuite) TestDisable() {
@@ -54,7 +83,6 @@ func (s *MFATestSuite) TestDisable() {
 	err = s.provider.Disable(s.Ctx, userID)
 	s.NoError(err)
 
-	// verify gone
 	err = s.provider.Disable(s.Ctx, userID)
 	s.Error(err) // NotFound
 }

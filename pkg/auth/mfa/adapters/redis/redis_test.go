@@ -33,7 +33,8 @@ func TestVerifyReplayProtection(t *testing.T) {
 		TOTPDigits: 6,
 		TOTPPeriod: 30, // 30 seconds
 	}
-	provider := redisAdapter.New(client, config)
+	provider, err := redisAdapter.New(client, config)
+	require.NoError(t, err)
 
 	userID := "user-replay-test"
 
@@ -90,7 +91,8 @@ func TestEnrollmentReplayProtection(t *testing.T) {
 		TOTPDigits: 6,
 		TOTPPeriod: 30, // 30 seconds
 	}
-	provider := redisAdapter.New(client, config)
+	provider, err := redisAdapter.New(client, config)
+	require.NoError(t, err)
 
 	userID := "user-enrollment-replay-test"
 
@@ -139,7 +141,8 @@ func TestRecoveryCodes(t *testing.T) {
 		TOTPDigits: 6,
 		TOTPPeriod: 30, // 30 seconds
 	}
-	provider := redisAdapter.New(client, config)
+	provider, err := redisAdapter.New(client, config)
+	require.NoError(t, err)
 
 	userID := "user-recovery-test"
 
@@ -193,7 +196,8 @@ func BenchmarkKeyGeneration(b *testing.B) {
 		TOTPDigits: 6,
 		TOTPPeriod: 30,
 	}
-	provider := redisAdapter.New(nil, config)
+	provider, err := redisAdapter.New(nil, config)
+	require.NoError(b, err)
 	userID := "user-1234567890"
 
 	b.Run("Key", func(b *testing.B) {
