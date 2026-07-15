@@ -27,36 +27,38 @@ func New(cfg Config) *Server {
 	e := echo.New()
 	e.HideBanner = true
 
+	// Apply configured read/write timeouts to the underlying http.Server.
+	if cfg.ReadTimeout > 0 {
+		e.Server.ReadTimeout = cfg.ReadTimeout
+	}
+	if cfg.WriteTimeout > 0 {
+		e.Server.WriteTimeout = cfg.WriteTimeout
+	}
+
 	// Standard Middleware
 	e.Use(middleware.Recover())
 	e.Use(middleware.RequestID())
 	e.Use(middleware.CORS())
 
 	// OTel Tracing
-	e.Use(otelecho.Middleware("api")) // Service name "api" or configurable
+	e.Use(otelecho.Middleware("api"))
 
-	// Structured Logging (replacing basic console logger)
+	// Structured Logging
 	e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			start := time.Now()
 			err := next(c)
 
-			// Compute status and error
 			status := c.Response().Status
 			if err != nil {
-				// If Echo returns an error (e.g. 404), status might not be set yet if handler errored early?
-				// Using echo.HTTPError logic
-				if he, ok := err.(*echo.HTTPError); ok {
+				var he *echo.HTTPError
+				if errors.As(err, &he) {
 					status = he.Code
-				} else {
-					// Generic error, usually 500 equivalent unless handled
-					if status == 200 {
-						status = 500
-					}
+				} else if status == http.StatusOK {
+					status = errors.HTTPStatus(err)
 				}
 			}
 
-			// Log
 			logger.L().InfoContext(c.Request().Context(), "http request",
 				"method", c.Request().Method,
 				"uri", c.Request().RequestURI,
@@ -68,7 +70,6 @@ func New(cfg Config) *Server {
 		}
 	})
 
-	// Centralized Error Handler
 	e.HTTPErrorHandler = genericErrorHandler
 
 	return &Server{echo: e, cfg: cfg}
@@ -87,32 +88,43 @@ func (s *Server) Shutdown(ctx context.Context) error {
 	return s.echo.Shutdown(ctx)
 }
 
-// genericErrorHandler maps generic errors (and pkg/errors) to HTTP responses
+// genericErrorHandler maps errors (including pkg/errors.AppError) to HTTP responses
+// using the full errors.HTTPStatus code map.
 func genericErrorHandler(err error, c echo.Context) {
-	code := http.StatusInternalServerError
-	msg := "internal server error"
-
-	if he, ok := err.(*echo.HTTPError); ok {
-		code = he.Code
-		msg = he.Message.(string)
-	} else if e, ok := err.(*errors.AppError); ok {
-		// Map Custom Error Codes
-		switch e.Code {
-		case errors.CodeNotFound:
-			code = http.StatusNotFound
-		case errors.CodeInvalidArgument:
-			code = http.StatusBadRequest
-		case errors.CodeUnauthenticated:
-			code = http.StatusUnauthorized
-		case errors.CodePermissionDenied:
-			code = http.StatusForbidden
-		}
-		msg = e.Message
+	if c.Response().Committed {
+		return
 	}
 
-	// Respond JSON
-	_ = c.JSON(code, map[string]interface{}{
-		"error": msg,
-		"code":  code,
-	})
+	code := http.StatusInternalServerError
+	msg := "internal server error"
+	payload := map[string]interface{}{}
+
+	var he *echo.HTTPError
+	if errors.As(err, &he) {
+		code = he.Code
+		switch m := he.Message.(type) {
+		case string:
+			msg = m
+		default:
+			msg = he.Error()
+		}
+		payload["error"] = msg
+		payload["code"] = code
+	} else {
+		code = errors.HTTPStatus(err)
+		var appErr *errors.AppError
+		if errors.As(err, &appErr) {
+			msg = appErr.Message
+			payload["error"] = msg
+			payload["code"] = appErr.Code
+		} else {
+			if err != nil {
+				msg = err.Error()
+			}
+			payload["error"] = msg
+			payload["code"] = code
+		}
+	}
+
+	_ = c.JSON(code, payload)
 }

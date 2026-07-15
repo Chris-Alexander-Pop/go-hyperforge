@@ -1,14 +1,10 @@
-// Package grpc provides common gRPC utilities, interceptors, and server configurations.
+// Package grpc provides a gRPC server with OpenTelemetry, unary/stream recovery,
+// AppError→gRPC status mapping (via pkg/errors.GRPCStatus), reflection, and
+// standard health checking (grpc.health.v1).
 //
-// This package standardizes gRPC server setup, including:
-//   - Middleware chains (interceptors) for logging, tracing, recovery, and auth
-//   - Health checking
-//   - Reflection
-//   - Error mapping from internal errors to gRPC codes
-//
-// Usage:
-//
-//	srv := grpc.NewServer(grpc.Config{Port: 8080})
-//	pb.RegisterMyServiceServer(srv.Server, impl)
-//	srv.Start()
+// Remaining gaps (not yet provided by this package):
+//   - Auth / JWT unary+stream interceptors (use pkg/auth at the service layer)
+//   - Per-method authorization / RBAC interceptors
+//   - Stream-level logging and error-mapping interceptors (unary ErrorInterceptor only)
+//   - Server TLS / mTLS configuration helpers
 package grpc

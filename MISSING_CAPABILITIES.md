@@ -90,7 +90,7 @@ Landed foundation/reuse/domain hardening (scores above are the *pre-fix* snapsho
 - [ ] ❌ `IsCode(err, code)` / `Code(err)` helpers
 - [ ] ❌ `Wrap` preserving `*AppError` (or `WrapCode`)
 - [ ] ❌ HTTP/gRPC mapping for custom/domain codes; reverse `FromHTTP` / `FromGRPC`
-- [ ] 🔗 Wire `HTTPStatus`/`GRPCStatus` into `pkg/api/rest` and `pkg/api/grpc`
+- [x] 🔗 Wire `HTTPStatus`/`GRPCStatus` into `pkg/api/rest` and `pkg/api/grpc`
 - [ ] ❌ Full test matrix for all helpers + wrapped errors
 
 ### `pkg/logger` (~58)
@@ -210,11 +210,15 @@ Landed foundation/reuse/domain hardening (scores above are the *pre-fix* snapsho
 - [x] ✅ Honor Attachments/MediaURL/Retry*; propagate ctx on HTTP SDKs
 - [x] ✅ Adapter unit tests; Mailgun/WebPush softened in docs (not implemented)
 
-### `pkg/api` (~48)
-- [ ] ❌ Real GraphQL wiring; gRPC health/stream/auth + `GRPCStatus` mapping
-- [ ] ❌ Echo↔stdlib middleware bridge; apply REST timeouts
-- [ ] ❌ WebSocket rooms/auth/origin; RBAC middleware + concurrency
-- [ ] ❌ OpenAPI helpers; `errors.go`; rate-limit key strategies beyond IP
+### `pkg/api` (~48 → improved)
+- [x] ✅ GraphQL schema injection via `api.Config.GraphQLSchema` (no no-op stub); honest docs
+- [x] ✅ gRPC health (`grpc.health.v1`), stream recovery, unary `GRPCStatus` ErrorInterceptor
+- [x] ✅ REST `ReadTimeout`/`WriteTimeout` applied; full `HTTPStatus` error map
+- [x] ✅ WebSocket origin allowlist, Hub `Shutdown`, broadcast no longer mutates under RLock
+- [x] ✅ RBAC `SmartRWMutex` + `middleware.RequirePermission`; rate-limit `KeyByUser`/`KeyByAPIKey`
+- [x] ✅ `pkg/api/errors.go`; softened overclaiming `doc.go`s; tests for RBAC/WS/HTTPStatus
+- [ ] ❌ OpenAPI helpers; Echo↔stdlib middleware bridge utilities
+- [ ] ❌ WebSocket rooms / upgrade-time auth; gRPC auth + stream error-mapping interceptors
 
 ---
 
@@ -227,11 +231,15 @@ Landed foundation/reuse/domain hardening (scores above are the *pre-fix* snapsho
 - [ ] ❌ `errors.go` + unify cloud vs root IdP adapters
 - [ ] ❌ Use EncryptionKey fields; WebAuthn memory real path
 
-### `pkg/security` (~30)
-- [ ] ❌ Production adapters (Vault, cloud KMS, reCAPTCHA, WAF, scanners)
-- [ ] 🔗 Bridge with `pkg/auth` (stop parallel IdP models); hash via crypto
-- [ ] ❌ `pkg/errors` in crypto/pqc; `pkg/validator` on Config
-- [ ] ❌ Real PQC or mark experimental; Dilithium claim
+### `pkg/security` (~30 → improved)
+- [x] ✅ Root `security.go` + domain `errors.go` (fraud/captcha/waf/scanning/secrets/kms/crypto) via `pkg/errors`
+- [x] ✅ Crypto: `pkg/errors`, `crypto/subtle` compare, `InstrumentedEncryptor`, MemoryKeyProvider → `crypto/adapters/memory`
+- [x] ✅ Secrets: `Rotate` + Config `Validate` (`pkg/validator`) + optional `EventedSecretManager` audit events
+- [x] ✅ Captcha: `adapters/recaptcha` siteverify HTTP adapter + honest memory/docs
+- [x] ✅ Softened Vault/cloud KMS/Dilithium/reCAPTCHA overclaims; bridge note vs `pkg/auth` IdP
+- [ ] ❌ Remaining production adapters (Vault, cloud KMS/WAF, scanners, GuardDuty)
+- [ ] ❌ Real/vetted PQC (CIRCL/liboqs); Dilithium/ML-DSA still absent
+- [ ] 🔗 Broader hash/password reuse via crypto across auth (partial)
 
 ### `pkg/audit` (~34)
 - [ ] ❌ Durable adapters (kafka/postgres); query/export/retention/GDPR APIs
