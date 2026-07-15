@@ -40,6 +40,31 @@ func ExampleWrap() {
 	// Output: failed to connect to database: connection refused
 }
 
+func ExampleWrap_preserveCode() {
+	err := errors.NotFound("user not found", nil)
+	wrapped := errors.Wrap(err, "get user")
+	fmt.Println(errors.Code(wrapped))
+	fmt.Println(errors.IsCode(wrapped, errors.CodeNotFound))
+	// Output:
+	// NOT_FOUND
+	// true
+}
+
+func ExampleDeadlineExceeded() {
+	err := errors.DeadlineExceeded("request timed out", nil)
+	fmt.Println(err.Code)
+	fmt.Println(errors.HTTPStatus(err))
+	// Output:
+	// DEADLINE_EXCEEDED
+	// 504
+}
+
+func ExampleIsCode() {
+	err := errors.Unavailable("upstream down", nil)
+	fmt.Println(errors.IsCode(err, errors.CodeUnavailable))
+	// Output: true
+}
+
 func Example_errorHandling() {
 	// Simulate a service function
 	getUser := func(id string) error {
