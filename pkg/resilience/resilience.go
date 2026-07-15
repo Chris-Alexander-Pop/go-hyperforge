@@ -1,10 +1,3 @@
-// Package resilience provides patterns for building resilient systems.
-//
-// This package includes:
-//   - Circuit Breaker: Prevents cascading failures
-//   - Retry: Automatic retries with backoff
-//   - Timeout: Request deadline enforcement
-//   - Bulkhead: Semaphore-bounded concurrency isolation
 package resilience
 
 import (
@@ -32,6 +25,30 @@ type Breaker interface {
 	Reset()
 	Metrics() CircuitBreakerMetrics
 }
+
+// Retrier is the thin retry interface for reuse and decoration.
+// Prefer NewRetrier when callers need a reusable policy object; Retry remains
+// available as a package-level helper.
+type Retrier interface {
+	Execute(ctx context.Context, fn Executor) error
+}
+
+// RetryPolicy is a concrete Retrier backed by RetryConfig.
+type RetryPolicy struct {
+	cfg RetryConfig
+}
+
+// NewRetrier creates a Retrier from the given retry configuration.
+func NewRetrier(cfg RetryConfig) *RetryPolicy {
+	return &RetryPolicy{cfg: cfg}
+}
+
+// Execute runs fn with the configured retry policy.
+func (r *RetryPolicy) Execute(ctx context.Context, fn Executor) error {
+	return Retry(ctx, r.cfg, fn)
+}
+
+var _ Retrier = (*RetryPolicy)(nil)
 
 // CircuitBreakerConfig configures the circuit breaker behavior.
 type CircuitBreakerConfig struct {

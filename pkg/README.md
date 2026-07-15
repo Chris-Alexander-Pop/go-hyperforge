@@ -35,7 +35,7 @@ See the root backlog: [`/MISSING_CAPABILITIES.md`](../MISSING_CAPABILITIES.md). 
 | `config` | Environment-based configuration loading |
 | `validator` | Input validation and sanitization |
 | `concurrency` | Mutexes, semaphores, worker pools, distributed locks |
-| `resilience` | Circuit breakers, retry with backoff |
+| `resilience` | Circuit breakers, retry, timeout, bulkhead |
 | `events` | Event bus for domain events |
 | `telemetry` | OpenTelemetry setup utilities |
 | `test` | Test suite helpers |

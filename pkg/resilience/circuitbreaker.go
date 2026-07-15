@@ -50,8 +50,9 @@ func NewCircuitBreaker(cfg CircuitBreakerConfig) *CircuitBreaker {
 
 // Execute runs the given function with circuit breaker protection.
 func (cb *CircuitBreaker) Execute(ctx context.Context, fn Executor) error {
-	if !cb.allowRequest() {
-		return ErrCircuitOpen
+	allowed, reject := cb.allowRequest()
+	if !allowed {
+		return reject
 	}
 
 	err := fn(ctx)
@@ -94,12 +95,13 @@ func (cb *CircuitBreaker) ForceClose() {
 	cb.Reset()
 }
 
-func (cb *CircuitBreaker) allowRequest() bool {
+// allowRequest reports whether a call may proceed and, if not, which sentinel to return.
+func (cb *CircuitBreaker) allowRequest() (bool, error) {
 	state := cb.State()
 
 	switch state {
 	case StateClosed:
-		return true
+		return true, nil
 
 	case StateOpen:
 		lastFailure := time.UnixMilli(cb.lastFailure.Load())
@@ -113,26 +115,26 @@ func (cb *CircuitBreaker) allowRequest() bool {
 			cb.mu.Unlock()
 			return cb.reserveHalfOpen()
 		}
-		return false
+		return false, ErrCircuitOpen
 
 	case StateHalfOpen:
 		return cb.reserveHalfOpen()
 	}
 
-	return false
+	return false, ErrCircuitOpen
 }
 
-func (cb *CircuitBreaker) reserveHalfOpen() bool {
+func (cb *CircuitBreaker) reserveHalfOpen() (bool, error) {
 	if cb.config.MaxRequests <= 0 {
-		return true
+		return true, nil
 	}
 	for {
 		cur := cb.halfOpenCount.Load()
 		if cur >= cb.config.MaxRequests {
-			return false
+			return false, ErrTooManyRequests
 		}
 		if cb.halfOpenCount.CompareAndSwap(cur, cur+1) {
-			return true
+			return true, nil
 		}
 	}
 }

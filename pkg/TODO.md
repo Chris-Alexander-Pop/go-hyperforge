@@ -24,7 +24,7 @@
 | **Messaging** | `pkg/messaging/*` (Kafka, NATS, RabbitMQ, SQS, SNS, Pub/Sub) |
 | **Cache** | `pkg/cache/*` (Redis, memory) |
 | **Blob** | `pkg/blob/*` (S3, GCS, Azure) |
-| **Resilience** | `pkg/resilience/*` (Circuit breaker, retry) |
+| **Resilience** | `pkg/resilience/*` (Circuit breaker, retry, timeout, bulkhead) |
 
 ---
 

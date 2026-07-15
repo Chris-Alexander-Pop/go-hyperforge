@@ -60,10 +60,11 @@ func (i *InstrumentedCircuitBreaker) Execute(ctx context.Context, fn Executor) e
 	if err != nil {
 		span.RecordError(err)
 		span.SetStatus(codes.Error, err.Error())
-		if errors.Is(err, ErrCircuitOpen) {
+		if errors.Is(err, ErrCircuitOpen) || errors.Is(err, ErrTooManyRequests) {
 			logger.L().WarnContext(ctx, "circuit breaker rejected request",
 				"name", i.name,
 				"state", string(i.next.State()),
+				"error", err.Error(),
 			)
 		}
 	}

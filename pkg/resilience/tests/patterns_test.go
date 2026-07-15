@@ -3,11 +3,13 @@ package resilience_test
 import (
 	"context"
 	"errors"
+	"net/http"
 	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
 
+	apperrors "github.com/chris-alexander-pop/system-design-library/pkg/errors"
 	"github.com/chris-alexander-pop/system-design-library/pkg/resilience"
 )
 
@@ -91,6 +93,9 @@ func TestWithTimeout(t *testing.T) {
 	if !errors.Is(err, context.DeadlineExceeded) {
 		t.Fatalf("expected deadline exceeded, got %v", err)
 	}
+	if !apperrors.IsCode(err, apperrors.CodeDeadlineExceeded) {
+		t.Fatalf("expected CodeDeadlineExceeded, got %q", apperrors.Code(err))
+	}
 }
 
 func TestWithTimeout_Success(t *testing.T) {
@@ -99,6 +104,37 @@ func TestWithTimeout_Success(t *testing.T) {
 	})
 	if err := fn(context.Background()); err != nil {
 		t.Fatalf("expected success, got %v", err)
+	}
+}
+
+func TestWithTimeout_IgnoresContext(t *testing.T) {
+	// fn blocks without watching ctx; WithTimeout must still return on deadline.
+	fn := resilience.WithTimeout(40*time.Millisecond, func(ctx context.Context) error {
+		time.Sleep(500 * time.Millisecond)
+		return nil
+	})
+	start := time.Now()
+	err := fn(context.Background())
+	elapsed := time.Since(start)
+	if !errors.Is(err, context.DeadlineExceeded) {
+		t.Fatalf("expected deadline exceeded, got %v", err)
+	}
+	if elapsed > 300*time.Millisecond {
+		t.Fatalf("timeout not enforced promptly, took %v", elapsed)
+	}
+}
+
+func TestWithTimeout_NonPositive(t *testing.T) {
+	called := false
+	fn := resilience.WithTimeout(0, func(ctx context.Context) error {
+		called = true
+		return nil
+	})
+	if err := fn(context.Background()); err != nil {
+		t.Fatalf("expected success, got %v", err)
+	}
+	if !called {
+		t.Fatal("expected fn to run when timeout <= 0")
 	}
 }
 
@@ -199,5 +235,85 @@ func TestInstrumentedCircuitBreaker(t *testing.T) {
 	err := icb.Execute(context.Background(), func(ctx context.Context) error { return nil })
 	if !errors.Is(err, resilience.ErrCircuitOpen) {
 		t.Fatalf("expected ErrCircuitOpen, got %v", err)
+	}
+}
+
+func TestCircuitBreaker_MaxRequests(t *testing.T) {
+	cb := resilience.NewCircuitBreaker(resilience.CircuitBreakerConfig{
+		Name:             "max-req",
+		FailureThreshold: 1,
+		SuccessThreshold: 5,
+		Timeout:          20 * time.Millisecond,
+		MaxRequests:      1,
+	})
+	ctx := context.Background()
+
+	_ = cb.Execute(ctx, func(ctx context.Context) error { return errors.New("fail") })
+	if cb.State() != resilience.StateOpen {
+		t.Fatalf("expected open, got %v", cb.State())
+	}
+
+	time.Sleep(40 * time.Millisecond)
+
+	started := make(chan struct{})
+	release := make(chan struct{})
+	done := make(chan error, 1)
+
+	go func() {
+		done <- cb.Execute(ctx, func(ctx context.Context) error {
+			close(started)
+			<-release
+			return nil
+		})
+	}()
+
+	<-started
+	err := cb.Execute(ctx, func(ctx context.Context) error { return nil })
+	if !errors.Is(err, resilience.ErrTooManyRequests) {
+		t.Fatalf("expected ErrTooManyRequests, got %v", err)
+	}
+	if apperrors.HTTPStatus(err) != http.StatusTooManyRequests {
+		t.Fatalf("expected HTTP 429, got %d", apperrors.HTTPStatus(err))
+	}
+	close(release)
+	if err := <-done; err != nil {
+		t.Fatalf("probe failed: %v", err)
+	}
+}
+
+func TestErrorCodes(t *testing.T) {
+	if apperrors.HTTPStatus(resilience.ErrCircuitOpen) != http.StatusServiceUnavailable {
+		t.Fatalf("circuit open should map to 503, got %d", apperrors.HTTPStatus(resilience.ErrCircuitOpen))
+	}
+	if !apperrors.IsCode(resilience.ErrCircuitOpen, apperrors.CodeUnavailable) {
+		t.Fatalf("expected UNAVAILABLE code, got %q", apperrors.Code(resilience.ErrCircuitOpen))
+	}
+	if apperrors.HTTPStatus(resilience.ErrBulkheadFull) != http.StatusTooManyRequests {
+		t.Fatalf("bulkhead full should map to 429, got %d", apperrors.HTTPStatus(resilience.ErrBulkheadFull))
+	}
+	if !apperrors.IsCode(resilience.ErrBulkheadFull, apperrors.CodeResourceExhausted) {
+		t.Fatalf("expected RESOURCE_EXHAUSTED, got %q", apperrors.Code(resilience.ErrBulkheadFull))
+	}
+}
+
+func TestRetrier(t *testing.T) {
+	var calls atomic.Int64
+	r := resilience.NewRetrier(resilience.RetryConfig{
+		MaxAttempts:    3,
+		InitialBackoff: time.Millisecond,
+		MaxBackoff:     5 * time.Millisecond,
+		Multiplier:     2,
+	})
+	err := r.Execute(context.Background(), func(ctx context.Context) error {
+		if calls.Add(1) < 3 {
+			return errors.New("temp")
+		}
+		return nil
+	})
+	if err != nil {
+		t.Fatalf("expected success, got %v", err)
+	}
+	if calls.Load() != 3 {
+		t.Fatalf("expected 3 calls, got %d", calls.Load())
 	}
 }

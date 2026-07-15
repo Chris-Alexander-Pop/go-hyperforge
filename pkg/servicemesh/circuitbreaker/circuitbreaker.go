@@ -169,12 +169,10 @@ func mapError(err error) error {
 	if err == nil {
 		return nil
 	}
+	if errors.Is(err, resilience.ErrTooManyRequests) {
+		return ErrTooManyRequests
+	}
 	if errors.Is(err, resilience.ErrCircuitOpen) {
-		// Half-open max-request rejection also surfaces as circuit-open from
-		// resilience; preserve historical ErrTooManyRequests when already half-open
-		// is not distinguishable here, so mesh callers get ErrCircuitOpen which
-		// matches open-circuit rejection tests. ErrTooManyRequests remains exported
-		// for callers that probe state themselves.
 		return ErrCircuitOpen
 	}
 	return err

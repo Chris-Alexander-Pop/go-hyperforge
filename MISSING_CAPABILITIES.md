@@ -50,7 +50,7 @@
 | security | 30* | Memory-only domain |
 | servicemesh | 25* | Discovery OK; CB/RL reinvent resilience/algorithms |
 | storage | 45* | Blob partial; file/block/archive memory-only |
-| resilience | 40* | CB+retry only; bulkhead claimed missing |
+| resilience | 75* | CB+retry+timeout+bulkhead; typed Execute / Hedge / Fallback still open |
 
 \*Approximate where review used checklist form without a single headline score.
 
@@ -112,13 +112,14 @@
 - [ ] ❌ Self-tests + examples; split/remove unused testcontainers helpers
 - [ ] ❌ Drive adoption in cache/messaging/events/resilience/logger/api
 
-### `pkg/resilience` (~40)
-- [ ] ❌ Interfaces + `instrumented.go` + `errors.go` + env `Config`
-- [ ] ❌ Real Timeout / Bulkhead / Hedge / Fallback (docs claim Bulkhead)
-- [ ] ❌ Half-open `MaxRequests`; typed `(T, error)` Execute
-- [ ] 🔗 Single CB source of truth vs `pkg/servicemesh/circuitbreaker`
-- [ ] ❌ Map `CIRCUIT_OPEN` → UNAVAILABLE/503
-- [ ] ❌ Tests for WithTimeout, ExponentialBackoff, RetryWithCircuitBreaker
+### `pkg/resilience` (~75)
+- [x] ✅ Breaker/Retrier interfaces + `instrumented.go` + `errors.go` (UNAVAILABLE/RESOURCE_EXHAUSTED)
+- [x] ✅ Real Timeout (`WithTimeout`) + semaphore Bulkhead via `pkg/concurrency`
+- [ ] ❌ Hedge / Fallback; typed `(T, error)` Execute; env `Config`
+- [x] ✅ Half-open `MaxRequests` (`ErrTooManyRequests`)
+- [x] 🔗 Single CB source of truth vs `pkg/servicemesh/circuitbreaker` (thin facade)
+- [x] ✅ Map circuit-open → UNAVAILABLE/503; bulkhead/half-open cap → RESOURCE_EXHAUSTED/429
+- [x] ✅ Tests for WithTimeout, ExponentialBackoff, RetryWithCircuitBreaker, Bulkhead, MaxRequests
 
 ### `pkg/concurrency` (~52)
 - [ ] 🔗 Wrap/re-export `x/sync/semaphore` + `errgroup` instead of competing copies
@@ -228,7 +229,7 @@
 ## 5. Infrastructure
 
 ### `pkg/network` (~50)
-- [ ] 🔗 Wire `pkg/algorithms/loadbalancing` into LB selection (or document CP-only)
+- [x] 🔗 Wire `pkg/algorithms/loadbalancing` into LB selection (memory `SelectTarget`)
 - [ ] ❌ `instrumented.go` + `errors.go` for cdn/apigateway/ip + root TCP/UDP
 - [ ] ❌ Cloud adapters matching TODO (Route53, CloudFront, etc.) or demote ✅
 - [ ] 🔗 `pkg/concurrency` in all memory adapters
