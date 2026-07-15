@@ -3,6 +3,7 @@
 //
 // Shipping backends today:
 //   - Memory: In-memory cold store for unit tests (instant restore)
+//   - Filesystem: Local cold directory (objects + meta sidecars; instant restore)
 //
 // Planned (not implemented): AWS S3 Glacier / Glacier Deep Archive, Azure Blob
 // Archive tier, Google Cloud Storage Archive class.
@@ -25,6 +26,7 @@ import (
 // Driver constants for archive storage backends.
 const (
 	DriverMemory       = "memory"
+	DriverFilesystem   = "filesystem"
 	DriverGlacier      = "glacier"
 	DriverGlacierDeep  = "glacier-deep"
 	DriverAzureArchive = "azure-archive"

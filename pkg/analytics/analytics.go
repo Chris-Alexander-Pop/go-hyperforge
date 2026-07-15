@@ -60,3 +60,25 @@ type Tracker interface {
 	// After Close, further operations return ErrClosed.
 	Close() error
 }
+
+// CounterStore tracks exact (non-HLL) counts for named counters.
+// Unlike Tracker, Incr/AddExact count occurrences (or unique sets when using AddExact
+// with a set-backed adapter), and Count returns exact totals.
+type CounterStore interface {
+	// Incr increments a named counter by delta (may be negative). Creates if missing.
+	Incr(ctx context.Context, counter string, delta int64) (int64, error)
+
+	// AddExact records a unique element for exact set cardinality (optional semantics).
+	// Memory exact adapter treats this as set membership: Count returns unique size.
+	// Adapters that only support numeric counters may return Unimplemented.
+	AddExact(ctx context.Context, counter string, element string) error
+
+	// Count returns the exact count for a named counter. Missing counters return (0, nil).
+	Count(ctx context.Context, counter string) (int64, error)
+
+	// Reset clears a counter. Missing counters are a no-op.
+	Reset(ctx context.Context, counter string) error
+
+	// Close releases resources. After Close, operations return ErrClosed.
+	Close() error
+}

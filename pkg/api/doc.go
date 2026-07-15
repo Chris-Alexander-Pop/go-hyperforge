@@ -2,11 +2,10 @@
 Package api is the unified entrypoint and factory for REST, gRPC, and GraphQL transports.
 
 Capabilities wired today: REST timeouts + HTTPStatus errors, gRPC health/recovery/GRPCStatus,
-GraphQL schema injection, WebSocket hub, RBAC middleware, multi-key rate limiting, and
-pkg/api/openapi document helper stubs.
+GraphQL schema injection, WebSocket hub (rooms + upgrade auth), RBAC middleware, multi-key
+rate limiting, pkg/api/openapi document helpers from route metadata, and Echo↔stdlib bridges.
 
-Not covered by this factory: full Echo↔stdlib middleware bridge utilities, WebSocket rooms,
-or production GraphQL complexity/auth plugins (configure via gqlgen).
+Not covered by this factory: production GraphQL complexity/auth plugins (configure via gqlgen).
 
 Usage:
 

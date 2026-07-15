@@ -20,11 +20,11 @@
 - `pkg/test`: drive Suite adoption across cache/messaging/events/…
 - `pkg/concurrency`: re-export `x/sync/semaphore` + `errgroup` (optional)
 - `pkg/database`: Neptune graph; broader conformance (Cassandra KV + Milvus vector **shipped**)
-- `pkg/storage`: block/archive/controller cloud adapters (file **local** shipped)
-- `pkg/data`: real Typesense/OpenSearch HTTP clients (memory stubs exist); Snowflake
-- `pkg/analytics`: exact counters / warehouse adapters
+- `pkg/storage`: block/archive/controller **cloud** adapters (file local + block local + archive filesystem shipped)
+- `pkg/data`: real Typesense/OpenSearch HTTP clients (memory stubs exist); Snowflake ✅ thin SQL/HTTP
+- `pkg/analytics`: warehouse adapters (exact CounterStore memory ✅)
 - `pkg/metering`: period aggregation / rate-card mutation APIs; postgres adapter
-- `pkg/api`: Echo↔stdlib middleware bridge; WS rooms / upgrade auth; gRPC auth + stream error mapping
+- `pkg/api`: GraphQL polish only (Echo↔stdlib + WS rooms/auth + gRPC auth/stream errors ✅)
 - `pkg/security`: cloud secret managers, scanners, GuardDuty; real CIRCL/liboqs PQC (experimental stub remains) — AWS WAF + GCP/Azure KMS **shipped**
 - `pkg/cloud`: postgres controlplane driver (PXE imaging **shipped**)
 - `pkg/servicemesh`: etcd/K8s discovery (mTLS helpers + honest retry docs landed)
@@ -77,6 +77,7 @@ Landed foundation/reuse/domain hardening (scores above are the *pre-fix* snapsho
 - ✅ `iot` awsiot behind root Client adapter; blob-backed OTA via pkg/storage/blob
 - ✅ `algorithms/loadbalancing/healthaware` skips unhealthy nodes
 - ✅ Deep wave: `concurrency` singleflight + adaptive WorkerPool; `events` Outbox→messaging; `cache` Redis Cluster Config; search Typesense/OpenSearch memory stubs; `storage/file` local FS; `api/openapi` stub; errors ABORTED/FAILED_PRECONDITION + FromHTTP/FromGRPC
+- ✅ API/data depth: OpenAPI FromRoutes + Echo↔stdlib bridge; WS rooms + upgrade auth; gRPC Auth + StreamError interceptors; Snowflake thin adapter; analytics ExactStore; block local + archive filesystem
 - ✅ Deep wave: enterprise ProjectionRunner + checkpoint sql/postgres + EventedStore messaging outbox; servicemesh mTLS helpers; speech AWS/Google adapters; ml inference/feature instrumented+errors+memory
 
 ---
@@ -93,11 +94,11 @@ Landed foundation/reuse/domain hardening (scores above are the *pre-fix* snapsho
 | errors | 58→improved | Codes/IsCode/Wrap/FromHTTP/FromGRPC |
 | datastructures | 58 | Broad catalog; many stubs / low reuse |
 | communication | 58 | Ready: root drivers/errors/resilience, html/text templates, adapter tests |
-| data | 62 | Search+Suggest; Typesense/OpenSearch memory stubs; bigdata errors/instrumented |
+| data | 62→improved | Search+Suggest; Typesense/OpenSearch memory stubs; Snowflake SQL/HTTP; bigdata errors/instrumented |
 | compute | 52→78 | EC2/GCE/Docker + k8s Exec; Azure VM/Functions scaffolds |
 | concurrency | 58→improved | singleflight + adaptive WorkerPool option |
 | network | 50* | LB/DNS/CDN/APIGW/IP instrumented; cloud adapters reserved |
-| api | 48→improved | OpenAPI helper stub; GraphQL; standards weak in places |
+| api | 48→improved | OpenAPI FromRoutes + Echo bridge; WS rooms/auth; gRPC auth+stream errors |
 | test | 45→improved | Suite self-tests/examples; containers Short-skip + Cleanup |
 | commerce | 42→78 | Money + payment depth; billing proration+dunning; TaxJar/Avalara; live FX |
 | events | 42→improved | Config/errors/lifecycle + Outbox messaging bridge |
@@ -106,12 +107,12 @@ Landed foundation/reuse/domain hardening (scores above are the *pre-fix* snapsho
 | cloud | 38→72 | Libvirt/Firecracker/Redfish/IPMI + instance bind APIs |
 | telemetry | 36→improved | OTLP/noop/stdout traces+metrics MeterProvider |
 | ai | 36→improved | StreamChat/gateway/prompt; multimodal Parts; evals; RAG↔vector/rerank; Textract |
-| analytics | 32→improved | HLL + event Sink + windowed uniqueness |
+| analytics | 32→improved | HLL + event Sink + windowed uniqueness + ExactStore |
 | validator | 32→improved | Interface/errors/instrumented; config routes through it |
 | audit | 34→improved | SQL/Postgres + messaging fanout; hash-chain; GDPR/retention |
 | security | 30* → improved | Vault KV v2, AWS KMS, Cloudflare WAF; scanners still open; PQC experimental |
 | servicemesh | 25*→improved | Discovery OK + Consul; CB/RL facades |
-| storage | 45*→improved | Blob Store parity; file local FS adapter |
+| storage | 45*→improved | Blob Store parity; file/block local + archive filesystem |
 | resilience | 75→improved | Hedge/Fallback/ExecuteT + env Config; CB+retry+timeout+bulkhead |
 
 \*Approximate where review used checklist form without a single headline score.
@@ -225,14 +226,17 @@ Landed foundation/reuse/domain hardening (scores above are the *pre-fix* snapsho
 - [x] ✅ `pkg/concurrency` in memory adapters; typed `pkg/events` payloads (`BlobEventPayload`)
 - [x] ✅ Root `storage.go`; archive doc clarified (cold storage ≠ tar/zip)
 - [x] ✅ Local/NFS-shaped `file` adapter (`file/adapters/local` real FS)
-- [ ] ❌ Production adapters for block/archive/controller (still future work)
+- [x] ✅ Local file-backed `block` adapter (`block/adapters/local` JSON metadata)
+- [x] ✅ Filesystem cold-dir `archive` adapter (`archive/adapters/filesystem`)
+- [ ] ❌ Production cloud adapters for block/archive/controller (still future work)
 
 ### `pkg/data` (~56 → improved)
 - [x] ✅ Docs: top-level `etl` / `processing` marked planned-only (`data/doc.go`, `pkg/README`)
 - [x] ✅ Search `Suggest` autocomplete on interface + memory; Typesense/OpenSearch memory stubs
 - [x] ✅ Reuse `pkg/concurrency` (SmartRWMutex/SmartMutex) in search memory, mapreduce, DAG
 - [x] ✅ Bigdata `errors.go` + instrumented logging; Spark docs honest (local spark-submit, not Connect)
-- [ ] ❌ Real Typesense/OpenSearch HTTP clients; Snowflake adapters (still future work)
+- [x] ✅ Snowflake thin adapter (`bigdata/adapters/snowflake` SQL driver + HTTP SQL API)
+- [ ] ❌ Real Typesense/OpenSearch HTTP clients (memory stubs remain)
 
 ### `pkg/streaming` (~25 → improved)
 - [x] ✅ Remove Pub/Sub duplication with `pkg/messaging` (Kinesis/EventHubs + memory only)
@@ -244,7 +248,8 @@ Landed foundation/reuse/domain hardening (scores above are the *pre-fix* snapsho
 - [x] ✅ Event ingest model (`Sink` / `Event`) + memory sink
 - [x] ✅ Redis HLL adapter (PFADD/PFCOUNT/PFMERGE); Merge on Tracker; precision 4–16
 - [x] ✅ Windowed uniqueness helper (`WindowKey` / `WindowedUniqueness`)
-- [ ] ❌ Exact counters / warehouse adapters (still future work)
+- [x] ✅ Exact counters: `CounterStore` + memory `ExactStore` (non-HLL)
+- [ ] ❌ Warehouse analytics adapters (still future work)
 - [x] ✅ Fix PACKAGE_STANDARDS §6.11 example (`memory.New` + Close/Merge)
 
 ### `pkg/metering` (~20 → improved)
@@ -278,9 +283,9 @@ Landed foundation/reuse/domain hardening (scores above are the *pre-fix* snapsho
 - [x] ✅ WebSocket origin allowlist, Hub `Shutdown`, broadcast no longer mutates under RLock
 - [x] ✅ RBAC `SmartRWMutex` + `middleware.RequirePermission`; rate-limit `KeyByUser`/`KeyByAPIKey`
 - [x] ✅ `pkg/api/errors.go`; softened overclaiming `doc.go`s; tests for RBAC/WS/HTTPStatus
-- [x] ✅ OpenAPI helpers stub (`pkg/api/openapi`)
-- [ ] ❌ Echo↔stdlib middleware bridge utilities
-- [ ] ❌ WebSocket rooms / upgrade-time auth; gRPC auth + stream error-mapping interceptors
+- [x] ✅ OpenAPI helpers: `FromRoutes` route metadata → OpenAPI 3 doc; Echo↔stdlib bridge (`EchoMiddleware`/`StdHandler`/`MountStd`)
+- [x] ✅ WebSocket rooms (`JoinRoom`/`LeaveRoom`/`BroadcastToRoom`) + upgrade-time `Authenticate` hook
+- [x] ✅ gRPC `AuthInterceptor`/`StreamAuthInterceptor` + `StreamErrorInterceptor` (GRPCStatus)
 
 ---
 

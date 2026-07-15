@@ -2,6 +2,7 @@
 //
 // Shipping backends today:
 //   - Memory: In-memory volume store for unit tests
+//   - Local: File-backed JSON metadata store for local/dev (not a real block device)
 //
 // Planned (not implemented): AWS EBS, Azure Managed Disks, GCP Persistent Disks,
 // Ceph, OpenStack Cinder.
@@ -22,6 +23,7 @@ import (
 // Driver constants for block storage backends.
 const (
 	DriverMemory          = "memory"
+	DriverLocal           = "local"
 	DriverEBS             = "ebs"
 	DriverAzureDisk       = "azure-disk"
 	DriverGCPPersistent   = "gcp-persistent"

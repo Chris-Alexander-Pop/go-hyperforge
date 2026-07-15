@@ -13,11 +13,11 @@ It is intentionally not a full analytics warehouse:
 
   - No sessionization, funnels, retention, or attribution
   - No OLAP queries or dashboards
-  - Exact counters belong in metering / telemetry / database packages
+  - Exact counters: use CounterStore (memory ExactStore) rather than HLL Tracker
 
 # Adapters
 
-  - adapters/memory — HLL Tracker + event Sink
+  - adapters/memory — HLL Tracker + event Sink + ExactStore (CounterStore)
   - adapters/redis  — Redis native HyperLogLog (PFADD / PFCOUNT / PFMERGE)
 
 # Example

@@ -1,6 +1,8 @@
 package websocket
 
 import (
+	"context"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"sync"
@@ -19,7 +21,7 @@ func TestHubShutdown_ClosesClients(t *testing.T) {
 		close(done)
 	}()
 
-	client := &Client{hub: hub, send: make(chan []byte, 1)}
+	client := &Client{hub: hub, send: make(chan []byte, 1), rooms: make(map[string]bool)}
 	hub.register <- client
 
 	require.Eventually(t, func() bool {
@@ -55,7 +57,7 @@ func TestHubBroadcast_DoesNotMutateUnderRLock(t *testing.T) {
 	const n = 20
 	clients := make([]*Client, n)
 	for i := 0; i < n; i++ {
-		c := &Client{hub: hub, send: make(chan []byte, 1)}
+		c := &Client{hub: hub, send: make(chan []byte, 1), rooms: make(map[string]bool)}
 		clients[i] = c
 		hub.register <- c
 	}
@@ -101,4 +103,75 @@ func TestCheckOriginAllowlist(t *testing.T) {
 
 	uAll := newUpgrader(Config{AllowedOrigins: []string{"*"}})
 	assert.True(t, uAll.CheckOrigin(reqDeny))
+}
+
+func TestHubRooms(t *testing.T) {
+	hub := NewHub()
+	go hub.Run()
+	defer hub.Shutdown()
+
+	c1 := &Client{hub: hub, send: make(chan []byte, 4), rooms: make(map[string]bool)}
+	c2 := &Client{hub: hub, send: make(chan []byte, 4), rooms: make(map[string]bool)}
+	c3 := &Client{hub: hub, send: make(chan []byte, 4), rooms: make(map[string]bool)}
+	hub.register <- c1
+	hub.register <- c2
+	hub.register <- c3
+
+	require.Eventually(t, func() bool {
+		hub.mu.RLock()
+		defer hub.mu.RUnlock()
+		return len(hub.clients) == 3
+	}, time.Second, 10*time.Millisecond)
+
+	hub.JoinRoom(c1, "lobby")
+	hub.JoinRoom(c2, "lobby")
+	hub.JoinRoom(c3, "other")
+	assert.Equal(t, 2, hub.RoomSize("lobby"))
+	assert.Equal(t, 1, hub.RoomSize("other"))
+
+	hub.BroadcastToRoom("lobby", []byte("hello-lobby"))
+
+	select {
+	case msg := <-c1.send:
+		assert.Equal(t, "hello-lobby", string(msg))
+	case <-time.After(time.Second):
+		t.Fatal("c1 did not receive room message")
+	}
+	select {
+	case msg := <-c2.send:
+		assert.Equal(t, "hello-lobby", string(msg))
+	case <-time.After(time.Second):
+		t.Fatal("c2 did not receive room message")
+	}
+	select {
+	case <-c3.send:
+		t.Fatal("c3 should not receive lobby message")
+	case <-time.After(50 * time.Millisecond):
+	}
+
+	hub.LeaveRoom(c1, "lobby")
+	assert.Equal(t, 1, hub.RoomSize("lobby"))
+
+	hub.unregister <- c2
+	require.Eventually(t, func() bool {
+		return hub.RoomSize("lobby") == 0
+	}, time.Second, 10*time.Millisecond)
+}
+
+func TestServeWs_AuthHook(t *testing.T) {
+	hub := NewHubWithConfig(Config{
+		Authenticate: func(r *http.Request) (context.Context, error) {
+			if r.Header.Get("Authorization") != "Bearer good" {
+				return nil, errors.New("bad token")
+			}
+			return context.WithValue(r.Context(), "sub", "alice"), nil
+		},
+	})
+	go hub.Run()
+	defer hub.Shutdown()
+
+	req := httptest.NewRequest(http.MethodGet, "/ws", nil)
+	rec := httptest.NewRecorder()
+	ServeWs(hub, rec, req)
+	assert.Equal(t, http.StatusUnauthorized, rec.Code)
 }
