@@ -4,10 +4,10 @@ import (
 	"context"
 	"time"
 
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/concurrency"
 	"github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 	"github.com/chris-alexander-pop/go-hyperforge/pkg/servicemesh/discovery"
 	"github.com/google/uuid"
-	"github.com/chris-alexander-pop/go-hyperforge/pkg/concurrency"
 )
 
 // Registry implements an in-memory service registry for testing.

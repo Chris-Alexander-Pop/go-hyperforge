@@ -9,12 +9,12 @@ import (
 
 type okTransport struct{}
 
-func (okTransport) Ping(string) (bool, error)             { return true, nil }
+func (okTransport) Ping(string) (bool, error)            { return true, nil }
 func (okTransport) PingReq(string, string) (bool, error) { return true, nil }
 
 type failTransport struct{}
 
-func (failTransport) Ping(string) (bool, error)             { return false, nil }
+func (failTransport) Ping(string) (bool, error)            { return false, nil }
 func (failTransport) PingReq(string, string) (bool, error) { return false, nil }
 
 func TestJoinEmitsEventAndStop(t *testing.T) {

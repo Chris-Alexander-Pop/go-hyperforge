@@ -8,9 +8,9 @@ package password
 import (
 	"context"
 
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/concurrency"
 	"github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
 	"github.com/chris-alexander-pop/go-hyperforge/pkg/security/crypto"
-	"github.com/chris-alexander-pop/go-hyperforge/pkg/concurrency"
 )
 
 // Store holds username → password-hash mappings.

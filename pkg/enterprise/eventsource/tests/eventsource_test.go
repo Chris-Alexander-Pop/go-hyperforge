@@ -465,10 +465,10 @@ func (m *recordingMetrics) OnError(name string, err error)                   { m
 func (m *recordingMetrics) OnCatchUpIdle(name string)                        { m.idle++ }
 
 type failOnceProjector struct {
-	types   []string
-	calls   int
-	failAt  int
-	seen    []string
+	types  []string
+	calls  int
+	failAt int
+	seen   []string
 }
 
 func (p *failOnceProjector) EventTypes() []string { return p.types }
