@@ -1,6 +1,7 @@
 package validator_test
 
 import (
+	"context"
 	"testing"
 
 	"github.com/chris-alexander-pop/system-design-library/pkg/test"
@@ -21,6 +22,7 @@ type UserPassword struct {
 
 func (s *PasswordSuite) TestStrongPassword() {
 	v := validator.New()
+	ctx := context.Background()
 
 	tests := []struct {
 		name     string
@@ -38,7 +40,7 @@ func (s *PasswordSuite) TestStrongPassword() {
 
 	for _, tt := range tests {
 		s.Run(tt.name, func() {
-			err := v.ValidateStruct(UserPassword{Password: tt.password})
+			err := v.ValidateStruct(ctx, UserPassword{Password: tt.password})
 			if tt.wantErr {
 				s.Error(err, "expected error for password: %s", tt.password)
 			} else {

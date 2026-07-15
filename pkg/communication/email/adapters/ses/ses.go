@@ -19,7 +19,7 @@ type Sender struct {
 
 // New creates a new SES sender.
 func New(ctx context.Context, cfg email.Config) (*Sender, error) {
-	if err := validator.New().ValidateStruct(cfg); err != nil {
+	if err := validator.New().ValidateStruct(context.Background(), cfg); err != nil {
 		return nil, errors.InvalidArgument("invalid config", err)
 	}
 

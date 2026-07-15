@@ -18,7 +18,7 @@ type Provider struct {
 
 // New creates a new Stripe provider.
 func New(cfg payment.Config) (payment.Provider, error) {
-	if err := validator.New().ValidateStruct(cfg); err != nil {
+	if err := validator.New().ValidateStruct(context.Background(), cfg); err != nil {
 		return nil, errors.InvalidArgument("invalid config", err)
 	}
 

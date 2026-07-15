@@ -217,7 +217,7 @@ func SanitizePath(input string) string {
 
 // ValidatePathInside checks if the target path is within the base directory.
 // It resolves paths to absolute paths and cleans them.
-// Returns the absolute clean path if valid, or an error.
+// Returns the absolute clean path if valid, or an InvalidArgument error on traversal.
 func ValidatePathInside(baseDir, targetPath string) (string, error) {
 	absBase, err := filepath.Abs(baseDir)
 	if err != nil {
@@ -234,7 +234,7 @@ func ValidatePathInside(baseDir, targetPath string) (string, error) {
 	}
 
 	if !strings.HasPrefix(fullPath, prefix) {
-		return "", fmt.Errorf("path traversal attempt: path %s resolves to %s which is not within %s", targetPath, fullPath, baseDir)
+		return "", errPathTraversal(targetPath, fullPath, baseDir)
 	}
 
 	return fullPath, nil

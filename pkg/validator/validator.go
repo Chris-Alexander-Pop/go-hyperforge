@@ -1,10 +1,11 @@
 package validator
 
 import (
+	"context"
 	"regexp"
 	"unicode"
 
-	"github.com/go-playground/validator/v10"
+	playground "github.com/go-playground/validator/v10"
 )
 
 // Common Regex Patterns
@@ -13,44 +14,63 @@ var (
 	phoneRegex = regexp.MustCompile(`^\+[1-9]\d{1,14}$`) // E.164 standard roughly
 )
 
-type Validator struct {
-	validate *validator.Validate
+// Validator validates structs and variables against validation tags.
+type Validator interface {
+	// ValidateStruct validates a struct using validate tags.
+	ValidateStruct(ctx context.Context, s interface{}) error
+
+	// ValidateVar validates a single variable against a tag.
+	ValidateVar(ctx context.Context, field interface{}, tag string) error
 }
 
-func New() *Validator {
-	v := validator.New()
+// Ensure Engine implements Validator at compile time.
+var _ Validator = (*Engine)(nil)
 
-	// Register Custom Validations
+// Engine is the concrete go-playground/validator based implementation.
+type Engine struct {
+	validate *playground.Validate
+}
+
+// New creates a Validator with custom rules registered (slug, password_strong, phone_e164).
+func New() *Engine {
+	v := playground.New()
+
 	_ = v.RegisterValidation("slug", validateSlug)
 	_ = v.RegisterValidation("password_strong", validatePasswordStrong)
 	_ = v.RegisterValidation("phone_e164", validatePhone)
 
-	return &Validator{
+	return &Engine{
 		validate: v,
 	}
 }
 
-// ValidateStruct validates a struct using tags
-func (v *Validator) ValidateStruct(s interface{}) error {
-	return v.validate.Struct(s)
+// ValidateStruct validates a struct using tags. Failures map to errors.InvalidArgument.
+func (v *Engine) ValidateStruct(ctx context.Context, s interface{}) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	return mapValidationError(v.validate.Struct(s))
 }
 
-// ValidateVar validates a single variable against a tag
-func (v *Validator) ValidateVar(field interface{}, tag string) error {
-	return v.validate.Var(field, tag)
+// ValidateVar validates a single variable against a tag. Failures map to errors.InvalidArgument.
+func (v *Engine) ValidateVar(ctx context.Context, field interface{}, tag string) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	return mapValidationError(v.validate.Var(field, tag))
 }
 
 // Custom Validation Functions
 
-func validateSlug(fl validator.FieldLevel) bool {
+func validateSlug(fl playground.FieldLevel) bool {
 	return slugRegex.MatchString(fl.Field().String())
 }
 
-func validatePhone(fl validator.FieldLevel) bool {
+func validatePhone(fl playground.FieldLevel) bool {
 	return phoneRegex.MatchString(fl.Field().String())
 }
 
-func validatePasswordStrong(fl validator.FieldLevel) bool {
+func validatePasswordStrong(fl playground.FieldLevel) bool {
 	password := fl.Field().String()
 
 	// Length 8+

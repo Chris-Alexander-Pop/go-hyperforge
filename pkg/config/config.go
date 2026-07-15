@@ -1,6 +1,8 @@
 package config
 
 import (
+	"context"
+
 	"github.com/chris-alexander-pop/system-design-library/pkg/errors"
 	"github.com/chris-alexander-pop/system-design-library/pkg/validator"
 	"github.com/ilyakaznacheev/cleanenv"
@@ -37,8 +39,8 @@ func LoadFrom[T any](path string, cfg *T) error {
 
 func validateConfig[T any](cfg *T) error {
 	v := validator.New()
-	if err := v.ValidateStruct(cfg); err != nil {
-		return errors.InvalidArgument("config validation failed", err)
+	if err := v.ValidateStruct(context.Background(), cfg); err != nil {
+		return errors.Wrap(err, "config validation failed")
 	}
 	return nil
 }
