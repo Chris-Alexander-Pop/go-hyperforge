@@ -375,7 +375,7 @@ func mapInspect(insp dockerccontainer.InspectResponse) *container.Container {
 			}
 		}
 		if insp.State != nil {
-			c.State = mapDockerState(string(insp.State.Status))
+			c.State = mapDockerState(insp.State.Status)
 			c.ExitCode = insp.State.ExitCode
 			if t, err := time.Parse(time.RFC3339Nano, insp.State.StartedAt); err == nil {
 				c.StartedAt = t

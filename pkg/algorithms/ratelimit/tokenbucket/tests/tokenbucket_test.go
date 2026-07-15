@@ -2,9 +2,10 @@ package tokenbucket_test
 
 import (
 	"context"
-	"github.com/chris-alexander-pop/go-hyperforge/pkg/algorithms/ratelimit/tokenbucket"
 	"testing"
 	"time"
+
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/algorithms/ratelimit/tokenbucket"
 )
 
 func TestInMemoryLimiter(t *testing.T) {

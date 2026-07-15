@@ -10,6 +10,8 @@ import (
 	"github.com/google/uuid"
 )
 
+const defaultRBDPool = "rbd"
+
 // RBDImage is a Ceph RBD image as seen by the injectable client.
 type RBDImage struct {
 	ID         string
@@ -67,7 +69,7 @@ func New(cfg Config) (*Controller, error) {
 	}
 	pool := cfg.Pool
 	if pool == "" {
-		pool = "rbd"
+		pool = defaultRBDPool
 	}
 	return &Controller{
 		client: cfg.Client,
@@ -184,7 +186,7 @@ func imageToVolume(img *RBDImage) *controller.Volume {
 		tags = map[string]string{}
 	}
 	tags["ceph.pool"] = img.Pool
-	volType := "rbd"
+	volType := defaultRBDPool
 	if t, ok := tags["type"]; ok && t != "" {
 		volType = t
 	}
@@ -232,7 +234,7 @@ type MemoryRBDClient struct {
 // NewMemoryRBDClient creates a test double RBD client.
 func NewMemoryRBDClient(pool string) *MemoryRBDClient {
 	if pool == "" {
-		pool = "rbd"
+		pool = defaultRBDPool
 	}
 	return &MemoryRBDClient{
 		mu:     concurrency.NewSmartRWMutex(concurrency.MutexConfig{Name: "ceph-memory-rbd"}),

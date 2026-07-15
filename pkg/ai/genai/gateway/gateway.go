@@ -47,7 +47,7 @@ func New(primary llm.Client, fallbacks ...llm.Client) (*Router, error) {
 
 // NewFromProviders builds a router from explicitly named providers.
 func NewFromProviders(providers ...Provider) (*Router, error) {
-	var list []Provider
+	list := make([]Provider, 0, len(providers))
 	for _, p := range providers {
 		if p.Client == nil {
 			continue

@@ -13,9 +13,7 @@ import (
 )
 
 func init() {
-	cache.RegisterDriver("redis", func(cfg cache.Config) (cache.Cache, error) {
-		return New(cfg)
-	})
+	cache.RegisterDriver("redis", New)
 }
 
 // RedisCache implements cache.Cache on Redis (standalone or cluster).

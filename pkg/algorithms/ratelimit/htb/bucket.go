@@ -1,8 +1,9 @@
 package htb
 
 import (
-	"github.com/chris-alexander-pop/go-hyperforge/pkg/concurrency"
 	"time"
+
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/concurrency"
 )
 
 // Bucket represents a node in the HTB hierarchy.

@@ -83,7 +83,7 @@ func (e *Engine) NewWorkerFromEngine(c client.Client, opts worker.Options) (work
 	}
 	tq := e.config.TaskQueue
 	if tq == "" {
-		tq = "default-task-queue"
+		tq = defaultTaskQueue
 	}
 	return NewWorker(c, WorkerConfig{TaskQueue: tq, Options: opts}, e.workflows)
 }

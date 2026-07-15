@@ -288,7 +288,7 @@ func (s *Service) ProcessDunning(ctx context.Context, subscriptionID string) (*b
 	}
 
 	now := s.now()
-	var transitioned []*billing.Invoice
+	transitioned := make([]*billing.Invoice, 0, len(s.invoices))
 	for _, inv := range s.invoices {
 		if inv.SubscriptionID != subscriptionID {
 			continue

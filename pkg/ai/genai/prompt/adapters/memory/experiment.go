@@ -135,7 +135,7 @@ func (r *RemoteRegistry) Fetch(ctx context.Context, name, version string) (*prom
 	}
 	r.mu.RLock()
 	defer r.mu.RUnlock()
-	if version == "" || version == "latest" {
+	if version == "" || version == latestVersion {
 		var latest prompt.Template
 		found := false
 		for k, t := range r.data {

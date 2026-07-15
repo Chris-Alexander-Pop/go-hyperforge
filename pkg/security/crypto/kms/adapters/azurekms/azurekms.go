@@ -41,7 +41,7 @@ func NewFromAPI(api EncryptDecryptAPI, algorithm string) (*KeyManager, error) {
 	if api == nil {
 		return nil, errors.New(pkgkms.CodeInvalidArgument, "kms api client is required", nil)
 	}
-	alg := azkeys.EncryptionAlgorithmRSAOAEP256
+	var alg azkeys.EncryptionAlgorithm
 	switch strings.ToUpper(strings.TrimSpace(algorithm)) {
 	case "", "RSA-OAEP-256":
 		alg = azkeys.EncryptionAlgorithmRSAOAEP256
@@ -133,7 +133,7 @@ func (m *KeyManager) Encrypt(ctx context.Context, keyID string, plaintext []byte
 	if err != nil {
 		return nil, errors.New(pkgkms.CodeEncryptFailed, "azure kms encrypt failed", err)
 	}
-	if out.Result == nil || len(out.Result) == 0 {
+	if len(out.Result) == 0 {
 		return nil, pkgkms.ErrEncryptFailed
 	}
 	return out.Result, nil
@@ -159,7 +159,7 @@ func (m *KeyManager) Decrypt(ctx context.Context, keyID string, ciphertext []byt
 	if err != nil {
 		return nil, errors.New(pkgkms.CodeDecryptFailed, "azure kms decrypt failed", err)
 	}
-	if out.Result == nil || len(out.Result) == 0 {
+	if len(out.Result) == 0 {
 		return nil, pkgkms.ErrDecryptFailed
 	}
 	return out.Result, nil

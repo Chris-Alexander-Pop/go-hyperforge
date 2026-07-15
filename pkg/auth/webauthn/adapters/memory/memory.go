@@ -1,6 +1,7 @@
 package memory
 
 import (
+	"bytes"
 	"context"
 	"crypto/rand"
 	"encoding/base64"
@@ -199,7 +200,7 @@ func (s *WebAuthnService) FinishLogin(ctx context.Context, user webauthn.User, s
 
 	if len(response.CredentialID) > 0 {
 		for i := range creds {
-			if string(creds[i].ID) == string(response.CredentialID) {
+			if bytes.Equal(creds[i].ID, response.CredentialID) {
 				return &creds[i], nil
 			}
 		}

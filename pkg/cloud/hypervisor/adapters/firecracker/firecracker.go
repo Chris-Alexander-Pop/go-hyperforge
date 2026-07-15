@@ -242,6 +242,9 @@ func (h *Hypervisor) putJSON(ctx context.Context, vmID, path string, payload any
 	} else {
 		// Firecracker unix API uses http://localhost/ as host.
 		req, err = http.NewRequestWithContext(ctx, http.MethodPut, "http://localhost"+path, bytes.NewReader(body))
+		if err != nil {
+			return pkgerrors.Internal("build firecracker request", err)
+		}
 		cli := unixHTTPClient(h.socketFor(vmID))
 		req.Header.Set("Content-Type", "application/json")
 		resp, doErr := cli.Do(req)

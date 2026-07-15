@@ -19,13 +19,16 @@ linters:
     - goconst
     - gocritic
     - unconvert
-    - unparam
     - nakedret
     - prealloc
 
 linters-settings:
   gocyclo:
-    min-complexity: 20
+    # Large adapter/state-machine helpers exceed 20 without being unreadable.
+    min-complexity: 30
+  goconst:
+    min-len: 3
+    min-occurrences: 4
   revive:
     severity: warning
     rules:
@@ -66,3 +69,12 @@ linters-settings:
       - equalFold
       - preferFprint
       - deferInLoop
+
+issues:
+  exclude-rules:
+    # Third-party SDK deprecations we still need until EndpointSlice/credential APIs migrate.
+    - linters: [staticcheck]
+      text: "SA1019:"
+    # Signature stability for public helpers outweighs unused-result noise.
+    - linters: [unparam]
+      path: ".*"

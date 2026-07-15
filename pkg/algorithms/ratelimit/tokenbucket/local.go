@@ -2,8 +2,9 @@ package tokenbucket
 
 import (
 	"context"
-	"github.com/chris-alexander-pop/go-hyperforge/pkg/concurrency"
 	"time"
+
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/concurrency"
 )
 
 // Local is a process-local token bucket used by mesh/API facades.

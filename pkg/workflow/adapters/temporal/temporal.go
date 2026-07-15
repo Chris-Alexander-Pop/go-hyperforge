@@ -26,6 +26,8 @@ import (
 	"go.temporal.io/sdk/client"
 )
 
+const defaultTaskQueue = "default-task-queue"
+
 // Config holds Temporal configuration.
 type Config struct {
 	// Host is the Temporal server address.
@@ -66,7 +68,7 @@ func New(cfg Config) (*Engine, error) {
 		cfg.Namespace = "default"
 	}
 	if cfg.TaskQueue == "" {
-		cfg.TaskQueue = "default-task-queue"
+		cfg.TaskQueue = defaultTaskQueue
 	}
 
 	c, err := client.Dial(client.Options{
@@ -87,7 +89,7 @@ func NewFromClient(c ClientAPI, cfg Config, ownsClient bool) *Engine {
 		cfg.Namespace = "default"
 	}
 	if cfg.TaskQueue == "" {
-		cfg.TaskQueue = "default-task-queue"
+		cfg.TaskQueue = defaultTaskQueue
 	}
 	return &Engine{
 		client:     c,

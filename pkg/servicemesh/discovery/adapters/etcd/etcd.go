@@ -183,21 +183,6 @@ func (r *Registry) put(ctx context.Context, key string, value []byte) error {
 	}, &kvResp{})
 }
 
-func (r *Registry) get(ctx context.Context, key string) ([]byte, bool, error) {
-	var resp kvResp
-	if err := r.doJSON(ctx, "/v3/kv/range", kvRangeReq{Key: b64(key)}, &resp); err != nil {
-		return nil, false, err
-	}
-	if len(resp.KVs) == 0 {
-		return nil, false, nil
-	}
-	raw, err := decodeB64(resp.KVs[0].Value)
-	if err != nil {
-		return nil, false, errors.Internal("invalid etcd value encoding", err)
-	}
-	return raw, true, nil
-}
-
 func (r *Registry) deleteKey(ctx context.Context, key string) error {
 	return r.doJSON(ctx, "/v3/kv/deleterange", kvDeleteReq{Key: b64(key)}, &kvResp{})
 }

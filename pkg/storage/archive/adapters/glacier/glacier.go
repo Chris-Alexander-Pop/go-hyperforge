@@ -443,7 +443,7 @@ func (m *MemoryObjectAPI) ListObjectsV2(ctx context.Context, params *s3.ListObje
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	prefix := aws.ToString(params.Prefix)
-	var contents []types.Object
+	contents := make([]types.Object, 0, len(m.data))
 	for k, v := range m.data {
 		if prefix != "" && !strings.HasPrefix(k, prefix) {
 			continue

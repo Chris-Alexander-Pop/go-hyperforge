@@ -2,8 +2,9 @@ package slidingwindow
 
 import (
 	"context"
-	"github.com/chris-alexander-pop/go-hyperforge/pkg/concurrency"
 	"time"
+
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/concurrency"
 )
 
 // Local is a process-local sliding-window limiter used by mesh/API facades.

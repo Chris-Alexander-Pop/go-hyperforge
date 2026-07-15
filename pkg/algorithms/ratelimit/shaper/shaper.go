@@ -1,8 +1,9 @@
 package shaper
 
 import (
-	"github.com/chris-alexander-pop/go-hyperforge/pkg/concurrency"
 	"time"
+
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/concurrency"
 )
 
 // Shaper implements a Leaky Bucket traffic shaper.

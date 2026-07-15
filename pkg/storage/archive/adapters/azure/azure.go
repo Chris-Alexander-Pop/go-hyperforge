@@ -203,7 +203,7 @@ func (s *sdkBlobAPI) ListBlobs(ctx context.Context, containerName, prefix string
 				bi.Size = *item.Properties.ContentLength
 			}
 			if item.Properties != nil && item.Properties.AccessTier != nil {
-				bi.Tier = blob.AccessTier(*item.Properties.AccessTier)
+				bi.Tier = *item.Properties.AccessTier
 			}
 			out = append(out, bi)
 			if limit > 0 && len(out) >= limit {

@@ -82,9 +82,7 @@ func (s *Store) AddVertex(ctx context.Context, v *graph.Vertex) error {
 		return errors.InvalidArgument("vertex id is required", nil)
 	}
 	label := sanitizeLabel(v.Label)
-	gremlin := fmt.Sprintf(
-		`g.V().has('id', id).fold().coalesce(unfold(), addV(label).property('id', id))`,
-	)
+	gremlin := `g.V().has('id', id).fold().coalesce(unfold(), addV(label).property('id', id))`
 	bindings := map[string]interface{}{"id": v.ID, "label": label}
 	for k, val := range v.Properties {
 		key := sanitizeProp(k)

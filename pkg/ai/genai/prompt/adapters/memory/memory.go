@@ -9,6 +9,8 @@ import (
 	"github.com/chris-alexander-pop/go-hyperforge/pkg/concurrency"
 )
 
+const latestVersion = "latest"
+
 type versionSet struct {
 	latest string
 	byVer  map[string]prompt.Template
@@ -35,7 +37,7 @@ func (s *Store) Put(ctx context.Context, t prompt.Template) error {
 	}
 	t.Name = strings.TrimSpace(t.Name)
 	t.Version = strings.TrimSpace(t.Version)
-	if t.Name == "" || t.Version == "" || t.Version == "latest" {
+	if t.Name == "" || t.Version == "" || t.Version == latestVersion {
 		return prompt.ErrInvalidTemplate
 	}
 
@@ -64,7 +66,7 @@ func (s *Store) Get(ctx context.Context, name, version string) (*prompt.Template
 		return nil, prompt.ErrNotFound
 	}
 	ver := version
-	if ver == "" || ver == "latest" {
+	if ver == "" || ver == latestVersion {
 		ver = vs.latest
 	}
 	t, ok := vs.byVer[ver]
@@ -82,7 +84,7 @@ func (s *Store) Render(ctx context.Context, name, version string, vars map[strin
 		return "", err
 	}
 	return prompt.RenderBodyWithIncludes(t.Body, vars, func(incName string) (string, error) {
-		inc, err := s.Get(ctx, incName, "latest")
+		inc, err := s.Get(ctx, incName, latestVersion)
 		if err != nil {
 			return "", err
 		}

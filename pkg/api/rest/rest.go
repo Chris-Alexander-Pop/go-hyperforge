@@ -95,7 +95,7 @@ func genericErrorHandler(err error, c echo.Context) {
 		return
 	}
 
-	code := http.StatusInternalServerError
+	var code int
 	msg := "internal server error"
 	payload := map[string]interface{}{}
 

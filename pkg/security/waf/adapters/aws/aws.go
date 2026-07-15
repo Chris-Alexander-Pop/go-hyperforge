@@ -75,7 +75,7 @@ func NewFromAPI(api IPSetAPI, cfg Config) (*Manager, error) {
 	if err := cfg.Validate(); err != nil {
 		return nil, err
 	}
-	scope := types.ScopeRegional
+	var scope types.Scope
 	switch strings.ToUpper(cfg.Scope) {
 	case "CLOUDFRONT":
 		scope = types.ScopeCloudfront
