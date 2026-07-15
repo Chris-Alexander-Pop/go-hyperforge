@@ -17,6 +17,9 @@ type InstrumentedSecretManager struct {
 	tracer trace.Tracer
 }
 
+// Ensure InstrumentedSecretManager implements SecretManager.
+var _ SecretManager = (*InstrumentedSecretManager)(nil)
+
 // NewInstrumentedSecretManager creates a new InstrumentedSecretManager.
 func NewInstrumentedSecretManager(next SecretManager) *InstrumentedSecretManager {
 	return &InstrumentedSecretManager{
@@ -32,7 +35,6 @@ func (m *InstrumentedSecretManager) Get(ctx context.Context, name string) (strin
 	defer span.End()
 
 	start := time.Now()
-	// NOTE: We do NOT log the secret value!
 	val, err := m.next.Get(ctx, name)
 
 	if err != nil {
@@ -61,4 +63,22 @@ func (m *InstrumentedSecretManager) Set(ctx context.Context, name, value string)
 
 	logger.L().InfoContext(ctx, "secret set", "name", name)
 	return nil
+}
+
+func (m *InstrumentedSecretManager) Rotate(ctx context.Context, name, newValue string) (string, error) {
+	ctx, span := m.tracer.Start(ctx, "SecretManager.Rotate",
+		trace.WithAttributes(attribute.String("secret.name", name)),
+	)
+	defer span.End()
+
+	val, err := m.next.Rotate(ctx, name, newValue)
+	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
+		logger.L().ErrorContext(ctx, "secret rotate failed", "error", err, "name", name)
+		return "", err
+	}
+
+	logger.L().InfoContext(ctx, "secret rotated", "name", name)
+	return val, nil
 }

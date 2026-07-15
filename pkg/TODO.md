@@ -213,7 +213,7 @@
 | `pkg/auth/webauthn` | ✅ | auth-service | Passkeys / Biometrics |
 
 ### Protection
-> 🔄 Memory-only domain adapters today (no Vault/cloud KMS/WAF/scanner production backends). See [`MISSING_CAPABILITIES.md`](../MISSING_CAPABILITIES.md#pkgsecurity-30).
+> 🔄 Foundation raised (root/errors, crypto, secrets Rotate, reCAPTCHA). Still no Vault/cloud KMS/WAF/scanner production backends. See [`MISSING_CAPABILITIES.md`](../MISSING_CAPABILITIES.md#pkgsecurity-30--improved).
 
 | Package | Status | Enables Services | Description |
 |---------|--------|------------------|-------------|

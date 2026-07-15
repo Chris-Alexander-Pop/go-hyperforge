@@ -2,6 +2,7 @@ package crypto
 
 import (
 	"crypto/rand"
+	"crypto/subtle"
 	"encoding/base64"
 	"fmt"
 	"strings"
@@ -131,7 +132,7 @@ func (h *Hasher) verifyArgon2id(password, encoded string) (bool, error) {
 		uint32(len(expectedHash)),
 	)
 
-	return constantTimeCompare(expectedHash, computedHash), nil
+	return subtle.ConstantTimeCompare(expectedHash, computedHash) == 1, nil
 }
 
 func splitArgon2Hash(hash string) []string {
@@ -166,16 +167,4 @@ func (h *Hasher) verifyBcrypt(password, hash string) (bool, error) {
 		return false, err
 	}
 	return true, nil
-}
-
-// constantTimeCompare compares two byte slices in constant time.
-func constantTimeCompare(a, b []byte) bool {
-	if len(a) != len(b) {
-		return false
-	}
-	var result byte
-	for i := 0; i < len(a); i++ {
-		result |= a[i] ^ b[i]
-	}
-	return result == 0
 }

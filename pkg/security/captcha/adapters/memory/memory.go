@@ -3,13 +3,16 @@ package memory
 import (
 	"context"
 
-	"github.com/chris-alexander-pop/system-design-library/pkg/errors"
+	"github.com/chris-alexander-pop/system-design-library/pkg/security/captcha"
 )
 
 // Verifier implements captcha.Verifier using simple memory checks.
 type Verifier struct {
 	validToken string
 }
+
+// Ensure Verifier implements captcha.Verifier.
+var _ captcha.Verifier = (*Verifier)(nil)
 
 // New creates a new memory captcha verifier.
 // It accepts a magic token that is considered valid. All others are invalid.
@@ -24,11 +27,11 @@ func New(magicToken string) *Verifier {
 }
 
 func (v *Verifier) Verify(ctx context.Context, token string) error {
-	if token == "" {
-		return errors.InvalidArgument("captcha token missing", nil)
+	if err := ctx.Err(); err != nil {
+		return err
 	}
-	if token != v.validToken {
-		return errors.Forbidden("invalid captcha token", nil)
+	if token == "" || token != v.validToken {
+		return captcha.ErrInvalidToken
 	}
 	return nil
 }

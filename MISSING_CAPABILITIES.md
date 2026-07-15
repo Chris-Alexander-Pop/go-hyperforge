@@ -22,7 +22,8 @@ Landed foundation/reuse/domain hardening (scores above are the *pre-fix* snapsho
 - ✅ `database` resilience/sharding helpers; `workflow` distlock + events + cron
 - ✅ `algorithms`: binarysearch, bfs/dfs, DistLimiter store-backed, sliding-window counter, educational stub docs, heap reuse in dijkstra/astar
 - ✅ `storage` root drivers, blob errors/resilience, GCS/Azure `blob.Store`, S3 miss→NotFound, SmartRWMutex memory adapters
-- 🔄 Remaining large gaps still listed below (auth OAuth2 AS, commerce depth, AI gateway, cloud IaaS adapters, security production drivers, etc.)
+- ✅ `security`: root/errors, crypto harden + memory KeyProvider, secrets Rotate/events, reCAPTCHA adapter, honest docs + auth bridge
+- 🔄 Remaining large gaps still listed below (auth OAuth2 AS, commerce depth, AI gateway, cloud IaaS adapters, security Vault/cloud KMS/WAF, etc.)
 
 ---
 
@@ -60,7 +61,7 @@ Landed foundation/reuse/domain hardening (scores above are the *pre-fix* snapsho
 | web3 | 22 | Client scaffolds; no interfaces/tests |
 | metering | 20* | Memory only; 0 tests; no consumers |
 | streaming | — | PutRecord + memory/Kinesis/EventHubs; Pub/Sub → messaging |
-| security | 30* | Memory-only domain |
+| security | 30* → improved | Root/errors, crypto harden, secrets Rotate, reCAPTCHA; Vault/cloud KMS still open |
 | servicemesh | 25* | Discovery OK; CB/RL reinvent resilience/algorithms |
 | storage | 45* | Blob Store parity + resilience landed; file/block/archive still memory-only |
 | resilience | 75* | CB+retry+timeout+bulkhead; typed Execute / Hedge / Fallback still open |

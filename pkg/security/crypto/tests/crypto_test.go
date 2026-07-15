@@ -1,70 +1,100 @@
 package tests
 
 import (
-	"encoding/base64"
+	"context"
 	"testing"
 
+	"github.com/chris-alexander-pop/system-design-library/pkg/errors"
 	"github.com/chris-alexander-pop/system-design-library/pkg/security/crypto"
+	cryptomem "github.com/chris-alexander-pop/system-design-library/pkg/security/crypto/adapters/memory"
+	"github.com/chris-alexander-pop/system-design-library/pkg/test"
 )
 
-func TestAESEncryptor(t *testing.T) {
+type CryptoTestSuite struct {
+	test.Suite
+}
+
+func (s *CryptoTestSuite) TestAESEncryptor() {
 	key, err := crypto.GenerateAES256Key()
-	if err != nil {
-		t.Fatalf("GenerateAES256Key failed: %v", err)
-	}
+	s.NoError(err)
 
 	enc, err := crypto.NewAESEncryptor(key)
-	if err != nil {
-		t.Fatalf("NewAESEncryptor failed: %v", err)
-	}
+	s.NoError(err)
 
 	plaintext := "Hello, World!"
 	ciphertext, err := enc.Encrypt([]byte(plaintext))
-	if err != nil {
-		t.Fatalf("Encrypt failed: %v", err)
-	}
-
-	if len(ciphertext) == 0 {
-		t.Fatal("Ciphertext is empty")
-	}
+	s.NoError(err)
+	s.NotEmpty(ciphertext)
 
 	decrypted, err := enc.Decrypt(ciphertext)
-	if err != nil {
-		t.Fatalf("Decrypt failed: %v", err)
-	}
-
-	if string(decrypted) != plaintext {
-		t.Errorf("Expected %q, got %q", plaintext, string(decrypted))
-	}
+	s.NoError(err)
+	s.Equal(plaintext, string(decrypted))
 }
 
-func TestAESEncryptor_String(t *testing.T) {
+func (s *CryptoTestSuite) TestAESEncryptor_String() {
 	key, err := crypto.GenerateAES256Key()
-	if err != nil {
-		t.Fatalf("GenerateAES256Key failed: %v", err)
-	}
+	s.NoError(err)
 
 	enc, err := crypto.NewAESEncryptor(key)
-	if err != nil {
-		t.Fatalf("NewAESEncryptor failed: %v", err)
-	}
+	s.NoError(err)
 
 	plaintext := "Sensitive Data"
 	encoded, err := enc.EncryptString(plaintext)
-	if err != nil {
-		t.Fatalf("EncryptString failed: %v", err)
-	}
-
-	if _, err := base64.StdEncoding.DecodeString(encoded); err != nil {
-		t.Fatalf("EncryptString returned invalid base64: %v", err)
-	}
+	s.NoError(err)
 
 	decrypted, err := enc.DecryptString(encoded)
-	if err != nil {
-		t.Fatalf("DecryptString failed: %v", err)
-	}
+	s.NoError(err)
+	s.Equal(plaintext, decrypted)
+}
 
-	if decrypted != plaintext {
-		t.Errorf("Expected %q, got %q", plaintext, decrypted)
-	}
+func (s *CryptoTestSuite) TestAESEncryptor_InvalidKey() {
+	_, err := crypto.NewAESEncryptor([]byte("short"))
+	s.Error(err)
+	s.True(errors.Is(err, crypto.ErrInvalidKey))
+}
+
+func (s *CryptoTestSuite) TestAESEncryptor_BadCiphertext() {
+	key, err := crypto.GenerateAES256Key()
+	s.NoError(err)
+	enc, err := crypto.NewAESEncryptor(key)
+	s.NoError(err)
+
+	_, err = enc.Decrypt([]byte("tiny"))
+	s.Error(err)
+	s.True(errors.Is(err, crypto.ErrInvalidCiphertext))
+}
+
+func (s *CryptoTestSuite) TestInstrumentedEncryptor() {
+	key, err := crypto.GenerateAES256Key()
+	s.NoError(err)
+	raw, err := crypto.NewAESEncryptor(key)
+	s.NoError(err)
+
+	enc := crypto.NewInstrumentedEncryptor(raw)
+	ct, err := enc.Encrypt([]byte("instrumented"))
+	s.NoError(err)
+	pt, err := enc.Decrypt(ct)
+	s.NoError(err)
+	s.Equal("instrumented", string(pt))
+}
+
+func (s *CryptoTestSuite) TestEnvelope_MemoryKeyProvider() {
+	master, err := crypto.GenerateAES256Key()
+	s.NoError(err)
+	kp, err := cryptomem.NewKeyProvider(master)
+	s.NoError(err)
+
+	env := crypto.NewEnvelopeEncryption(kp)
+	payload, err := env.Encrypt(context.Background(), []byte("envelope-secret"))
+	s.NoError(err)
+	s.NotEmpty(payload.EncryptedData)
+	s.Equal("AES-256-GCM", payload.Algorithm)
+
+	out, err := env.Decrypt(context.Background(), payload)
+	s.NoError(err)
+	s.Equal("envelope-secret", string(out))
+}
+
+func TestCryptoSuite(t *testing.T) {
+	test.Run(t, new(CryptoTestSuite))
 }

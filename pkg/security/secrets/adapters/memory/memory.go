@@ -2,9 +2,10 @@ package memory
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/base64"
 
 	"github.com/chris-alexander-pop/system-design-library/pkg/concurrency"
-	"github.com/chris-alexander-pop/system-design-library/pkg/errors"
 	"github.com/chris-alexander-pop/system-design-library/pkg/security/secrets"
 )
 
@@ -13,6 +14,9 @@ type SecretManager struct {
 	secrets map[string]string
 	mu      *concurrency.SmartRWMutex
 }
+
+// Ensure SecretManager implements secrets.SecretManager.
+var _ secrets.SecretManager = (*SecretManager)(nil)
 
 // New creates a new in-memory secret manager.
 func New() secrets.SecretManager {
@@ -23,20 +27,61 @@ func New() secrets.SecretManager {
 }
 
 func (m *SecretManager) Get(ctx context.Context, name string) (string, error) {
+	if err := ctx.Err(); err != nil {
+		return "", err
+	}
+	if name == "" {
+		return "", secrets.ErrInvalidArgument
+	}
+
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 
 	val, ok := m.secrets[name]
 	if !ok {
-		return "", errors.NotFound("secret not found", nil)
+		return "", secrets.ErrNotFound
 	}
 	return val, nil
 }
 
 func (m *SecretManager) Set(ctx context.Context, name, value string) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	if name == "" {
+		return secrets.ErrInvalidArgument
+	}
+
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
 	m.secrets[name] = value
 	return nil
+}
+
+func (m *SecretManager) Rotate(ctx context.Context, name, newValue string) (string, error) {
+	if err := ctx.Err(); err != nil {
+		return "", err
+	}
+	if name == "" {
+		return "", secrets.ErrInvalidArgument
+	}
+
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	if _, ok := m.secrets[name]; !ok {
+		return "", secrets.ErrNotFound
+	}
+
+	if newValue == "" {
+		buf := make([]byte, 32)
+		if _, err := rand.Read(buf); err != nil {
+			return "", secrets.ErrRotateFailed
+		}
+		newValue = base64.RawURLEncoding.EncodeToString(buf)
+	}
+
+	m.secrets[name] = newValue
+	return newValue, nil
 }

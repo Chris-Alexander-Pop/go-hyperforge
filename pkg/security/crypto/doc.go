@@ -2,8 +2,14 @@
 Package crypto provides cryptographic primitives and helpers.
 
 Features:
-  - Encryption: AES-GCM envelope encryption
-  - Hashing: SHA-256, Argon2id helpers
-  - PQC: Post-Quantum Cryptography (Kyber/Dilithium) in subpackage
+  - Encryption: AES-GCM (Encryptor) + envelope encryption via KeyProvider
+  - Hashing: Argon2id / bcrypt password helpers
+  - InstrumentedEncryptor for logging/tracing without leaking plaintext
+  - PQC: experimental hybrid KEM (X25519 + demo Kyber). Dilithium/ML-DSA
+    signatures are not implemented — docs that claim them are outdated.
+
+KeyProvider memory adapter: crypto/adapters/memory.
+Cloud KMS backends are not shipped; use pkg/security/crypto/kms memory for
+local encrypt/decrypt of small payloads.
 */
 package crypto
