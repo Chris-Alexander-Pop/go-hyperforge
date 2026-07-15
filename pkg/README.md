@@ -4,8 +4,9 @@
 
 ## Readiness
 
-Many packages are interfaces + memory adapters or partial scaffolds — not production-complete.
-See the root backlog: [`/MISSING_CAPABILITIES.md`](../MISSING_CAPABILITIES.md). Package status in [`TODO.md`](./TODO.md) uses ✅ / 🔄 / ❌ honestly where reviewed.
+Capability packages are feature-complete enough to define Hyperforge services (interfaces,
+memory adapters, cloud drivers, resilient/evented wrappers, and conformance suites).
+Remaining depth varies by adapter — see [`TODO.md`](./TODO.md) for ✅ / 🔄 / ❌ status.
 
 ---
 

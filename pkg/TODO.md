@@ -51,7 +51,7 @@
 | `pkg/ai/nlp/embedding` | ✅ | embedding-service | Embedding Generation |
 
 ### Machine Learning (`pkg/ai/ml`)
-> 🔄 Training/inference/feature are memory or local-subprocess depth; cloud trainers exist but are not production-hardened. See [`MISSING_CAPABILITIES.md`](../MISSING_CAPABILITIES.md#pkgai-36--improved).
+> 🔄 Training/inference/feature are memory or local-subprocess depth; cloud trainers exist but are not production-hardened.
 
 | Package | Status | Enables Services | Description |
 |---------|--------|------------------|-------------|
@@ -125,7 +125,7 @@
 
 ## 3. Commerce (`pkg/commerce`)
 
-> 🔄 Improved — Money + payment webhooks/auth-capture/idempotency/events; billing plans/proration/dunning; TaxJar/Avalara + live FX adapters. See [`MISSING_CAPABILITIES.md`](../MISSING_CAPABILITIES.md).
+> 🔄 Improved — Money + payment webhooks/auth-capture/idempotency/events; billing plans/proration/dunning; TaxJar/Avalara + live FX adapters.
 
 | Package | Status | Enables Services | Description |
 |---------|--------|------------------|-------------|
@@ -203,7 +203,7 @@
 
 ## 5. Workflows & Orchestration (`pkg/workflow`)
 
-> 🔄 Memory engine + durable saga/scheduler are solid; cloud adapters are thin SDK wrappers (depth varies). See [`MISSING_CAPABILITIES.md`](../MISSING_CAPABILITIES.md#pkgworkflow-38--improved).
+> 🔄 Memory engine + durable saga/scheduler are solid; cloud adapters are thin SDK wrappers (depth varies).
 
 | Package | Status | Enables Services | Description |
 |---------|--------|------------------|-------------|
@@ -229,7 +229,7 @@
 | `pkg/auth/webauthn` | ✅ | auth-service | Passkeys / Biometrics |
 
 ### Protection
-> 🔄 Vault KV v2, AWS/GCP/Azure KMS + secret managers, Cloudflare+AWS WAF, GuardDuty + ClamAV landed; fraud/captcha remain memory-depth. See [`MISSING_CAPABILITIES.md`](../MISSING_CAPABILITIES.md#pkgsecurity-30--improved).
+> 🔄 Vault KV v2, AWS/GCP/Azure KMS + secret managers, Cloudflare+AWS WAF, GuardDuty + ClamAV landed; fraud/captcha remain memory-depth.
 
 | Package | Status | Enables Services | Description |
 |---------|--------|------------------|-------------|
@@ -245,7 +245,7 @@
 ## 7. Core Infrastructure (`pkg/network`, `pkg/compute`)
 
 ### Networking
-> 🔄 CDN/APIGW/IP/DNS are interface + memory only (Route53/CloudFront/etc. reserved). LB has AWS/GCP adapters. See [`MISSING_CAPABILITIES.md`](../MISSING_CAPABILITIES.md#pkgnetwork-50).
+> 🔄 CDN/APIGW/IP/DNS are interface + memory only (Route53/CloudFront/etc. reserved). LB has AWS/GCP adapters.
 
 | Package | Status | Enables Services | Description |
 |---------|--------|------------------|-------------|
@@ -258,7 +258,7 @@
 | `pkg/network/ip` | 🔄 | geo-blocking | IP Intelligence + Memory (MaxMind/etc. reserved) |
 
 ### Compute
-> 🔄 VM: memory + EC2/GCE; Azure VM is Unimplemented scaffold. Serverless: memory + Lambda/GCF; Azure Functions HTTP Invoke + ARM CRUD Unimplemented. See [`MISSING_CAPABILITIES.md`](../MISSING_CAPABILITIES.md#pkgcompute-52).
+> 🔄 VM: memory + EC2/GCE; Azure VM is Unimplemented scaffold. Serverless: memory + Lambda/GCF; Azure Functions HTTP Invoke + ARM CRUD Unimplemented.
 
 | Package | Status | Enables Services | Description |
 |---------|--------|------------------|-------------|
@@ -275,7 +275,7 @@
 
 ## 8. Web3 (`pkg/web3`)
 
-> ✅ Root Client/Store/Verifier/SolanaClient + memory; geth/kubo/solana adapters; ethereum/ipfs/solana thin re-exports; WalletConnect is session stub (no relay). See [`MISSING_CAPABILITIES.md`](../MISSING_CAPABILITIES.md#pkgweb3-22).
+> ✅ Root Client/Store/Verifier/SolanaClient + memory; geth/kubo/solana adapters; ethereum/ipfs/solana thin re-exports; WalletConnect is session stub (no relay).
 
 | Package | Status | Enables Services | Description |
 |---------|--------|------------------|-------------|
@@ -293,7 +293,7 @@
 
 ## 9. IoT (`pkg/iot`)
 
-> 🔄 Root interfaces + memory; awsiot/greengrass/mqtt behind root Client; CoAP UDP + device registry + cert helpers. See [`MISSING_CAPABILITIES.md`](../MISSING_CAPABILITIES.md#pkgiot-28).
+> 🔄 Root interfaces + memory; awsiot/greengrass/mqtt behind root Client; CoAP UDP + device registry + cert helpers.
 
 | Package | Status | Enables Services | Description |
 |---------|--------|------------------|-------------|
@@ -312,7 +312,7 @@
 
 ## 10. Enterprise Patterns (`pkg/enterprise`)
 
-> 🔄 Design stubs + ProjectionRunner/checkpoint/outbox landed; not standards-complete. See [`MISSING_CAPABILITIES.md`](../MISSING_CAPABILITIES.md#pkgenterprise-24).
+> 🔄 Design stubs + ProjectionRunner/checkpoint/outbox landed; not standards-complete.
 
 | Package | Status | Enables Services | Description |
 |---------|--------|------------------|-------------|
@@ -326,7 +326,7 @@
 
 > **MISSING REQUIREMENTS**: To build a "Private Cloud" (AWS equivalent) on bare metal, you need the following **Server-Side** capabilities, not just clients.
 >
-> 🔄 Cloud packages have memory scaffolds plus Libvirt/Firecracker/Redfish/IPMI/PXE adapters (depth varies). Metering has Prometheus exporter. See [`MISSING_CAPABILITIES.md`](../MISSING_CAPABILITIES.md#pkgcloud-38) and [`metering`](../MISSING_CAPABILITIES.md#pkgmetering-20).
+> 🔄 Cloud packages have memory scaffolds plus Libvirt/Firecracker/Redfish/IPMI/PXE adapters (depth varies). Metering has Prometheus exporter.
 
 | Domain | Package | Needs Implementation | Description |
 |--------|---------|---------------------|-------------|
