@@ -3,9 +3,13 @@ Package servicemesh provides service mesh components for microservices.
 
 Subpackages:
 
-  - circuitbreaker: Circuit breaker pattern implementation
+  - circuitbreaker: Mesh-facing facade over pkg/resilience
   - discovery: Service discovery and registration
-  - ratelimit: Rate limiting algorithms
+  - ratelimit: Mesh-facing facade over pkg/algorithms/ratelimit
+
+Prefer pkg/resilience and pkg/algorithms/ratelimit for application code.
+This package is a mesh-facing facade that preserves historical APIs while
+delegating core behavior to those shared packages.
 
 Usage:
 

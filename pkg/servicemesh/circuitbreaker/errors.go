@@ -2,7 +2,9 @@ package circuitbreaker
 
 import "github.com/chris-alexander-pop/system-design-library/pkg/errors"
 
-// Sentinel errors for circuit breaker.
+// Sentinel errors for the mesh-facing circuit breaker facade.
+// Prefer comparing with errors.Is. Domain codes stay local until pkg/errors
+// gains UNAVAILABLE / RESOURCE_EXHAUSTED mappings.
 var (
 	// ErrCircuitOpen is returned when the circuit is open.
 	ErrCircuitOpen = errors.Conflict("circuit breaker is open", nil)

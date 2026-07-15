@@ -1,10 +1,8 @@
-// Package ratelimit provides rate limiting implementations.
+// Package ratelimit is a mesh-facing facade over pkg/algorithms/ratelimit.
 //
-// Supports multiple algorithms:
-//   - Token Bucket: Allows bursts up to bucket capacity
-//   - Sliding Window: Counts requests in a sliding time window
-//   - Fixed Window: Counts requests in fixed time intervals
-//   - Leaky Bucket: Smooths out request rate
+// Prefer github.com/chris-alexander-pop/system-design-library/pkg/algorithms/ratelimit
+// (tokenbucket / slidingwindow Local limiters) for new code. This package adapts
+// those implementations to a simple Limiter interface used by mesh integrations.
 //
 // Usage:
 //
@@ -18,6 +16,9 @@ import (
 	"context"
 	"sync"
 	"time"
+
+	"github.com/chris-alexander-pop/system-design-library/pkg/algorithms/ratelimit/slidingwindow"
+	"github.com/chris-alexander-pop/system-design-library/pkg/algorithms/ratelimit/tokenbucket"
 )
 
 // Algorithm represents the rate limiting algorithm.
@@ -63,174 +64,37 @@ type Limiter interface {
 	Tokens() float64
 }
 
-// TokenBucket implements the token bucket algorithm.
+// TokenBucket adapts algorithms/ratelimit/tokenbucket.Local to Limiter.
 type TokenBucket struct {
-	mu         sync.Mutex
-	tokens     float64
-	capacity   float64
-	rate       float64 // tokens per second
-	lastUpdate time.Time
+	inner *tokenbucket.Local
 }
 
-// NewTokenBucket creates a new token bucket limiter.
+// NewTokenBucket creates a token-bucket limiter backed by pkg/algorithms.
 func NewTokenBucket(capacity int, rate float64) *TokenBucket {
-	return &TokenBucket{
-		tokens:     float64(capacity),
-		capacity:   float64(capacity),
-		rate:       rate,
-		lastUpdate: time.Now(),
-	}
+	return &TokenBucket{inner: tokenbucket.NewLocal(capacity, rate)}
 }
 
-func (tb *TokenBucket) refill() {
-	now := time.Now()
-	elapsed := now.Sub(tb.lastUpdate).Seconds()
-	tb.tokens += elapsed * tb.rate
-	if tb.tokens > tb.capacity {
-		tb.tokens = tb.capacity
-	}
-	tb.lastUpdate = now
-}
+func (tb *TokenBucket) Allow() bool                    { return tb.inner.Allow() }
+func (tb *TokenBucket) AllowN(n int) bool              { return tb.inner.AllowN(n) }
+func (tb *TokenBucket) Wait(ctx context.Context) error { return tb.inner.Wait(ctx) }
+func (tb *TokenBucket) Reserve() time.Duration         { return tb.inner.Reserve() }
+func (tb *TokenBucket) Tokens() float64                { return tb.inner.Tokens() }
 
-func (tb *TokenBucket) Allow() bool {
-	return tb.AllowN(1)
-}
-
-func (tb *TokenBucket) AllowN(n int) bool {
-	tb.mu.Lock()
-	defer tb.mu.Unlock()
-
-	tb.refill()
-
-	if tb.tokens >= float64(n) {
-		tb.tokens -= float64(n)
-		return true
-	}
-	return false
-}
-
-func (tb *TokenBucket) Wait(ctx context.Context) error {
-	for {
-		if tb.Allow() {
-			return nil
-		}
-
-		wait := tb.Reserve()
-		if wait <= 0 {
-			wait = time.Millisecond * 10
-		}
-
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		case <-time.After(wait):
-		}
-	}
-}
-
-func (tb *TokenBucket) Reserve() time.Duration {
-	tb.mu.Lock()
-	defer tb.mu.Unlock()
-
-	tb.refill()
-
-	if tb.tokens >= 1 {
-		return 0
-	}
-
-	needed := 1 - tb.tokens
-	return time.Duration(needed/tb.rate*1000) * time.Millisecond
-}
-
-func (tb *TokenBucket) Tokens() float64 {
-	tb.mu.Lock()
-	defer tb.mu.Unlock()
-	tb.refill()
-	return tb.tokens
-}
-
-// SlidingWindow implements the sliding window algorithm.
+// SlidingWindow adapts algorithms/ratelimit/slidingwindow.Local to Limiter.
 type SlidingWindow struct {
-	mu       sync.Mutex
-	requests []time.Time
-	limit    int
-	window   time.Duration
+	inner *slidingwindow.Local
 }
 
-// NewSlidingWindow creates a new sliding window limiter.
+// NewSlidingWindow creates a sliding-window limiter backed by pkg/algorithms.
 func NewSlidingWindow(limit int, window time.Duration) *SlidingWindow {
-	return &SlidingWindow{
-		requests: make([]time.Time, 0),
-		limit:    limit,
-		window:   window,
-	}
+	return &SlidingWindow{inner: slidingwindow.NewLocal(limit, window)}
 }
 
-func (sw *SlidingWindow) cleanup() {
-	threshold := time.Now().Add(-sw.window)
-	valid := make([]time.Time, 0, len(sw.requests))
-	for _, t := range sw.requests {
-		if t.After(threshold) {
-			valid = append(valid, t)
-		}
-	}
-	sw.requests = valid
-}
-
-func (sw *SlidingWindow) Allow() bool {
-	return sw.AllowN(1)
-}
-
-func (sw *SlidingWindow) AllowN(n int) bool {
-	sw.mu.Lock()
-	defer sw.mu.Unlock()
-
-	sw.cleanup()
-
-	if len(sw.requests)+n <= sw.limit {
-		now := time.Now()
-		for i := 0; i < n; i++ {
-			sw.requests = append(sw.requests, now)
-		}
-		return true
-	}
-	return false
-}
-
-func (sw *SlidingWindow) Wait(ctx context.Context) error {
-	for {
-		if sw.Allow() {
-			return nil
-		}
-
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		case <-time.After(time.Millisecond * 100):
-		}
-	}
-}
-
-func (sw *SlidingWindow) Reserve() time.Duration {
-	sw.mu.Lock()
-	defer sw.mu.Unlock()
-
-	sw.cleanup()
-
-	if len(sw.requests) < sw.limit {
-		return 0
-	}
-
-	// Wait until oldest request expires
-	return time.Until(sw.requests[0].Add(sw.window))
-}
-
-func (sw *SlidingWindow) Tokens() float64 {
-	sw.mu.Lock()
-	defer sw.mu.Unlock()
-	sw.cleanup()
-	return float64(sw.limit - len(sw.requests))
-}
+func (sw *SlidingWindow) Allow() bool                    { return sw.inner.Allow() }
+func (sw *SlidingWindow) AllowN(n int) bool              { return sw.inner.AllowN(n) }
+func (sw *SlidingWindow) Wait(ctx context.Context) error { return sw.inner.Wait(ctx) }
+func (sw *SlidingWindow) Reserve() time.Duration         { return sw.inner.Reserve() }
+func (sw *SlidingWindow) Tokens() float64                { return sw.inner.Tokens() }
 
 // KeyedLimiter provides per-key rate limiting.
 type KeyedLimiter struct {
@@ -274,7 +138,6 @@ func (kl *KeyedLimiter) getLimiter(key string) Limiter {
 	kl.mu.Lock()
 	defer kl.mu.Unlock()
 
-	// Double-check
 	if limiter, ok = kl.limiters[key]; ok {
 		return limiter
 	}
@@ -283,3 +146,8 @@ func (kl *KeyedLimiter) getLimiter(key string) Limiter {
 	kl.limiters[key] = limiter
 	return limiter
 }
+
+var (
+	_ Limiter = (*TokenBucket)(nil)
+	_ Limiter = (*SlidingWindow)(nil)
+)

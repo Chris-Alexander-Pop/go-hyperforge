@@ -4,7 +4,7 @@
 //   - Circuit Breaker: Prevents cascading failures
 //   - Retry: Automatic retries with backoff
 //   - Timeout: Request deadline enforcement
-//   - Bulkhead: Isolation of resources
+//   - Bulkhead: Semaphore-bounded concurrency isolation
 package resilience
 
 import (
@@ -21,6 +21,18 @@ const (
 	StateHalfOpen State = "half_open" // Testing if service has recovered
 )
 
+// Executor is a unit of work that can run under resilience patterns.
+type Executor func(ctx context.Context) error
+
+// Breaker is the thin circuit-breaker interface for reuse and decoration.
+// The concrete *CircuitBreaker and *InstrumentedCircuitBreaker implement it.
+type Breaker interface {
+	Execute(ctx context.Context, fn Executor) error
+	State() State
+	Reset()
+	Metrics() CircuitBreakerMetrics
+}
+
 // CircuitBreakerConfig configures the circuit breaker behavior.
 type CircuitBreakerConfig struct {
 	// Name identifies this circuit breaker (for logging/metrics).
@@ -35,12 +47,13 @@ type CircuitBreakerConfig struct {
 	// Timeout is how long to wait before transitioning from open to half-open.
 	Timeout time.Duration
 
+	// MaxRequests is the max concurrent/allowed probes in half-open state.
+	// Zero means unlimited (backward compatible).
+	MaxRequests int64
+
 	// OnStateChange is called when the circuit breaker changes state.
 	OnStateChange func(name string, from, to State)
 }
-
-// Executor represents something that can be executed with circuit breaker protection.
-type Executor func(ctx context.Context) error
 
 // RetryConfig configures retry behavior.
 type RetryConfig struct {
@@ -70,6 +83,7 @@ func DefaultCircuitBreakerConfig(name string) CircuitBreakerConfig {
 		FailureThreshold: 5,
 		SuccessThreshold: 2,
 		Timeout:          30 * time.Second,
+		MaxRequests:      0,
 	}
 }
 

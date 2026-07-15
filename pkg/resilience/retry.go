@@ -77,7 +77,7 @@ func Retry(ctx context.Context, cfg RetryConfig, fn Executor) error {
 }
 
 // RetryWithCircuitBreaker combines retry and circuit breaker.
-func RetryWithCircuitBreaker(ctx context.Context, cb *CircuitBreaker, retryCfg RetryConfig, fn Executor) error {
+func RetryWithCircuitBreaker(ctx context.Context, cb Breaker, retryCfg RetryConfig, fn Executor) error {
 	return Retry(ctx, retryCfg, func(ctx context.Context) error {
 		return cb.Execute(ctx, fn)
 	})
