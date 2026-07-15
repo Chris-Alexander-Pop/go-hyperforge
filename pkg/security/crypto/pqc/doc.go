@@ -1,15 +1,12 @@
 /*
-Package pqc provides experimental post-quantum cryptography helpers.
+Package pqc provides post-quantum cryptography helpers backed by Cloudflare CIRCL.
 
-EXPERIMENTAL — not for production confidentiality.
+Status:
+  - Hybrid KEM combines X25519 with ML-KEM (FIPS 203) via
+    github.com/cloudflare/circl/kem/mlkem (levels 512/768/1024).
+  - Dilithium / ML-DSA digital signatures are NOT implemented.
 
-Status (honest):
-  - Hybrid KEM combines X25519 with a *demo* Kyber-like KEM (not a vetted
-    production ML-KEM). Cloudflare CIRCL / liboqs are NOT vendored in go.mod;
-    integrate them in adapters when ready.
-  - Dilithium / ML-DSA digital signatures are NOT implemented. Earlier docs
-    that listed Dilithium as included were overclaims.
-
-Use for learning and interface prototyping only.
+Suitable for hybrid key exchange prototyping and production ML-KEM use through
+the KyberKEM / HybridKEM APIs. Signature algorithms remain out of scope.
 */
 package pqc

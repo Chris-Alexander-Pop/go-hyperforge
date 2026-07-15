@@ -80,6 +80,16 @@ func (m *EventedMeter) GetUsage(ctx context.Context, filter UsageFilter) ([]Usag
 	return m.next.GetUsage(ctx, filter)
 }
 
+// PeriodAggregate delegates to the underlying meter.
+func (m *EventedMeter) PeriodAggregate(ctx context.Context, filter UsageFilter, period time.Duration) ([]PeriodBucket, error) {
+	return m.next.PeriodAggregate(ctx, filter, period)
+}
+
+// SummarizeUsage delegates to the underlying meter.
+func (m *EventedMeter) SummarizeUsage(ctx context.Context, filter UsageFilter) (*UsageSummary, error) {
+	return m.next.SummarizeUsage(ctx, filter)
+}
+
 // Close delegates to the underlying meter.
 func (m *EventedMeter) Close() error {
 	return m.next.Close()

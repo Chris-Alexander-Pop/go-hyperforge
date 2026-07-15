@@ -3,11 +3,16 @@
 // This package supports various MFA methods including:
 //   - TOTP (Time-based One-Time Password) via Provider (memory/redis adapters)
 //   - SMS/Email OTP via ChannelProvider (adapters/sms, adapters/email)
-//   - Recovery codes
+//   - Recovery codes (SHA-256 hashed at rest; high-entropy one-time codes)
+//
+// Set Config.EncryptionKey so TOTP secrets are encrypted at rest (AES-GCM via
+// pkg/security/crypto). Without it, TOTP secrets remain plaintext in the store.
+// Password-like credentials elsewhere in auth use pkg/security/crypto.Hasher
+// (see pkg/auth/password and oauth2 memory client secrets).
 //
 // TOTP usage:
 //
-//	mfaService, err := memory.New(mfa.Config{TOTPIssuer: "MyApp"})
+//	mfaService, err := memory.New(mfa.Config{TOTPIssuer: "MyApp", EncryptionKey: key})
 //	secret, recovery, err := mfaService.Enroll(ctx, userID)
 //	ok, err := mfaService.Verify(ctx, userID, code)
 //

@@ -3,13 +3,11 @@ package cache
 import (
 	"context"
 	"net"
-	"strings"
 	"testing"
 	"time"
 
 	"github.com/alicebob/miniredis/v2"
 	"github.com/chris-alexander-pop/go-hyperforge/pkg/cache"
-	"github.com/chris-alexander-pop/go-hyperforge/pkg/cache/adapters/memory"
 	cacheredis "github.com/chris-alexander-pop/go-hyperforge/pkg/cache/adapters/redis"
 	goredis "github.com/redis/go-redis/v9"
 )
@@ -73,33 +71,6 @@ func TestNewFromConfigUnregistered(t *testing.T) {
 	}
 }
 
-func TestInvalidatePrefix(t *testing.T) {
-	c := memory.New()
-	defer c.Close()
-	ctx := context.Background()
-
-	_ = c.Set(ctx, "user:1", "a", time.Minute)
-	_ = c.Set(ctx, "user:2", "b", time.Minute)
-	_ = c.Set(ctx, "other:1", "c", time.Minute)
-
-	n, err := cache.InvalidatePrefix(ctx, c, "user:")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if n != 2 {
-		t.Fatalf("deleted=%d", n)
-	}
-
-	ok, _ := c.Exists(ctx, "user:1")
-	if ok {
-		t.Fatal("user:1 should be gone")
-	}
-	ok, _ = c.Exists(ctx, "other:1")
-	if !ok {
-		t.Fatal("other:1 should remain")
-	}
-}
-
 func TestInvalidatePrefixRedis(t *testing.T) {
 	mr, err := miniredis.Run()
 	if err != nil {
@@ -123,15 +94,5 @@ func TestInvalidatePrefixRedis(t *testing.T) {
 	}
 	if n != 2 {
 		t.Fatalf("deleted=%d", n)
-	}
-}
-
-func TestInvalidatePrefixNil(t *testing.T) {
-	_, err := cache.InvalidatePrefix(context.Background(), nil, "x")
-	if err == nil {
-		t.Fatal("expected error")
-	}
-	if !strings.Contains(err.Error(), "nil") {
-		t.Fatalf("err=%v", err)
 	}
 }

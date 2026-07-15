@@ -7,6 +7,8 @@ import (
 	"sync"
 )
 
+// Educational sketch only — see package doc. Not a production DHT.
+
 const (
 	m = 160 // Key size in bits (SHA-1)
 )

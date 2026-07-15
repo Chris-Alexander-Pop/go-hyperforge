@@ -1,6 +1,7 @@
 package raft
 
 import (
+	"sync"
 	"testing"
 	"time"
 )
@@ -25,12 +26,10 @@ func (m *mockTransport) AppendEntries(peer string, term int, leaderID string, pr
 }
 
 func TestCandidateElectionSpeed(t *testing.T) {
-	// 3 nodes, need 2 votes (1 self + 1 peer)
 	peers := []string{"peer1", "peer2"}
 
 	transport := &mockTransport{
 		requestVoteFunc: func(peer string, term int, candidateID string, lastLogIndex int, lastLogTerm int) (int, bool) {
-			// Grant vote immediately
 			return term, true
 		},
 	}
@@ -39,27 +38,92 @@ func TestCandidateElectionSpeed(t *testing.T) {
 	n.state = Candidate
 
 	start := time.Now()
-
-	// We run runCandidate.
-	// We want to assert that it returns quickly when votes are granted.
 	n.runCandidate()
-
 	duration := time.Since(start)
 
-	// Check if we became leader
-	n.mu.Lock()
-	state := n.state
-	n.mu.Unlock()
-
-	if state != Leader {
-		t.Errorf("Expected state to be Leader, got %v", state)
+	if n.State() != Leader {
+		t.Errorf("Expected state to be Leader, got %v", n.State())
 	}
-
-	t.Logf("Election took %v", duration)
-
-	// We expect this to be very fast (<< 50ms).
-	// Using 50ms as a safe upper bound.
 	if duration > 50*time.Millisecond {
 		t.Errorf("Election took too long: %v (expected < 50ms)", duration)
+	}
+}
+
+func TestProposeNotLeader(t *testing.T) {
+	n := New("n1", nil, &mockTransport{}, nil)
+	if err := n.Propose("x"); err != ErrNotLeader {
+		t.Fatalf("expected ErrNotLeader, got %v", err)
+	}
+}
+
+func TestProposeAndReplicate(t *testing.T) {
+	follower := New("f1", nil, &mockTransport{}, make(chan interface{}, 8))
+	var mu sync.Mutex
+	var sent []LogEntry
+
+	leaderTransport := &mockTransport{
+		appendEntriesFunc: func(peer string, term int, leaderID string, prevLogIndex int, prevLogTerm int, entries []LogEntry, leaderCommit int) (int, bool) {
+			mu.Lock()
+			sent = append(sent, entries...)
+			mu.Unlock()
+			return follower.HandleAppendEntries(term, leaderID, prevLogIndex, prevLogTerm, entries, leaderCommit)
+		},
+	}
+
+	leader := New("l1", []string{"f1"}, leaderTransport, make(chan interface{}, 8))
+	leader.mu.Lock()
+	leader.state = Leader
+	leader.currentTerm = 1
+	leader.nextIndex["f1"] = 0
+	leader.matchIndex["f1"] = -1
+	leader.mu.Unlock()
+
+	if err := leader.Propose("cmd-a"); err != nil {
+		t.Fatal(err)
+	}
+	if err := leader.Propose("cmd-b"); err != nil {
+		t.Fatal(err)
+	}
+
+	flog := follower.Log()
+	if len(flog) != 2 {
+		t.Fatalf("follower log len=%d want 2", len(flog))
+	}
+	if flog[0].Command != "cmd-a" || flog[1].Command != "cmd-b" {
+		t.Fatalf("follower log=%v", flog)
+	}
+	if leader.CommitIndex() < 1 {
+		t.Fatalf("leader commitIndex=%d want >=1", leader.CommitIndex())
+	}
+	if follower.CommitIndex() < 0 {
+		t.Fatalf("follower should have advanced commit")
+	}
+	mu.Lock()
+	defer mu.Unlock()
+	if len(sent) == 0 {
+		t.Fatal("expected AppendEntries with entries")
+	}
+}
+
+func TestHandleAppendEntriesRejectsStaleTerm(t *testing.T) {
+	n := New("n1", nil, &mockTransport{}, nil)
+	n.mu.Lock()
+	n.currentTerm = 5
+	n.mu.Unlock()
+	term, ok := n.HandleAppendEntries(3, "L", -1, 0, []LogEntry{{Term: 3, Command: "x"}}, 0)
+	if ok || term != 5 {
+		t.Fatalf("got term=%d ok=%v", term, ok)
+	}
+}
+
+func TestHandleAppendEntriesPrevLogMismatch(t *testing.T) {
+	n := New("n1", nil, &mockTransport{}, nil)
+	n.mu.Lock()
+	n.currentTerm = 1
+	n.log = []LogEntry{{Term: 1, Command: "a"}}
+	n.mu.Unlock()
+	_, ok := n.HandleAppendEntries(1, "L", 0, 99, []LogEntry{{Term: 1, Command: "b"}}, 0)
+	if ok {
+		t.Fatal("expected prev log term mismatch rejection")
 	}
 }

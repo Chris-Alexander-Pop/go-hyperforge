@@ -5,7 +5,7 @@ Features:
   - Encryption: AES-GCM (Encryptor) + envelope encryption via KeyProvider
   - Hashing: Argon2id / bcrypt password helpers
   - InstrumentedEncryptor for logging/tracing without leaking plaintext
-  - PQC: experimental hybrid KEM (X25519 + demo Kyber). Dilithium/ML-DSA
+  - PQC: hybrid KEM (X25519 + CIRCL ML-KEM / FIPS 203). Dilithium/ML-DSA
     signatures are not implemented — docs that claim them are outdated.
 
 KeyProvider memory adapter: crypto/adapters/memory.

@@ -247,6 +247,16 @@ func (s *Store) CalculateCost(ctx context.Context, usage metering.UsageEvent) (f
 	return usage.Quantity * rate.PricePerUnit, nil
 }
 
+// PeriodAggregate buckets usage into fixed-width periods.
+func (s *Store) PeriodAggregate(ctx context.Context, filter metering.UsageFilter, period time.Duration) ([]metering.PeriodBucket, error) {
+	return metering.DefaultPeriodAggregate(ctx, s, filter, period)
+}
+
+// SummarizeUsage returns totals for matching usage.
+func (s *Store) SummarizeUsage(ctx context.Context, filter metering.UsageFilter) (*metering.UsageSummary, error) {
+	return metering.DefaultSummarizeUsage(ctx, s, filter)
+}
+
 // Close marks the store closed.
 func (s *Store) Close() error {
 	s.closed.Store(true)

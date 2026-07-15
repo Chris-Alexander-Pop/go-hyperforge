@@ -1,24 +1,25 @@
 /*
 Package analytics provides approximate uniqueness / cardinality tracking and
-lightweight event ingest for tests.
+event ingest (memory + warehouse sinks).
 
 # Scope
 
 Tracker estimates how many distinct elements have been seen for a named
 counter (e.g. unique visitors) via HyperLogLog. Sink ingests structured events
-into an in-memory (or future warehouse) sink. WindowedUniqueness buckets
+into an in-memory or warehouse-backed sink. WindowedUniqueness buckets
 Tracker counters by time window.
 
-It is intentionally not a full analytics warehouse:
+It is intentionally not a full analytics product:
 
   - No sessionization, funnels, retention, or attribution
-  - No OLAP queries or dashboards
+  - No OLAP dashboards (use pkg/data/bigdata Client for SQL)
   - Exact counters: use CounterStore (memory ExactStore) rather than HLL Tracker
 
 # Adapters
 
   - adapters/memory — HLL Tracker + event Sink + ExactStore (CounterStore)
   - adapters/redis  — Redis native HyperLogLog (PFADD / PFCOUNT / PFMERGE)
+  - adapters/warehouse — Sink writing INSERT rows via pkg/data/bigdata.Client
 
 # Example
 

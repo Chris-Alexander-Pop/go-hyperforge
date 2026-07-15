@@ -13,6 +13,7 @@ import (
 	"github.com/chris-alexander-pop/go-hyperforge/pkg/auth/oauth2"
 	"github.com/chris-alexander-pop/go-hyperforge/pkg/concurrency"
 	"github.com/chris-alexander-pop/go-hyperforge/pkg/errors"
+	"github.com/chris-alexander-pop/go-hyperforge/pkg/security/crypto"
 )
 
 type authCode struct {
@@ -39,6 +40,7 @@ type issuedToken struct {
 }
 
 // Server is an in-memory OAuth2 AuthorizationServer + TokenIssuer.
+// Client secrets are hashed at rest with pkg/security/crypto.Hasher (Argon2id).
 type Server struct {
 	cfg      oauth2.Config
 	mu       *concurrency.SmartRWMutex
@@ -46,6 +48,7 @@ type Server struct {
 	codes    map[string]*authCode
 	tokens   map[string]*issuedToken
 	password oauth2.PasswordAuthenticator
+	hasher   *crypto.Hasher
 	now      func() time.Time
 }
 
@@ -82,6 +85,7 @@ func New(cfg oauth2.Config, opts ...Option) *Server {
 		clients: make(map[string]oauth2.Client),
 		codes:   make(map[string]*authCode),
 		tokens:  make(map[string]*issuedToken),
+		hasher:  crypto.NewHasher(crypto.DefaultHashConfig()),
 		now:     time.Now,
 	}
 	for _, opt := range opts {
@@ -94,6 +98,8 @@ func New(cfg oauth2.Config, opts ...Option) *Server {
 func (s *Server) Issuer() oauth2.TokenIssuer { return s }
 
 // RegisterClient stores a client definition.
+// When Secret is non-empty it is hashed with crypto.Hasher before storage;
+// callers continue to present the plaintext secret on Token requests.
 func (s *Server) RegisterClient(ctx context.Context, client oauth2.Client) error {
 	if err := ctx.Err(); err != nil {
 		return err
@@ -103,6 +109,13 @@ func (s *Server) RegisterClient(ctx context.Context, client oauth2.Client) error
 	}
 	if len(client.GrantTypes) == 0 {
 		client.GrantTypes = []oauth2.GrantType{oauth2.GrantAuthorizationCode, oauth2.GrantRefreshToken}
+	}
+	if client.Secret != "" {
+		hashed, err := s.hasher.Hash(client.Secret)
+		if err != nil {
+			return errors.Internal("failed to hash client secret", err)
+		}
+		client.Secret = hashed
 	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -321,8 +334,11 @@ func (s *Server) authenticateClientLocked(id, secret string) (oauth2.Client, err
 	if !ok {
 		return oauth2.Client{}, oauth2.ErrInvalidClient
 	}
-	if client.Secret != "" && subtle.ConstantTimeCompare([]byte(client.Secret), []byte(secret)) != 1 {
-		return oauth2.Client{}, oauth2.ErrInvalidClient
+	if client.Secret != "" {
+		ok, err := s.hasher.Verify(secret, client.Secret)
+		if err != nil || !ok {
+			return oauth2.Client{}, oauth2.ErrInvalidClient
+		}
 	}
 	return client, nil
 }

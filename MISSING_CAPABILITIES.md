@@ -15,25 +15,9 @@
 ### Still open (truly remaining)
 
 - Cross-cutting: adopt `pkg/errors` / `SmartMutex` / `resilience` / `validator` / `algorithms` / `events` everywhere; PACKAGE_STANDARDS skeletons & interface tests; demote false ✅ in `pkg/TODO.md`
-- `pkg/logger`: bootstrap examples in templates/services (Init/Shutdown already fixed; service starter uses config.Load)
-- `pkg/config`: broader in-repo `Load` adoption beyond search/web3/iot + templates/service/starter
-- `pkg/test`: drive Suite adoption across cache/messaging/events/…
-- `pkg/concurrency`: re-export `x/sync/semaphore` + `errgroup` (optional)
-- `pkg/database`: broader conformance (Cassandra KV + Milvus vector + Neptune Gremlin **shipped**)
-- `pkg/storage`: block/archive/controller **cloud** adapters (file local + block local + archive filesystem shipped)
-- `pkg/analytics`: warehouse adapters (exact CounterStore memory ✅)
-- `pkg/metering`: period aggregation / rate-card mutation APIs (postgres Meter/Rater **shipped**)
-- `pkg/api`: GraphQL polish only (Echo↔stdlib + WS rooms/auth + gRPC auth/stream errors ✅)
-- `pkg/security`: real CIRCL/liboqs PQC (experimental stub remains); Azure Key Vault secrets — AWS/GCP secrets + GuardDuty + WAF/KMS **shipped**
-- `pkg/cloud`: (postgres controlplane + PXE imaging **shipped**)
-- `pkg/servicemesh`: etcd/K8s discovery (mTLS helpers + honest retry docs landed)
-- `pkg/enterprise`: fuller standards layout polish (ProjectionRunner + durable checkpoint + messaging outbox landed)
-- `pkg/workflow`: cloud adapter completeness (robfig cron + saga/scheduler instrumented **shipped**)
-- `pkg/iot`: cloud device-cert SDK wiring; MQTT Paho behind root Client; CoAP UDP
-- `pkg/web3`: Solana behind root interface; WalletConnect/DID resolver
-- `pkg/ai`: remaining ML depth beyond inference/feature instrumented; speech cloud polish
-- `pkg/algorithms`: Raft/Paxos/Chord/SWIM/Louvain beyond educational stubs (sticky LB **shipped**)
-- `pkg/datastructures`: drive reuse into algorithms/cache/workflow
+- `pkg/security`: real CIRCL/liboqs PQC finish (ML-KEM experimental path may exist; Dilithium/ML-DSA and production hardening still open)
+- `pkg/algorithms`: finish educational consensus beyond Raft log append/replicate (Paxos/Chord/SWIM/Louvain remain stubs)
+- `pkg/api`: GraphQL polish (complexity/depth/OTel may land elsewhere; schema tooling and DX still open)
 
 ### Progress since review (branch `branch/package-readiness-review-35ed`)
 
@@ -55,7 +39,8 @@ Landed foundation/reuse/domain hardening (scores above are the *pre-fix* snapsho
 - ✅ `resilience`: Hedge/Fallback/ExecuteT + env-tagged Config; CB+retry+timeout+bulkhead
 - ✅ `cache`: Exists/MGet/MSet/Expire/GetTTL, NewFromConfig, miniredis conformance, InvalidatePrefix
 - ✅ `streaming`: PutRecords + optional Consume (memory consumer)
-- ✅ `analytics`: Event Sink + memory sink + WindowedUniqueness
+- ✅ `analytics`: Event Sink + memory sink + WindowedUniqueness + warehouse bigdata sink
+- ✅ Deep Hyperforge remaining: CIRCL ML-KEM PQC; GraphQL complexity/depth+OTel; auth password Hasher; Raft/Paxos/Chord docs softened
 - ✅ `ai` (critical): LLM `StreamChat` + memory streaming, `errors.go`/instrumented, context-first conversation memory, embedding/image memory adapters; softened dual `ai/llm` vs `genai/llm` ledger; Chat (not Generate) docs
 - ✅ `test`: Suite self-tests + examples; StartPostgres/StartRedis Short-skip + t.Cleanup
 - ✅ `auth` SAML: SP client interface + memory ACS/AuthnRequest stub (XML crypto Unimplemented)
@@ -81,6 +66,7 @@ Landed foundation/reuse/domain hardening (scores above are the *pre-fix* snapsho
 - ✅ Remaining adapters: Cassandra KV (gocql + injectable SessionAPI); Milvus vector REST; AWS WAFv2 IPSet; GCP/Azure KMS Encrypt/Decrypt; PXE provisioning HTTP
 - ✅ Deep Hyperforge gaps: Typesense/OpenSearch real HTTP clients; web3 adapters/geth+kubo (ethereum/ipfs thin wrappers); greengrass `iot.Client` adapter + device/cert helpers; `config.Load` in search/web3/iot + templates/service/starter; prompt `{{#if}}`/`{{include:}}`; TODO overclaim demotions
 - ✅ Deep wave: sticky LB; Neptune Gremlin HTTP; GuardDuty scanner; AWS/GCP secret managers; postgres controlplane + metering; instrumented durable saga + scheduler (robfig cron already wired)
+- ✅ Deep remaining: etcd + Kubernetes discovery; Raft Propose/AppendEntries log replicate; Meter PeriodAggregate/SummarizeUsage; EBS file stub + Glacier thin adapter; logger bootstrap template; cache+events Suite migration; concurrency errgroup/semaphore re-exports
 
 ---
 
@@ -105,14 +91,14 @@ Landed foundation/reuse/domain hardening (scores above are the *pre-fix* snapsho
 | commerce | 42→78 | Money + payment depth; billing proration+dunning; TaxJar/Avalara; live FX |
 | events | 42→improved | Config/errors/lifecycle + Outbox messaging bridge |
 | workflow | 38→improved | Task/Wait SM + distlock/events |
-| algorithms | 38→improved | Maglev/P2C; many educational stubs remain |
+| algorithms | 38→improved | Maglev/P2C/sticky; Raft/Paxos/Chord remain educational sketches |
 | cloud | 38→72 | Libvirt/Firecracker/Redfish/IPMI/PXE + instance bind APIs |
 | telemetry | 36→improved | OTLP/noop/stdout traces+metrics MeterProvider |
 | ai | 36→improved | StreamChat/gateway/prompt; multimodal Parts; evals; RAG↔vector/rerank; Textract |
-| analytics | 32→improved | HLL + event Sink + windowed uniqueness + ExactStore |
+| analytics | 32→improved | HLL + event Sink + windowed uniqueness + ExactStore + warehouse sink |
 | validator | 32→improved | Interface/errors/instrumented; config routes through it |
 | audit | 34→improved | SQL/Postgres + messaging fanout; hash-chain; GDPR/retention |
-| security | 30* → improved | Vault KV v2, AWS/GCP/Azure KMS, Cloudflare+AWS WAF; scanners still open; PQC experimental |
+| security | 30* → improved | Vault/KMS/WAF; CIRCL ML-KEM; Dilithium/scanners still open |
 | servicemesh | 25*→improved | Discovery OK + Consul; CB/RL facades |
 | storage | 45*→improved | Blob Store parity; file/block local + archive filesystem |
 | resilience | 75→improved | Hedge/Fallback/ExecuteT + env Config; CB+retry+timeout+bulkhead |
@@ -253,7 +239,7 @@ Landed foundation/reuse/domain hardening (scores above are the *pre-fix* snapsho
 - [x] ✅ Redis HLL adapter (PFADD/PFCOUNT/PFMERGE); Merge on Tracker; precision 4–16
 - [x] ✅ Windowed uniqueness helper (`WindowKey` / `WindowedUniqueness`)
 - [x] ✅ Exact counters: `CounterStore` + memory `ExactStore` (non-HLL)
-- [ ] ❌ Warehouse analytics adapters (still future work)
+- [x] ✅ Warehouse analytics sink (`adapters/warehouse` → `pkg/data/bigdata.Client` INSERT)
 - [x] ✅ Fix PACKAGE_STANDARDS §6.11 example (`memory.New` + Close/Merge)
 
 ### `pkg/metering` (~20 → improved)
@@ -283,6 +269,7 @@ Landed foundation/reuse/domain hardening (scores above are the *pre-fix* snapsho
 
 ### `pkg/api` (~48 → improved)
 - [x] ✅ GraphQL schema injection via `api.Config.GraphQLSchema` (no no-op stub); honest docs
+- [x] ✅ GraphQL complexity limit (gqlgen FixedComplexityLimit), depth limit (AroundFields), OTel op spans
 - [x] ✅ gRPC health (`grpc.health.v1`), stream recovery, unary `GRPCStatus` ErrorInterceptor
 - [x] ✅ REST `ReadTimeout`/`WriteTimeout` applied; full `HTTPStatus` error map
 - [x] ✅ WebSocket origin allowlist, Hub `Shutdown`, broadcast no longer mutates under RLock
@@ -304,6 +291,7 @@ Landed foundation/reuse/domain hardening (scores above are the *pre-fix* snapsho
 - [x] ✅ SAML SP client skeleton (`pkg/auth/saml`) + memory ACS/AuthnRequest adapter; `ValidateXMLSignature` → Unimplemented (full SSO crypto reserved)
 - [x] ✅ Root `errors.go` sentinels; cloud vs root IdP adapters remain dual surfaces (documented)
 - [x] ✅ EncryptionKey wired for session/MFA memory+redis; WebAuthn memory is a usable challenge-tracking test double (library adapter remains production path)
+- [x] ✅ Local password store (`pkg/auth/password`) + OAuth2 memory client secrets via `crypto.Hasher` (Argon2id)
 
 ### `pkg/security` (~30 → improved)
 - [x] ✅ Root `security.go` + domain `errors.go` (fraud/captcha/waf/scanning/secrets/kms/crypto) via `pkg/errors`
@@ -319,8 +307,8 @@ Landed foundation/reuse/domain hardening (scores above are the *pre-fix* snapsho
 - [x] ✅ AWS Secrets Manager + GCP Secret Manager Get/Set (`secrets/adapters/awssecrets`, `gcpsecretmanager`)
 - [x] ✅ GuardDuty findings List/Get scanner (`scanning/adapters/guardduty`) injectable
 - [ ] ❌ Remaining: Azure Key Vault secrets; ClamAV scanner
-- [x] 🔄 PQC marked **experimental** (demo Kyber + X25519); CIRCL/liboqs not in go.mod; Dilithium/ML-DSA absent
-- [ ] 🔗 Broader hash/password reuse via crypto across auth (partial)
+- [x] ✅ PQC: CIRCL ML-KEM (FIPS 203) in go.mod; hybrid X25519+ML-KEM; Dilithium/ML-DSA still absent
+- [x] ✅ Hash/password reuse via crypto across auth (password store + OAuth2 client secrets; MFA TOTP still needs EncryptionKey)
 
 ### `pkg/audit` (~34 → improved)
 - [x] ✅ Durable `adapters/sql` + `adapters/postgres` (database/sql Append/Query)
@@ -430,12 +418,12 @@ Landed foundation/reuse/domain hardening (scores above are the *pre-fix* snapsho
 
 ### `pkg/algorithms` (~38 → improved)
 - [x] ✅ Implement standards-cited `search/binarysearch`, `graph/bfs`, `graph/dfs` (+ tests)
-- [x] ✅ Soften Raft/Paxos/Chord/SWIM/Louvain docs as educational stubs; DistLimiter uses cache store
+- [x] ✅ Soften Raft/Paxos/Chord/SWIM/Louvain docs as educational sketches (not production); DistLimiter uses cache store
 - [x] ✅ Sliding window counter (weighted prev+curr windows); Local remains exact log
 - [x] 🔗 Dijkstra/A* reuse `pkg/datastructures/heap`; shared `algorithms/graph` types
 - [x] ✅ Maglev + P2C loadbalancing; health-aware balancer (`healthaware`)
 - [x] ✅ Sticky session-affinity balancer (`loadbalancing/sticky`)
-- [ ] ❌ Finish Raft/Paxos/Chord/SWIM/Louvain beyond educational stubs
+- [ ] ❌ Finish Raft/Paxos/Chord/SWIM/Louvain beyond educational sketches (still open)
 
 ### `pkg/datastructures` (~58)
 - [x] ✅ Tests for ARC/CRDT/roaring/cuckoo/scalable/graph/DAG; G-Set CRDT implemented

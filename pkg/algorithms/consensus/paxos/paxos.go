@@ -5,6 +5,8 @@ import (
 	"sync"
 )
 
+// Educational sketch only — see package doc. Not a production consensus library.
+
 // Proposal represents a value being proposed.
 type Proposal struct {
 	ID    int // Sequence Number

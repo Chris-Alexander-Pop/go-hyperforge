@@ -15,7 +15,7 @@ Inventory (import paths under github.com/chris-alexander-pop/go-hyperforge):
 	  - algorithms/graph/dijkstra — weighted shortest path (uses pkg/datastructures/heap)
 	  - algorithms/graph/astar — A* search (uses pkg/datastructures/heap)
 	  - algorithms/graph/prim, kruskal — minimum spanning tree
-	  - algorithms/graph/louvain — educational community-detection stub
+	  - algorithms/graph/louvain — educational community-detection sketch (not production)
 
 	Sort
 	  - algorithms/sort/quicksort, mergesort, heapsort, radixsort
@@ -27,14 +27,15 @@ Inventory (import paths under github.com/chris-alexander-pop/go-hyperforge):
 
 	Load balancing
 	  - algorithms/loadbalancing/roundrobin, weightedroundrobin, leastconnections, random
+	  - algorithms/loadbalancing/maglev, p2c, sticky, healthaware
 
 	Consistent hashing / DHT
 	  - algorithms/consistenthash/ring, bounded
-	  - algorithms/dht/chord — educational Chord stub
+	  - algorithms/dht/chord — educational Chord sketch (not a production DHT)
 
 	Consensus / gossip
-	  - algorithms/consensus/raft, paxos — educational stubs
-	  - algorithms/gossip/swim — educational SWIM stub
+	  - algorithms/consensus/raft, paxos — educational sketches (not production consensus)
+	  - algorithms/gossip/swim — educational SWIM sketch (not production membership)
 
 	Concurrency helpers
 	  - algorithms/concurrency/adaptive

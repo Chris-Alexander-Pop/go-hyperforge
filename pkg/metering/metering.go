@@ -2,6 +2,7 @@ package metering
 
 import (
 	"context"
+	"sort"
 	"time"
 )
 
@@ -14,9 +15,119 @@ type Meter interface {
 	// GetUsage retrieves usage events matching the filter.
 	GetUsage(ctx context.Context, filter UsageFilter) ([]UsageEvent, error)
 
+	// PeriodAggregate buckets matching usage into fixed-width periods.
+	// period must be > 0. Buckets are ordered by PeriodStart ascending.
+	PeriodAggregate(ctx context.Context, filter UsageFilter, period time.Duration) ([]PeriodBucket, error)
+
+	// SummarizeUsage returns totals for matching usage (by resource type and overall).
+	SummarizeUsage(ctx context.Context, filter UsageFilter) (*UsageSummary, error)
+
 	// Close releases resources held by the meter.
 	// The meter should not be used after calling Close.
 	Close() error
+}
+
+// PeriodBucket is a time-bucketed usage aggregate.
+type PeriodBucket struct {
+	PeriodStart  time.Time `json:"period_start"`
+	PeriodEnd    time.Time `json:"period_end"`
+	TenantID     string    `json:"tenant_id,omitempty"`
+	ResourceType string    `json:"resource_type,omitempty"`
+	Quantity     float64   `json:"quantity"`
+	EventCount   int       `json:"event_count"`
+}
+
+// UsageSummary aggregates usage across a filter window.
+type UsageSummary struct {
+	TenantID       string             `json:"tenant_id,omitempty"`
+	TotalQuantity  float64            `json:"total_quantity"`
+	EventCount     int                `json:"event_count"`
+	ByResourceType map[string]float64 `json:"by_resource_type"`
+	StartTime      time.Time          `json:"start_time,omitempty"`
+	EndTime        time.Time          `json:"end_time,omitempty"`
+}
+
+// SummarizeEvents builds a UsageSummary from already-fetched events.
+func SummarizeEvents(events []UsageEvent, filter UsageFilter) *UsageSummary {
+	sum := &UsageSummary{
+		TenantID:       filter.TenantID,
+		ByResourceType: make(map[string]float64),
+		StartTime:      filter.StartTime,
+		EndTime:        filter.EndTime,
+	}
+	for _, e := range events {
+		sum.TotalQuantity += e.Quantity
+		sum.EventCount++
+		sum.ByResourceType[e.ResourceType] += e.Quantity
+	}
+	return sum
+}
+
+// BucketEvents groups events into fixed-width period buckets keyed by
+// (periodStart, resourceType). Events with zero Timestamp are skipped.
+func BucketEvents(events []UsageEvent, period time.Duration) []PeriodBucket {
+	if period <= 0 {
+		return nil
+	}
+	type key struct {
+		start int64
+		res   string
+		ten   string
+	}
+	acc := make(map[key]*PeriodBucket)
+	for _, e := range events {
+		if e.Timestamp.IsZero() {
+			continue
+		}
+		ts := e.Timestamp.UTC()
+		startUnix := ts.UnixNano() - (ts.UnixNano() % period.Nanoseconds())
+		start := time.Unix(0, startUnix).UTC()
+		k := key{start: startUnix, res: e.ResourceType, ten: e.TenantID}
+		b, ok := acc[k]
+		if !ok {
+			b = &PeriodBucket{
+				PeriodStart:  start,
+				PeriodEnd:    start.Add(period),
+				TenantID:     e.TenantID,
+				ResourceType: e.ResourceType,
+			}
+			acc[k] = b
+		}
+		b.Quantity += e.Quantity
+		b.EventCount++
+	}
+	out := make([]PeriodBucket, 0, len(acc))
+	for _, b := range acc {
+		out = append(out, *b)
+	}
+	sort.Slice(out, func(i, j int) bool {
+		if out[i].PeriodStart.Equal(out[j].PeriodStart) {
+			return out[i].ResourceType < out[j].ResourceType
+		}
+		return out[i].PeriodStart.Before(out[j].PeriodStart)
+	})
+	return out
+}
+
+// DefaultPeriodAggregate implements PeriodAggregate via GetUsage + BucketEvents.
+func DefaultPeriodAggregate(ctx context.Context, m Meter, filter UsageFilter, period time.Duration) ([]PeriodBucket, error) {
+	if period <= 0 {
+		return nil, ErrInvalidUsage
+	}
+	events, err := m.GetUsage(ctx, filter)
+	if err != nil {
+		return nil, err
+	}
+	return BucketEvents(events, period), nil
+}
+
+// DefaultSummarizeUsage implements SummarizeUsage via GetUsage + SummarizeEvents.
+func DefaultSummarizeUsage(ctx context.Context, m Meter, filter UsageFilter) (*UsageSummary, error) {
+	events, err := m.GetUsage(ctx, filter)
+	if err != nil {
+		return nil, err
+	}
+	return SummarizeEvents(events, filter), nil
 }
 
 // Rater defines the interface for calculating costs and managing rate cards.

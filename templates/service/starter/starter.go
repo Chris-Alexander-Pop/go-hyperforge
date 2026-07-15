@@ -30,6 +30,7 @@ func Load() (Config, error) {
 
 // Bootstrap loads config and initializes the process logger.
 // Callers should defer logger.Shutdown when Async logging is enabled.
+// See also templates/logger for a minimal Init/Shutdown bootstrap helper.
 func Bootstrap(ctx context.Context) (Config, error) {
 	cfg, err := Load()
 	if err != nil {

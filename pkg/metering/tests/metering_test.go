@@ -269,6 +269,32 @@ func (s *MeteringTestSuite) TestEventedMeterSkipsPublishOnError() {
 	s.Equal(0, count)
 }
 
+func (s *MeteringTestSuite) TestSummarizeAndPeriodAggregate() {
+	base := time.Date(2026, 7, 15, 10, 0, 0, 0, time.UTC)
+	events := []metering.UsageEvent{
+		{TenantID: "t1", ResourceType: "compute.instance.small", ResourceID: "a", Quantity: 2, Timestamp: base},
+		{TenantID: "t1", ResourceType: "compute.instance.small", ResourceID: "b", Quantity: 3, Timestamp: base.Add(30 * time.Minute)},
+		{TenantID: "t1", ResourceType: "storage.standard", ResourceID: "c", Quantity: 10, Timestamp: base.Add(2 * time.Hour)},
+	}
+	for _, e := range events {
+		s.NoError(s.meter.RecordUsage(s.Ctx, e))
+	}
+
+	sum, err := s.meter.SummarizeUsage(s.Ctx, metering.UsageFilter{TenantID: "t1"})
+	s.NoError(err)
+	s.Equal(15.0, sum.TotalQuantity)
+	s.Equal(3, sum.EventCount)
+	s.Equal(5.0, sum.ByResourceType["compute.instance.small"])
+	s.Equal(10.0, sum.ByResourceType["storage.standard"])
+
+	buckets, err := s.meter.PeriodAggregate(s.Ctx, metering.UsageFilter{TenantID: "t1"}, time.Hour)
+	s.NoError(err)
+	s.True(len(buckets) >= 2)
+
+	_, err = s.meter.PeriodAggregate(s.Ctx, metering.UsageFilter{}, 0)
+	s.True(errors.Is(err, metering.ErrInvalidUsage))
+}
+
 func (s *MeteringTestSuite) TestInstrumentedRaterClose() {
 	s.NoError(s.rater.Close())
 }

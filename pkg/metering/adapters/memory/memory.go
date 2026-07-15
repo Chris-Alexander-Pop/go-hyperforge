@@ -3,6 +3,7 @@ package memory
 import (
 	"context"
 	"sync/atomic"
+	"time"
 
 	"github.com/chris-alexander-pop/go-hyperforge/pkg/concurrency"
 	"github.com/chris-alexander-pop/go-hyperforge/pkg/metering"
@@ -100,6 +101,16 @@ func (m *MemoryMetering) GetUsage(ctx context.Context, filter metering.UsageFilt
 		results = append(results, e)
 	}
 	return results, nil
+}
+
+// PeriodAggregate buckets usage into fixed-width periods.
+func (m *MemoryMetering) PeriodAggregate(ctx context.Context, filter metering.UsageFilter, period time.Duration) ([]metering.PeriodBucket, error) {
+	return metering.DefaultPeriodAggregate(ctx, m, filter, period)
+}
+
+// SummarizeUsage returns totals for matching usage.
+func (m *MemoryMetering) SummarizeUsage(ctx context.Context, filter metering.UsageFilter) (*metering.UsageSummary, error) {
+	return metering.DefaultSummarizeUsage(ctx, m, filter)
 }
 
 func (m *MemoryMetering) GetRate(ctx context.Context, resourceType string) (*metering.RateCard, error) {

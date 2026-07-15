@@ -56,7 +56,7 @@ type KEM interface {
 func NewHybridKEM() *HybridKEM {
 	return &HybridKEM{
 		classicalKEM: &X25519KEM{},
-		pqKEM:        NewKyberKEM(KyberLevel768), // Kyber-768 (NIST Level 3)
+		pqKEM:        NewKyberKEM(KyberLevel768), // ML-KEM-768 (NIST Level 3)
 	}
 }
 

@@ -58,6 +58,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/wafv2 v1.75.1
 	github.com/aws/smithy-go v1.27.3
 	github.com/bwmarrin/discordgo v0.29.0
+	github.com/cloudflare/circl v1.6.4
 	github.com/colinmarc/hdfs/v2 v2.4.0
 	github.com/coreos/go-oidc/v3 v3.17.0
 	github.com/docker/docker v28.5.1+incompatible
@@ -98,6 +99,7 @@ require (
 	github.com/testcontainers/testcontainers-go/modules/postgres v0.40.0
 	github.com/testcontainers/testcontainers-go/modules/redis v0.40.0
 	github.com/twilio/twilio-go v1.29.1
+	github.com/vektah/gqlparser/v2 v2.5.31
 	github.com/xdg-go/scram v1.1.2
 	go.mongodb.org/mongo-driver v1.17.6
 	go.opentelemetry.io/contrib/instrumentation/github.com/labstack/echo/otelecho v0.64.0
@@ -130,6 +132,7 @@ require (
 	k8s.io/api v0.35.0
 	k8s.io/apimachinery v0.35.0
 	k8s.io/client-go v0.35.0
+	k8s.io/utils v0.0.0-20251002143259-bc988d571ff4
 	modernc.org/sqlite v1.29.6
 )
 
@@ -324,7 +327,6 @@ require (
 	github.com/twpayne/go-geom v1.6.1 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/fasttemplate v1.2.2 // indirect
-	github.com/vektah/gqlparser/v2 v2.5.31 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
 	github.com/xdg-go/pbkdf2 v1.0.0 // indirect
 	github.com/xdg-go/stringprep v1.0.4 // indirect
@@ -358,7 +360,6 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	k8s.io/klog/v2 v2.130.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20250910181357-589584f1c912 // indirect
-	k8s.io/utils v0.0.0-20251002143259-bc988d571ff4 // indirect
 	modernc.org/gc/v3 v3.0.0-20240107210532-573471604cb6 // indirect
 	modernc.org/libc v1.41.0 // indirect
 	modernc.org/mathutil v1.6.0 // indirect

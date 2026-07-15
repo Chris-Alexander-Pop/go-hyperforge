@@ -10,6 +10,7 @@ import (
 	"sort"
 	"strconv"
 	"sync/atomic"
+	"time"
 
 	"github.com/chris-alexander-pop/go-hyperforge/pkg/concurrency"
 	"github.com/chris-alexander-pop/go-hyperforge/pkg/metering"
@@ -99,6 +100,16 @@ func (e *Exporter) GetUsage(ctx context.Context, filter metering.UsageFilter) ([
 		out = append(out, ev)
 	}
 	return out, nil
+}
+
+// PeriodAggregate buckets usage into fixed-width periods.
+func (e *Exporter) PeriodAggregate(ctx context.Context, filter metering.UsageFilter, period time.Duration) ([]metering.PeriodBucket, error) {
+	return metering.DefaultPeriodAggregate(ctx, e, filter, period)
+}
+
+// SummarizeUsage returns totals for matching usage.
+func (e *Exporter) SummarizeUsage(ctx context.Context, filter metering.UsageFilter) (*metering.UsageSummary, error) {
+	return metering.DefaultSummarizeUsage(ctx, e, filter)
 }
 
 // Close marks the exporter closed.

@@ -4,9 +4,9 @@
 // Shipping backends today:
 //   - Memory: In-memory cold store for unit tests (instant restore)
 //   - Filesystem: Local cold directory (objects + meta sidecars; instant restore)
+//   - Glacier: Thin S3 Glacier/DEEP_ARCHIVE adapter (adapters/glacier; injectable ObjectAPI)
 //
-// Planned (not implemented): AWS S3 Glacier / Glacier Deep Archive, Azure Blob
-// Archive tier, Google Cloud Storage Archive class.
+// Planned (not implemented): Azure Blob Archive tier, Google Cloud Storage Archive class.
 //
 // Usage:
 //

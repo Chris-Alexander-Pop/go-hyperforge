@@ -103,6 +103,62 @@ func (m *InstrumentedMeter) GetUsage(ctx context.Context, filter UsageFilter) ([
 	return events, nil
 }
 
+func (m *InstrumentedMeter) PeriodAggregate(ctx context.Context, filter UsageFilter, period time.Duration) ([]PeriodBucket, error) {
+	ctx, span := m.tracer.Start(ctx, "metering.PeriodAggregate", trace.WithAttributes(
+		attribute.String("tenant.id", filter.TenantID),
+		attribute.String("resource.type", filter.ResourceType),
+		attribute.Int64("period_ms", period.Milliseconds()),
+	))
+	defer span.End()
+
+	start := time.Now()
+	buckets, err := m.next.PeriodAggregate(ctx, filter, period)
+	duration := time.Since(start)
+
+	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
+		logger.L().ErrorContext(ctx, "failed to period-aggregate usage",
+			"operation", "metering.PeriodAggregate",
+			"error", err,
+			"duration_ms", duration.Milliseconds(),
+		)
+		return nil, err
+	}
+	span.SetAttributes(attribute.Int("result.count", len(buckets)))
+	return buckets, nil
+}
+
+func (m *InstrumentedMeter) SummarizeUsage(ctx context.Context, filter UsageFilter) (*UsageSummary, error) {
+	ctx, span := m.tracer.Start(ctx, "metering.SummarizeUsage", trace.WithAttributes(
+		attribute.String("tenant.id", filter.TenantID),
+		attribute.String("resource.type", filter.ResourceType),
+	))
+	defer span.End()
+
+	start := time.Now()
+	sum, err := m.next.SummarizeUsage(ctx, filter)
+	duration := time.Since(start)
+
+	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
+		logger.L().ErrorContext(ctx, "failed to summarize usage",
+			"operation", "metering.SummarizeUsage",
+			"error", err,
+			"duration_ms", duration.Milliseconds(),
+		)
+		return nil, err
+	}
+	if sum != nil {
+		span.SetAttributes(
+			attribute.Float64("total_quantity", sum.TotalQuantity),
+			attribute.Int("event_count", sum.EventCount),
+		)
+	}
+	return sum, nil
+}
+
 func (m *InstrumentedMeter) Close() error {
 	return m.next.Close()
 }
