@@ -126,6 +126,6 @@ type Updater interface {
 
 // Config holds shared IoT package configuration.
 type Config struct {
-	// Driver selects a backend: "memory", "mqtt", "awsiot".
+	// Driver selects a backend: "memory", "mqtt", "awsiot", "greengrass".
 	Driver string `env:"IOT_DRIVER" env-default:"memory"`
 }

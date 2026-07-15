@@ -8,7 +8,6 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 	"strings"
@@ -97,7 +96,7 @@ func New(cfg Config, opts ...Option) *Client {
 // SpeechToText transcribes audio via TranscribeAPI or HTTP endpoint.
 func (c *Client) SpeechToText(ctx context.Context, audio []byte) (string, error) {
 	if len(audio) == 0 {
-		return "", pkgerrors.InvalidArgument("audio content is required", nil)
+		return "", speech.ErrEmptyAudio
 	}
 	if c.transcribe != nil {
 		return c.transcribe.Transcribe(ctx, audio)
@@ -116,12 +115,12 @@ func (c *Client) SpeechToText(ctx context.Context, audio []byte) (string, error)
 	req.Header.Set("Content-Type", "application/json")
 	resp, err := c.http.Do(req)
 	if err != nil {
-		return "", pkgerrors.Internal("transcribe request failed", err)
+		return "", pkgerrors.Unavailable("transcribe request failed", err)
 	}
 	defer resp.Body.Close()
 	raw, _ := io.ReadAll(resp.Body)
 	if resp.StatusCode != http.StatusOK {
-		return "", pkgerrors.Internal(fmt.Sprintf("transcribe HTTP %d: %s", resp.StatusCode, string(raw)), nil)
+		return "", speech.MapHTTPStatus(resp.StatusCode, string(raw))
 	}
 	var out struct {
 		Text string `json:"text"`
@@ -135,7 +134,7 @@ func (c *Client) SpeechToText(ctx context.Context, audio []byte) (string, error)
 // TextToSpeech synthesizes via PollyAPI or HTTP endpoint.
 func (c *Client) TextToSpeech(ctx context.Context, text string, format speech.AudioFormat) ([]byte, error) {
 	if text == "" {
-		return nil, pkgerrors.InvalidArgument("text input is required", nil)
+		return nil, speech.ErrEmptyText
 	}
 	if format == "" {
 		format = speech.FormatMP3
@@ -159,7 +158,7 @@ func (c *Client) TextToSpeech(ctx context.Context, text string, format speech.Au
 	req.Header.Set("Content-Type", "application/json")
 	resp, err := c.http.Do(req)
 	if err != nil {
-		return nil, pkgerrors.Internal("polly request failed", err)
+		return nil, pkgerrors.Unavailable("polly request failed", err)
 	}
 	defer resp.Body.Close()
 	raw, err := io.ReadAll(resp.Body)
@@ -167,7 +166,7 @@ func (c *Client) TextToSpeech(ctx context.Context, text string, format speech.Au
 		return nil, pkgerrors.Internal("read polly response", err)
 	}
 	if resp.StatusCode != http.StatusOK {
-		return nil, pkgerrors.Internal(fmt.Sprintf("polly HTTP %d: %s", resp.StatusCode, string(raw)), nil)
+		return nil, speech.MapHTTPStatus(resp.StatusCode, string(raw))
 	}
 	return raw, nil
 }

@@ -8,7 +8,7 @@ import (
 
 // Config holds shared Web3 package configuration.
 type Config struct {
-	// Driver selects a backend: "memory", "ethereum", "ipfs".
+	// Driver selects a backend: "memory", "ethereum", "solana", "ipfs".
 	Driver string `env:"WEB3_DRIVER" env-default:"memory"`
 }
 
@@ -113,4 +113,119 @@ type Verifier interface {
 
 	// Verify checks expiration, not-before, nonce reuse, and signature recovery.
 	Verify(ctx context.Context, message *SIWEMessage, signature string) (bool, error)
+}
+
+// SolanaClient is the primary Solana JSON-RPC client interface.
+// Implementations include adapters/memory (Solana) and adapters/solana
+// (blockchain/solana is a thin re-export of adapters/solana).
+type SolanaClient interface {
+	// Close releases resources (no-op for HTTP clients).
+	Close()
+
+	// GetBalance returns the SOL balance in lamports.
+	GetBalance(ctx context.Context, address string) (uint64, error)
+
+	// GetBlockHeight returns the current block height.
+	GetBlockHeight(ctx context.Context) (uint64, error)
+
+	// GetSlot returns the current slot.
+	GetSlot(ctx context.Context) (uint64, error)
+
+	// GetTransaction retrieves transaction details by signature.
+	GetTransaction(ctx context.Context, signature string) (map[string]interface{}, error)
+
+	// GetAccountInfo retrieves account data.
+	GetAccountInfo(ctx context.Context, address string) (map[string]interface{}, error)
+
+	// SendTransaction sends a signed transaction (base64) and returns the signature.
+	SendTransaction(ctx context.Context, signedTx string) (string, error)
+
+	// GetRecentBlockhash retrieves a recent blockhash for transactions.
+	GetRecentBlockhash(ctx context.Context) (string, error)
+
+	// GetTokenAccountBalance returns an SPL token balance amount string.
+	GetTokenAccountBalance(ctx context.Context, tokenAccount string) (string, error)
+}
+
+// WalletConnectSession is a thin WalletConnect session stub (no relay protocol).
+// Implementations include adapters/memory.
+type WalletConnectSession interface {
+	// Pair creates or resumes a pairing topic with a peer URI.
+	Pair(ctx context.Context, uri string) (*WCSession, error)
+
+	// Approve marks a session approved for the given topic.
+	Approve(ctx context.Context, topic string, accounts []string) error
+
+	// Reject marks a session rejected.
+	Reject(ctx context.Context, topic string, reason string) error
+
+	// GetSession returns session state by topic.
+	GetSession(ctx context.Context, topic string) (*WCSession, error)
+
+	// Disconnect ends a session.
+	Disconnect(ctx context.Context, topic string) error
+
+	// Request records a JSON-RPC style request against an active session.
+	Request(ctx context.Context, topic, method string, params []byte) (*WCResponse, error)
+}
+
+// WCSession is WalletConnect session state (stub).
+type WCSession struct {
+	Topic    string
+	URI      string
+	Accounts []string
+	Status   WCSessionStatus
+	Metadata map[string]string
+}
+
+// WCSessionStatus is the lifecycle state of a WalletConnect session.
+type WCSessionStatus string
+
+const (
+	WCStatusPending  WCSessionStatus = "pending"
+	WCStatusApproved WCSessionStatus = "approved"
+	WCStatusRejected WCSessionStatus = "rejected"
+	WCStatusClosed   WCSessionStatus = "closed"
+)
+
+// WCResponse is a stub WalletConnect JSON-RPC response.
+type WCResponse struct {
+	ID     string
+	Result []byte
+	Error  string
+}
+
+// DIDDocument is a minimal DID document representation.
+type DIDDocument struct {
+	ID                 string
+	Controller         []string
+	VerificationMethod []DIDVerificationMethod
+	Authentication     []string
+	Service            []DIDService
+	AlsoKnownAs        []string
+}
+
+// DIDVerificationMethod is a verification method entry.
+type DIDVerificationMethod struct {
+	ID           string
+	Type         string
+	Controller   string
+	PublicKeyHex string
+}
+
+// DIDService is a service endpoint entry.
+type DIDService struct {
+	ID              string
+	Type            string
+	ServiceEndpoint string
+}
+
+// DIDResolver resolves DID strings to DID documents.
+// Implementations include identity memory resolvers (ethr / web).
+type DIDResolver interface {
+	// Resolve fetches or constructs a DID document for the given DID URI.
+	Resolve(ctx context.Context, did string) (*DIDDocument, error)
+
+	// Method returns the DID method this resolver handles (e.g. "ethr", "web").
+	Method() string
 }

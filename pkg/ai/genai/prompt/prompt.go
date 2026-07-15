@@ -5,8 +5,8 @@
 //   - {{#if key}}...{{/if}} conditionals (truthy when var is non-empty)
 //   - {{include:name}} includes (resolved via Store when rendering)
 //
-// This remains intentionally thin versus a full prompt ops platform (evals, A/B,
-// remote registries).
+// Also provides thin Experiment (A/B assign) and RemoteRegistry interfaces with
+// in-memory adapters under adapters/memory.
 package prompt
 
 import (
@@ -123,4 +123,33 @@ func applyConditionals(body string, vars map[string]string) string {
 		out = out[:loc[0]] + replacement + out[loc[1]:]
 	}
 	return out
+}
+
+// Experiment defines a thin A/B prompt assignment surface.
+type Experiment interface {
+	// Assign returns the template name/version (or variant id) for a subject.
+	Assign(ctx context.Context, experimentID, subjectID string) (*Variant, error)
+
+	// RecordOutcome records an optional outcome metric for the assignment.
+	RecordOutcome(ctx context.Context, experimentID, subjectID string, metric float64) error
+}
+
+// Variant is an A/B prompt variant.
+type Variant struct {
+	ExperimentID string
+	ID           string
+	TemplateName string
+	Version      string
+	Weight       int
+}
+
+// RemoteRegistry is a thin remote prompt registry (fetch by name/version).
+// Local Store remains the primary write/render surface; RemoteRegistry is
+// for pull-through sync from an external catalog.
+type RemoteRegistry interface {
+	// Fetch retrieves a template from the remote catalog.
+	Fetch(ctx context.Context, name, version string) (*Template, error)
+
+	// List returns known template names (optional version filter).
+	List(ctx context.Context, prefix string) ([]Template, error)
 }

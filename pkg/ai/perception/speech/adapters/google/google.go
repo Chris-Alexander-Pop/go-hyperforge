@@ -9,7 +9,6 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 	"strings"
@@ -96,7 +95,7 @@ func (c *Client) doJSON(ctx context.Context, url string, payload any) ([]byte, e
 	}
 	resp, err := c.http.Do(req)
 	if err != nil {
-		return nil, pkgerrors.Internal("google speech request failed", err)
+		return nil, pkgerrors.Unavailable("google speech request failed", err)
 	}
 	defer resp.Body.Close()
 	raw, err := io.ReadAll(resp.Body)
@@ -104,7 +103,7 @@ func (c *Client) doJSON(ctx context.Context, url string, payload any) ([]byte, e
 		return nil, pkgerrors.Internal("read response", err)
 	}
 	if resp.StatusCode != http.StatusOK {
-		return nil, pkgerrors.Internal(fmt.Sprintf("google speech HTTP %d: %s", resp.StatusCode, string(raw)), nil)
+		return nil, speech.MapHTTPStatus(resp.StatusCode, string(raw))
 	}
 	return raw, nil
 }
@@ -112,7 +111,7 @@ func (c *Client) doJSON(ctx context.Context, url string, payload any) ([]byte, e
 // SpeechToText calls speech:recognize.
 func (c *Client) SpeechToText(ctx context.Context, audio []byte) (string, error) {
 	if len(audio) == 0 {
-		return "", pkgerrors.InvalidArgument("audio content is required", nil)
+		return "", speech.ErrEmptyAudio
 	}
 	payload := map[string]any{
 		"config": map[string]any{
@@ -150,7 +149,7 @@ func (c *Client) SpeechToText(ctx context.Context, audio []byte) (string, error)
 // TextToSpeech calls text:synthesize.
 func (c *Client) TextToSpeech(ctx context.Context, text string, format speech.AudioFormat) ([]byte, error) {
 	if text == "" {
-		return nil, pkgerrors.InvalidArgument("text input is required", nil)
+		return nil, speech.ErrEmptyText
 	}
 	encoding := "MP3"
 	switch format {

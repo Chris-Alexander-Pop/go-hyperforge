@@ -1,7 +1,7 @@
-// Package coap provides a stub Constrained Application Protocol (CoAP) client surface.
+// Package coap provides a Constrained Application Protocol (CoAP) client surface.
 //
-// This is intentionally a protocol stub: types and a Client interface suitable for
-// adapters and tests. It does not speak real UDP/DTLS CoAP on the wire yet.
+// Includes an in-process Memory stub and a UDP datagram transport (minimal RFC 7252
+// framing for listen/exchange). DTLS and Observe remain unimplemented.
 package coap
 
 import (
@@ -80,9 +80,9 @@ type Response struct {
 // Handler handles an inbound CoAP request (server-side stub).
 type Handler func(ctx context.Context, req *Message) (*Message, error)
 
-// Client is the CoAP client interface (stub protocol package).
+// Client is the CoAP client interface (Memory stub or UDP datagram transport).
 type Client interface {
-	// Connect prepares the transport (no-op for memory stub until UDP lands).
+	// Connect prepares the transport (marks memory connected, or dials UDP peer).
 	Connect(ctx context.Context) error
 	// Close releases resources.
 	Close() error

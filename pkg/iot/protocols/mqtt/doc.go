@@ -1,8 +1,8 @@
 // Package mqtt provides an MQTT client for IoT messaging via Eclipse Paho.
 //
 // Supports MQTT 3.1.1 and 5.0 over TCP/TLS. Token wait timeouts are handled
-// correctly (timeout ≠ success). Prefer pkg/iot.Client for interface-based
-// consumers; use pkg/iot/adapters/memory in tests.
+// correctly (timeout ≠ success). Prefer pkg/iot.Client via adapters/mqtt (or
+// adapters/memory in tests) for interface-based consumers.
 //
 // Usage:
 //

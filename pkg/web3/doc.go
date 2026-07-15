@@ -14,13 +14,14 @@ This root package provides:
 Concrete implementations:
 
   - adapters/geth — go-ethereum ethclient behind web3.Client
+  - adapters/solana — Solana JSON-RPC behind web3.SolanaClient
   - adapters/kubo — Kubo/IPFS HTTP API behind web3.Store
-  - identity — SIWE cryptographic verification and basic DID parsing
+  - adapters/memory — Ethereum/IPFS/SIWE/Solana/WalletConnect test doubles
+  - identity — SIWE verification, DID parse/format, memory ethr/web DID resolvers
   - blockchain/ethereum — thin wrapper re-exporting adapters/geth
-  - blockchain/solana — JSON-RPC Solana client scaffold (not behind a root interface yet)
+  - blockchain/solana — thin wrapper re-exporting adapters/solana
   - storage/ipfs — thin wrapper re-exporting adapters/kubo
 
-WalletConnect session protocol is not implemented. DID support is limited to
-string parse/format helpers (no resolver, no DID document fetch).
+WalletConnect is a session stub (no relay). DID resolution is in-memory ethr/web.
 */
 package web3

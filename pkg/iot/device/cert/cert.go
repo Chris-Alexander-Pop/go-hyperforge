@@ -1,9 +1,11 @@
 // Package cert provides device certificate helper types for IoT provisioning.
 //
 // These types model X.509 device identity material (PEM + metadata) and a
-// CertificateProvider interface for create/attach/detach flows. Cloud SDK
-// wiring (AWS IoT CreateKeysAndCertificate, etc.) is left to adapters; the
-// memory provider supports local tests and scaffolding.
+// CertificateProvider interface for create/attach/detach flows.
+//
+// Implementations:
+//   - MemoryProvider — in-process test double
+//   - adapters/awsiot — injectable AWS IoT CreateKeysAndCertificate-style API
 package cert
 
 import (

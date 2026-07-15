@@ -13,13 +13,14 @@ This root package provides:
 Concrete implementations:
 
   - protocols/mqtt — Eclipse Paho MQTT client (MQTT 3.1.1/5.0 over TCP/TLS)
-  - protocols/coap — CoAP stub client (in-process memory; UDP/DTLS not on the wire yet)
+  - adapters/mqtt — Paho behind root iot.Client
+  - protocols/coap — CoAP Memory stub + UDP datagram listen/exchange
   - device/ota — HTTP manifest/download updater with SHA-256 verification
   - device/registry — DeviceRegistry interface + adapters/memory
-  - device/cert — device certificate helper types + memory CertificateProvider
+  - device/cert — CertificateProvider + memory + adapters/awsiot (injectable SDK)
   - adapters/awsiot — AWS IoT Core SDK + NewAdapter behind root Client
   - adapters/greengrass — Greengrass V2 management + NewAdapter behind root Client
 
-Real CoAP UDP transport and cloud certificate SDK wiring remain open.
+DTLS CoAP and Observe remain open.
 */
 package iot

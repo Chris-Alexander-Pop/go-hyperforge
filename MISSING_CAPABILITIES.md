@@ -29,6 +29,10 @@ After sibling domain agents land (iot/web3/ai depth; workflow/metering/storage; 
 
 Landed foundation/reuse/domain hardening (scores above are the *pre-fix* snapshot):
 
+- ✅ `iot`: adapters/mqtt (Paho→Client); CoAP UDP; device/cert adapters/awsiot
+- ✅ `web3`: SolanaClient + adapters/solana; WalletConnect stub; DID ethr/web resolvers
+- ✅ `ai`: training instrumented/errors/memory; speech HTTP mapping; prompt A/B + RemoteRegistry
+
 - ✅ `errors`, `logger`, `cache`, `events`, `config`, `validator`, `resilience`
 - ✅ `servicemesh` facades → resilience/algorithms; `network/loadbalancer` → algorithms
 - ✅ `enterprise`, `metering`, `analytics`, `audit`, `iot`, `web3`, `communication`, `streaming`
@@ -399,6 +403,9 @@ Landed foundation/reuse/domain hardening (scores above are the *pre-fix* snapsho
 - [x] ✅ MQTT WaitTimeout bug fixed; OTA semver via `golang.org/x/mod/semver`
 - [x] ✅ CoAP stub (`protocols/coap`) + device registry interface/memory
 - [x] ✅ AWS IoT behind root Client interface (`adapters/awsiot.NewAdapter`); blob-backed OTA (`device/ota.BlobUpdater`)
+- [x] ✅ MQTT Paho behind root `iot.Client` (`adapters/mqtt`)
+- [x] ✅ CoAP UDP datagram listen/exchange (`protocols/coap.UDP`) + tests
+- [x] ✅ Device cert AWS IoT injectable `CertificateProvider` (`device/cert/adapters/awsiot`)
 - [x] ✅ Greengrass behind root Client (`adapters/greengrass.NewAdapter`); device cert helpers (`device/cert`)
 - [x] ✅ Demoted TODO overclaims
 
