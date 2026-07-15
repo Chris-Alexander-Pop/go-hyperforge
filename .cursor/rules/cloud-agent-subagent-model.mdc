@@ -1,0 +1,25 @@
+---
+description: Require Cursor Grok 4.5 High for all cloud-agent subagents
+alwaysApply: true
+---
+
+# Cloud Agent Subagent Model Policy
+
+When this repository is being worked on by a **Cursor Cloud Agent**, you MUST follow these rules for every `Task` / subagent spawn:
+
+## Required model
+
+- **Only** spawn subagents with model `cursor-grok-4.5-high`.
+- Do **not** spawn subagents with any other model (including `cursor-grok-4.5-high-fast`, Composer, GPT/Codex, Claude, or the parent default when it would resolve to something else).
+- Always pass `model: "cursor-grok-4.5-high"` explicitly on every `Task` tool call.
+
+## Scope
+
+- Applies to all subagent types: `generalPurpose`, `explore`, `debug`, `computerUse`, `videoReview`, `cursor-guide`, `bugbot`, `security-review`, `best-of-n-runner`, and any future types.
+- Applies on cloud agents even if the parent agent is already Grok 4.5 High — still set the model explicitly.
+- Does not restrict the parent cloud agent’s own model selection; it only constrains **spawned subagents**.
+
+## If unavailable
+
+- If `cursor-grok-4.5-high` cannot be used, **do not** fall back to another model.
+- Skip spawning that subagent and continue the work yourself (or report that the subagent could not be started under policy).
