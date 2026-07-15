@@ -1,11 +1,9 @@
 // Package file provides a unified interface for network file system storage.
 //
-// Supported backends:
-//   - Memory: In-memory file system for testing
-//   - NFS: Network File System (planned)
-//   - EFS: AWS Elastic File System (planned)
-//   - Azure Files: Azure file shares (planned)
-//   - GCS FUSE: Google Cloud Storage FUSE (planned)
+// Shipping backends today:
+//   - Memory: In-memory file system for unit tests
+//
+// Planned (not implemented): NFS, AWS EFS, Azure Files, GCS FUSE.
 //
 // Usage:
 //

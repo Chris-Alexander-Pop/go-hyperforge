@@ -8,9 +8,9 @@ import (
 	"io"
 	"sort"
 	"strings"
-	"sync"
 	"time"
 
+	"github.com/chris-alexander-pop/system-design-library/pkg/concurrency"
 	"github.com/chris-alexander-pop/system-design-library/pkg/errors"
 	"github.com/chris-alexander-pop/system-design-library/pkg/storage/archive"
 	"github.com/google/uuid"
@@ -31,7 +31,7 @@ type object struct {
 
 // Store implements an in-memory archive store for testing.
 type Store struct {
-	mu      sync.RWMutex
+	mu      *concurrency.SmartRWMutex
 	objects map[string]*object
 	config  archive.Config
 }
@@ -48,6 +48,7 @@ func New() *Store {
 // NewWithConfig creates a new in-memory archive store with config.
 func NewWithConfig(cfg archive.Config) *Store {
 	return &Store{
+		mu:      concurrency.NewSmartRWMutex(concurrency.MutexConfig{Name: "archive-memory"}),
 		objects: make(map[string]*object),
 		config:  cfg,
 	}

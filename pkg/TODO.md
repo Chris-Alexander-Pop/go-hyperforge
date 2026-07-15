@@ -172,10 +172,10 @@
 ### Storage (File/Block/Object)
 | Package | Status | Enables Services | Description |
 |---------|--------|------------------|-------------|
-| `pkg/storage/blob` | ✅ | media-store | Object Storage (S3/GCS/Azure) |
-| `pkg/storage/file` | ✅ | shared-fs | Network File Systems (EFS/NFS) |
-| `pkg/storage/block` | ✅ | vm-disk | Block Storage (EBS) |
-| `pkg/storage/archive` | ✅ | backup | Cold Storage (Glacier) |
+| `pkg/storage/blob` | ✅ | media-store | Object Storage (S3/GCS/Azure/local/memory) |
+| `pkg/storage/file` | 🔄 | shared-fs | Interface + memory only (EFS/NFS not implemented) |
+| `pkg/storage/block` | 🔄 | vm-disk | Interface + memory only (EBS not implemented) |
+| `pkg/storage/archive` | 🔄 | backup | Cold storage interface + memory only (Glacier not implemented) |
 
 ### Search
 | Package | Status | Enables Services | Description |

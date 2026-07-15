@@ -2,9 +2,9 @@ package memory
 
 import (
 	"context"
-	"sync"
 	"time"
 
+	"github.com/chris-alexander-pop/system-design-library/pkg/concurrency"
 	"github.com/chris-alexander-pop/system-design-library/pkg/errors"
 	"github.com/chris-alexander-pop/system-design-library/pkg/storage/block"
 	"github.com/google/uuid"
@@ -12,7 +12,7 @@ import (
 
 // Store implements an in-memory volume store for testing.
 type Store struct {
-	mu        sync.RWMutex
+	mu        *concurrency.SmartRWMutex
 	volumes   map[string]*block.Volume
 	snapshots map[string]*block.Snapshot
 }
@@ -20,6 +20,7 @@ type Store struct {
 // New creates a new in-memory volume store.
 func New() *Store {
 	return &Store{
+		mu:        concurrency.NewSmartRWMutex(concurrency.MutexConfig{Name: "block-memory"}),
 		volumes:   make(map[string]*block.Volume),
 		snapshots: make(map[string]*block.Snapshot),
 	}

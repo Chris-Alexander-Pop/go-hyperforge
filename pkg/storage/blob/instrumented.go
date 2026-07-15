@@ -91,6 +91,6 @@ func (s *InstrumentedStore) URL(key string) string {
 }
 
 func (s *InstrumentedStore) startSpan(ctx context.Context, op string) (context.Context, trace.Span) {
-	tracer := otel.Tracer("pkg/blob")
+	tracer := otel.Tracer("pkg/storage/blob")
 	return tracer.Start(ctx, fmt.Sprintf("%s.%s", s.name, op))
 }

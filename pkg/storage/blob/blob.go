@@ -20,19 +20,26 @@ import (
 	"io"
 )
 
-// Config holds configuration for blob storage
+// Config holds configuration for blob storage.
 type Config struct {
-	Driver string `env:"BLOB_DRIVER" env-default:"local"` // local, s3
+	Driver string `env:"BLOB_DRIVER" env-default:"local"` // local, s3, gcs, azureblob, memory
 	Bucket string `env:"BLOB_BUCKET" env-default:"default-bucket"`
 
 	// Local storage specific
 	LocalDir string `env:"BLOB_LOCAL_DIR" env-default:"./uploads"`
 
-	// S3 specific
+	// S3 specific (also used for MinIO / LocalStack via Endpoint)
 	Region          string `env:"BLOB_S3_REGION" env-default:"us-east-1"`
-	Endpoint        string `env:"BLOB_S3_ENDPOINT"` // optional, for minio/localstack
+	Endpoint        string `env:"BLOB_S3_ENDPOINT"`
 	AccessKeyID     string `env:"BLOB_S3_ACCESS_KEY"`
 	SecretAccessKey string `env:"BLOB_S3_SECRET_KEY"`
+
+	// Azure Blob specific
+	AzureAccountName string `env:"BLOB_AZURE_ACCOUNT"`
+	AzureAccountKey  string `env:"BLOB_AZURE_KEY"`
+
+	// GCS specific (ADC is preferred; project is optional metadata)
+	GCPProjectID string `env:"BLOB_GCP_PROJECT"`
 }
 
 // Store defines the interface for object storage

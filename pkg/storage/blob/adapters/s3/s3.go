@@ -2,6 +2,7 @@ package s3
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 
@@ -10,11 +11,16 @@ import (
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/feature/s3/manager"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
-	"github.com/chris-alexander-pop/system-design-library/pkg/errors"
+	"github.com/aws/aws-sdk-go-v2/service/s3/types"
+	smithy "github.com/aws/smithy-go"
+	pkgerrors "github.com/chris-alexander-pop/system-design-library/pkg/errors"
 	"github.com/chris-alexander-pop/system-design-library/pkg/storage/blob"
 )
 
-// Store implements Store using AWS S3
+// Ensure Store implements blob.Store.
+var _ blob.Store = (*Store)(nil)
+
+// Store implements blob.Store using AWS S3 (or S3-compatible endpoints).
 type Store struct {
 	client     *s3.Client
 	bucket     string
@@ -22,10 +28,10 @@ type Store struct {
 	downloader *manager.Downloader
 }
 
-// New creates a new S3Store
+// New creates a new S3-backed blob store.
 func New(ctx context.Context, cfg blob.Config) (blob.Store, error) {
 	if cfg.Bucket == "" {
-		return nil, errors.New(errors.CodeInvalidArgument, "bucket name is required", nil)
+		return nil, blob.ErrInvalidConfig
 	}
 
 	opts := []func(*config.LoadOptions) error{
@@ -42,13 +48,13 @@ func New(ctx context.Context, cfg blob.Config) (blob.Store, error) {
 
 	awsCfg, err := config.LoadDefaultConfig(ctx, opts...)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to load aws config")
+		return nil, pkgerrors.Wrap(err, "failed to load aws config")
 	}
 
 	client := s3.NewFromConfig(awsCfg, func(o *s3.Options) {
 		if cfg.Endpoint != "" {
 			o.BaseEndpoint = aws.String(cfg.Endpoint)
-			o.UsePathStyle = true // Needed for MinIO often
+			o.UsePathStyle = true // Needed for MinIO / LocalStack
 		}
 	})
 
@@ -60,6 +66,36 @@ func New(ctx context.Context, cfg blob.Config) (blob.Store, error) {
 	}, nil
 }
 
+// mapError maps S3 SDK errors to pkg/errors, including missing-key → NotFound.
+func mapError(op string, err error) error {
+	if err == nil {
+		return nil
+	}
+	if isNotFound(err) {
+		return pkgerrors.NotFound("blob not found", err)
+	}
+	return pkgerrors.Internal("failed to "+op+" from s3", err)
+}
+
+func isNotFound(err error) bool {
+	var nsk *types.NoSuchKey
+	if errors.As(err, &nsk) {
+		return true
+	}
+	var nf *types.NotFound
+	if errors.As(err, &nf) {
+		return true
+	}
+	var apiErr smithy.APIError
+	if errors.As(err, &apiErr) {
+		switch apiErr.ErrorCode() {
+		case "NoSuchKey", "NotFound", "404":
+			return true
+		}
+	}
+	return false
+}
+
 func (s *Store) Upload(ctx context.Context, key string, data io.Reader) error {
 	_, err := s.uploader.Upload(ctx, &s3.PutObjectInput{
 		Bucket: aws.String(s.bucket),
@@ -67,27 +103,19 @@ func (s *Store) Upload(ctx context.Context, key string, data io.Reader) error {
 		Body:   data,
 	})
 	if err != nil {
-		return errors.Internal("failed to upload to s3", err)
+		return mapError("upload", err)
 	}
 	return nil
 }
 
 func (s *Store) Download(ctx context.Context, key string) (io.ReadCloser, error) {
-	// For streaming large files, GetObject is fine directly, but Downloader is efficient for chunks.
-	// However, Downloader requires a WriterAt, which isn't io.ReadCloser friendly for streaming back to user.
-	// So we use standard GetObject here for streaming interface.
-
 	out, err := s.client.GetObject(ctx, &s3.GetObjectInput{
 		Bucket: aws.String(s.bucket),
 		Key:    aws.String(key),
 	})
 	if err != nil {
-		// Check for NoSuchKey
-		// In v2 we check error types
-		// Simple approach for now:
-		return nil, errors.Internal("failed to download from s3", err)
+		return nil, mapError("download", err)
 	}
-
 	return out.Body, nil
 }
 
@@ -97,12 +125,11 @@ func (s *Store) Delete(ctx context.Context, key string) error {
 		Key:    aws.String(key),
 	})
 	if err != nil {
-		return errors.Internal("failed to delete from s3", err)
+		return mapError("delete", err)
 	}
 	return nil
 }
 
 func (s *Store) URL(key string) string {
-	// naive public URL
 	return fmt.Sprintf("https://%s.s3.amazonaws.com/%s", s.bucket, key)
 }

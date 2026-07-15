@@ -7,9 +7,9 @@ import (
 	"path"
 	"sort"
 	"strings"
-	"sync"
 	"time"
 
+	"github.com/chris-alexander-pop/system-design-library/pkg/concurrency"
 	"github.com/chris-alexander-pop/system-design-library/pkg/errors"
 	"github.com/chris-alexander-pop/system-design-library/pkg/storage/file"
 )
@@ -26,13 +26,14 @@ type node struct {
 
 // Store implements an in-memory file store for testing.
 type Store struct {
-	mu   sync.RWMutex
+	mu   *concurrency.SmartRWMutex
 	root *node
 }
 
 // New creates a new in-memory file store.
 func New() *Store {
 	return &Store{
+		mu: concurrency.NewSmartRWMutex(concurrency.MutexConfig{Name: "file-memory"}),
 		root: &node{
 			isDir:    true,
 			modTime:  time.Now(),

@@ -1,10 +1,10 @@
 // Package block provides a unified interface for block storage (volumes).
 //
-// Supported backends:
-//   - Memory: In-memory volume store for testing
-//   - EBS: AWS Elastic Block Store (planned)
-//   - Azure Disk: Azure Managed Disks (planned)
-//   - Persistent Disk: GCP Persistent Disks (planned)
+// Shipping backends today:
+//   - Memory: In-memory volume store for unit tests
+//
+// Planned (not implemented): AWS EBS, Azure Managed Disks, GCP Persistent Disks,
+// Ceph, OpenStack Cinder.
 //
 // Usage:
 //

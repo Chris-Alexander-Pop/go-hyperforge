@@ -1,2 +1,2 @@
-// Package archive provides a unified interface for cold/archive storage.
+// Package archive provides cold/archive object storage (not tar/zip packaging).
 package archive

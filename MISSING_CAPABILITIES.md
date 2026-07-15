@@ -21,6 +21,7 @@ Landed foundation/reuse/domain hardening (scores above are the *pre-fix* snapsho
 - ✅ `enterprise`, `metering`, `analytics`, `audit`, `iot`, `web3`, `communication`, `streaming`
 - ✅ `database` resilience/sharding helpers; `workflow` distlock + events + cron
 - ✅ `algorithms`: binarysearch, bfs/dfs, DistLimiter store-backed, sliding-window counter, educational stub docs, heap reuse in dijkstra/astar
+- ✅ `storage` root drivers, blob errors/resilience, GCS/Azure `blob.Store`, S3 miss→NotFound, SmartRWMutex memory adapters
 - 🔄 Remaining large gaps still listed below (auth OAuth2 AS, commerce depth, AI gateway, cloud IaaS adapters, security production drivers, etc.)
 
 ---
@@ -61,7 +62,7 @@ Landed foundation/reuse/domain hardening (scores above are the *pre-fix* snapsho
 | streaming | — | PutRecord + memory/Kinesis/EventHubs; Pub/Sub → messaging |
 | security | 30* | Memory-only domain |
 | servicemesh | 25* | Discovery OK; CB/RL reinvent resilience/algorithms |
-| storage | 45* | Blob partial; file/block/archive memory-only |
+| storage | 45* | Blob Store parity + resilience landed; file/block/archive still memory-only |
 | resilience | 75* | CB+retry+timeout+bulkhead; typed Execute / Hedge / Fallback still open |
 
 \*Approximate where review used checklist form without a single headline score.
@@ -165,11 +166,12 @@ Landed foundation/reuse/domain hardening (scores above are the *pre-fix* snapsho
 - [ ] ❌ Interface conformance tests across stores
 
 ### `pkg/storage` (~45)
-- [ ] ❌ GCS/Azure must implement `blob.Store`; map S3 miss → NotFound
-- [ ] ❌ `blob/errors.go`; `pkg/resilience` on cloud I/O
-- [ ] ❌ Production adapters for file/block/archive/controller (or demote TODO)
-- [ ] 🔗 `pkg/concurrency` in memory adapters; typed `pkg/events` payloads
-- [ ] ❌ Root `storage.go`; fix archive doc (cold storage ≠ tar/zip)
+- [x] ✅ GCS/Azure implement `blob.Store`; map S3 miss → NotFound
+- [x] ✅ `blob/errors.go`; `pkg/resilience` on cloud I/O (`resilient.go`)
+- [x] ✅ Docs demoted: file/block/archive/controller memory-only (cloud adapters not claimed)
+- [x] ✅ `pkg/concurrency` in memory adapters; typed `pkg/events` payloads (`BlobEventPayload`)
+- [x] ✅ Root `storage.go`; archive doc clarified (cold storage ≠ tar/zip)
+- [ ] ❌ Production adapters for file/block/archive/controller (still future work)
 
 ### `pkg/data` (~56)
 - [ ] ⚠️ Remove or implement claimed `etl` / `processing` top-level packages
@@ -344,7 +346,7 @@ Landed foundation/reuse/domain hardening (scores above are the *pre-fix* snapsho
 1. **Foundation correctness:** logger Init/trace, errors codes/Wrap/IsCode, config→validator, cache TTL + miss semantics
 2. **Reuse cleanup:** servicemesh wraps resilience/algorithms; network uses loadbalancing algos; database uses resilience; streaming vs messaging boundary
 3. **Standards skeleton:** events Config/errors/lifecycle; enterprise/iot/web3/metering tests + memory adapters
-4. **Catalog depth:** commerce webhooks/FX/tax; auth OAuth2; storage blob Store parity; AI gateway/streaming
+4. **Catalog depth:** commerce webhooks/FX/tax; auth OAuth2; storage file/block/archive cloud adapters; AI gateway/streaming
 5. **Docs honesty:** `pkg/TODO.md` status pass; `pkg/README.md` maturity notes; package `doc.go` overclaims
 
 ---
