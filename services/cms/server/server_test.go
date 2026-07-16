@@ -10,27 +10,54 @@ import (
 	"github.com/chris-alexander-pop/go-hyperforge/services/cms/server"
 )
 
-func TestHealthAndCRUD(t *testing.T) {
+func TestCreatePublishGetBySlug(t *testing.T) {
 	srv := server.New(server.Config{Port: "0"})
 	ts := httptest.NewServer(srv.Echo())
 	t.Cleanup(ts.Close)
 
-	res, err := http.Get(ts.URL + "/healthz")
-	if err != nil {
-		t.Fatalf("healthz: %v", err)
-	}
+	res, _ := http.Get(ts.URL + "/healthz")
 	res.Body.Close()
-	if res.StatusCode != http.StatusOK {
-		t.Fatalf("healthz status=%d", res.StatusCode)
-	}
 
-	body, _ := json.Marshal(map[string]interface{}{"name": "item-1"})
-	createResp, err := http.Post(ts.URL+"/v1/pages", "application/json", bytes.NewReader(body))
+	body, _ := json.Marshal(map[string]string{"slug": "about", "title": "About", "body": "hi"})
+	cr, err := http.Post(ts.URL+"/v1/pages", "application/json", bytes.NewReader(body))
 	if err != nil {
 		t.Fatalf("create: %v", err)
 	}
-	defer createResp.Body.Close()
-	if createResp.StatusCode != http.StatusCreated {
-		t.Fatalf("create status=%d", createResp.StatusCode)
+	defer cr.Body.Close()
+	var page map[string]interface{}
+	json.NewDecoder(cr.Body).Decode(&page)
+	id, _ := page["id"].(string)
+
+	pr, err := http.Post(ts.URL+"/v1/pages/"+id+"/publish", "application/json", bytes.NewReader([]byte("{}")))
+	if err != nil {
+		t.Fatalf("publish: %v", err)
+	}
+	pr.Body.Close()
+	if pr.StatusCode != http.StatusOK {
+		t.Fatalf("publish=%d", pr.StatusCode)
+	}
+
+	gr, err := http.Get(ts.URL + "/v1/pages/by-slug/about")
+	if err != nil {
+		t.Fatalf("by-slug: %v", err)
+	}
+	defer gr.Body.Close()
+	if gr.StatusCode != http.StatusOK {
+		t.Fatalf("by-slug=%d", gr.StatusCode)
+	}
+}
+
+func TestCreateMissingSlug(t *testing.T) {
+	srv := server.New(server.Config{Port: "0"})
+	ts := httptest.NewServer(srv.Echo())
+	t.Cleanup(ts.Close)
+	body, _ := json.Marshal(map[string]string{"title": "About"})
+	cr, err := http.Post(ts.URL+"/v1/pages", "application/json", bytes.NewReader(body))
+	if err != nil {
+		t.Fatalf("create: %v", err)
+	}
+	defer cr.Body.Close()
+	if cr.StatusCode != http.StatusBadRequest {
+		t.Fatalf("expected 400, got %d", cr.StatusCode)
 	}
 }

@@ -10,7 +10,7 @@ import (
 	"github.com/chris-alexander-pop/go-hyperforge/services/subscription/server"
 )
 
-func TestHealthAndCRUD(t *testing.T) {
+func TestHealthz(t *testing.T) {
 	srv := server.New(server.Config{Port: "0"})
 	ts := httptest.NewServer(srv.Echo())
 	t.Cleanup(ts.Close)
@@ -19,12 +19,21 @@ func TestHealthAndCRUD(t *testing.T) {
 	if err != nil {
 		t.Fatalf("healthz: %v", err)
 	}
-	res.Body.Close()
+	defer res.Body.Close()
 	if res.StatusCode != http.StatusOK {
 		t.Fatalf("healthz status=%d", res.StatusCode)
 	}
+}
 
-	body, _ := json.Marshal(map[string]interface{}{"name": "item-1"})
+func TestCreateGetCancel(t *testing.T) {
+	srv := server.New(server.Config{Port: "0"})
+	ts := httptest.NewServer(srv.Echo())
+	t.Cleanup(ts.Close)
+
+	body, _ := json.Marshal(map[string]string{
+		"customer_id": "cust_1",
+		"plan_id":     "basic_monthly",
+	})
 	createResp, err := http.Post(ts.URL+"/v1/subscriptions", "application/json", bytes.NewReader(body))
 	if err != nil {
 		t.Fatalf("create: %v", err)
@@ -32,5 +41,60 @@ func TestHealthAndCRUD(t *testing.T) {
 	defer createResp.Body.Close()
 	if createResp.StatusCode != http.StatusCreated {
 		t.Fatalf("create status=%d", createResp.StatusCode)
+	}
+	var created map[string]interface{}
+	if err := json.NewDecoder(createResp.Body).Decode(&created); err != nil {
+		t.Fatalf("decode: %v", err)
+	}
+	id, _ := created["id"].(string)
+	if id == "" {
+		t.Fatal("expected id")
+	}
+	if created["status"] != "active" {
+		t.Fatalf("status=%v", created["status"])
+	}
+
+	getResp, err := http.Get(ts.URL + "/v1/subscriptions/" + id)
+	if err != nil {
+		t.Fatalf("get: %v", err)
+	}
+	defer getResp.Body.Close()
+	if getResp.StatusCode != http.StatusOK {
+		t.Fatalf("get status=%d", getResp.StatusCode)
+	}
+
+	cancelResp, err := http.Post(ts.URL+"/v1/subscriptions/"+id+"/cancel", "application/json", nil)
+	if err != nil {
+		t.Fatalf("cancel: %v", err)
+	}
+	defer cancelResp.Body.Close()
+	if cancelResp.StatusCode != http.StatusOK {
+		t.Fatalf("cancel status=%d", cancelResp.StatusCode)
+	}
+	var cancelled map[string]interface{}
+	if err := json.NewDecoder(cancelResp.Body).Decode(&cancelled); err != nil {
+		t.Fatalf("decode cancel: %v", err)
+	}
+	if cancelled["status"] != "canceled" {
+		t.Fatalf("status=%v", cancelled["status"])
+	}
+}
+
+func TestCreateUnknownPlan(t *testing.T) {
+	srv := server.New(server.Config{Port: "0"})
+	ts := httptest.NewServer(srv.Echo())
+	t.Cleanup(ts.Close)
+
+	body, _ := json.Marshal(map[string]string{
+		"customer_id": "cust_1",
+		"plan_id":     "no_such_plan",
+	})
+	res, err := http.Post(ts.URL+"/v1/subscriptions", "application/json", bytes.NewReader(body))
+	if err != nil {
+		t.Fatalf("create: %v", err)
+	}
+	defer res.Body.Close()
+	if res.StatusCode != http.StatusNotFound {
+		t.Fatalf("expected 404, got %d", res.StatusCode)
 	}
 }

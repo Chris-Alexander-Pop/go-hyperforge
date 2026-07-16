@@ -137,6 +137,7 @@ go test -bench=. -benchmem ./pkg/resilience/...
 - [Package Standards](pkg/PACKAGE_STANDARDS.md) - Design patterns and conventions
 - [Package Index](pkg/README.md) - All packages with descriptions
 - [Service Conventions](docs/services.md) - Microservice layout and identity cluster
+- [Service Deepening](docs/SERVICE_DEEPENING.md) - Domain services wired to `pkg/` (waves)
 - [Service Catalog](services/SERVICE_CATALOG.md) - Planned microservices
 - [Contributing](CONTRIBUTING.md) - Development workflow
 - [Changelog](CHANGELOG.md) - Version history

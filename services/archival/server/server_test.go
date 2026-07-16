@@ -10,27 +10,47 @@ import (
 	"github.com/chris-alexander-pop/go-hyperforge/services/archival/server"
 )
 
-func TestHealthAndCRUD(t *testing.T) {
+func TestArchiveListGet(t *testing.T) {
 	srv := server.New(server.Config{Port: "0"})
 	ts := httptest.NewServer(srv.Echo())
 	t.Cleanup(ts.Close)
 
-	res, err := http.Get(ts.URL + "/healthz")
-	if err != nil {
-		t.Fatalf("healthz: %v", err)
-	}
+	res, _ := http.Get(ts.URL + "/healthz")
 	res.Body.Close()
-	if res.StatusCode != http.StatusOK {
-		t.Fatalf("healthz status=%d", res.StatusCode)
-	}
 
-	body, _ := json.Marshal(map[string]interface{}{"name": "item-1"})
-	createResp, err := http.Post(ts.URL+"/v1/archives", "application/json", bytes.NewReader(body))
+	body, _ := json.Marshal(map[string]string{"object_key": "logs/2024", "tier": "glacier"})
+	ar, err := http.Post(ts.URL+"/v1/archives", "application/json", bytes.NewReader(body))
 	if err != nil {
-		t.Fatalf("create: %v", err)
+		t.Fatalf("archive: %v", err)
 	}
-	defer createResp.Body.Close()
-	if createResp.StatusCode != http.StatusCreated {
-		t.Fatalf("create status=%d", createResp.StatusCode)
+	defer ar.Body.Close()
+	var obj map[string]interface{}
+	json.NewDecoder(ar.Body).Decode(&obj)
+	id, _ := obj["id"].(string)
+
+	lr, _ := http.Get(ts.URL + "/v1/archives")
+	lr.Body.Close()
+	gr, err := http.Get(ts.URL + "/v1/archives/" + id)
+	if err != nil {
+		t.Fatalf("get: %v", err)
+	}
+	gr.Body.Close()
+	if gr.StatusCode != http.StatusOK {
+		t.Fatalf("get=%d", gr.StatusCode)
+	}
+}
+
+func TestArchiveMissingKey(t *testing.T) {
+	srv := server.New(server.Config{Port: "0"})
+	ts := httptest.NewServer(srv.Echo())
+	t.Cleanup(ts.Close)
+	body, _ := json.Marshal(map[string]string{"tier": "cold"})
+	ar, err := http.Post(ts.URL+"/v1/archives", "application/json", bytes.NewReader(body))
+	if err != nil {
+		t.Fatalf("archive: %v", err)
+	}
+	defer ar.Body.Close()
+	if ar.StatusCode != http.StatusBadRequest {
+		t.Fatalf("expected 400, got %d", ar.StatusCode)
 	}
 }

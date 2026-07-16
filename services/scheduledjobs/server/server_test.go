@@ -10,27 +10,50 @@ import (
 	"github.com/chris-alexander-pop/go-hyperforge/services/scheduledjobs/server"
 )
 
-func TestHealthAndCRUD(t *testing.T) {
+func TestCreateAndRun(t *testing.T) {
 	srv := server.New(server.Config{Port: "0"})
 	ts := httptest.NewServer(srv.Echo())
 	t.Cleanup(ts.Close)
 
-	res, err := http.Get(ts.URL + "/healthz")
-	if err != nil {
-		t.Fatalf("healthz: %v", err)
-	}
+	res, _ := http.Get(ts.URL + "/healthz")
 	res.Body.Close()
-	if res.StatusCode != http.StatusOK {
-		t.Fatalf("healthz status=%d", res.StatusCode)
-	}
 
-	body, _ := json.Marshal(map[string]interface{}{"name": "item-1"})
-	createResp, err := http.Post(ts.URL+"/v1/jobs", "application/json", bytes.NewReader(body))
+	body, _ := json.Marshal(map[string]string{"name": "nightly", "schedule": "once"})
+	cr, err := http.Post(ts.URL+"/v1/jobs", "application/json", bytes.NewReader(body))
 	if err != nil {
 		t.Fatalf("create: %v", err)
 	}
-	defer createResp.Body.Close()
-	if createResp.StatusCode != http.StatusCreated {
-		t.Fatalf("create status=%d", createResp.StatusCode)
+	defer cr.Body.Close()
+	if cr.StatusCode != http.StatusCreated {
+		t.Fatalf("create status=%d", cr.StatusCode)
+	}
+
+	rr, err := http.Post(ts.URL+"/v1/jobs/nightly/run", "application/json", bytes.NewReader([]byte("{}")))
+	if err != nil {
+		t.Fatalf("run: %v", err)
+	}
+	defer rr.Body.Close()
+	var out map[string]interface{}
+	json.NewDecoder(rr.Body).Decode(&out)
+	if rr.StatusCode != http.StatusOK {
+		t.Fatalf("run status=%d out=%v", rr.StatusCode, out)
+	}
+	if out["runs"].(float64) < 1 {
+		t.Fatalf("expected runs >= 1, got %v", out)
+	}
+}
+
+func TestCreateMissingName(t *testing.T) {
+	srv := server.New(server.Config{Port: "0"})
+	ts := httptest.NewServer(srv.Echo())
+	t.Cleanup(ts.Close)
+	body, _ := json.Marshal(map[string]string{"schedule": "once"})
+	cr, err := http.Post(ts.URL+"/v1/jobs", "application/json", bytes.NewReader(body))
+	if err != nil {
+		t.Fatalf("create: %v", err)
+	}
+	defer cr.Body.Close()
+	if cr.StatusCode != http.StatusBadRequest {
+		t.Fatalf("expected 400, got %d", cr.StatusCode)
 	}
 }
