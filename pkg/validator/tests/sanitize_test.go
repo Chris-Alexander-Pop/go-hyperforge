@@ -203,7 +203,9 @@ func (s *SanitizeSuite) TestValidatePathInside() {
 
 	ok, err := validator.ValidatePathInside(base, "subdir/file.txt")
 	s.NoError(err)
-	s.Equal(filepath.Join(base, "subdir", "file.txt"), ok)
+	evalBase, evalErr := filepath.EvalSymlinks(base)
+	s.Require().NoError(evalErr)
+	s.Equal(filepath.Join(evalBase, "subdir", "file.txt"), ok)
 
 	_, err = validator.ValidatePathInside(base, "../outside.txt")
 	s.Error(err)

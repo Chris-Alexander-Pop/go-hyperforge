@@ -125,18 +125,31 @@ func WithTimeout(timeout time.Duration, fn Executor) Executor {
 
 		select {
 		case err := <-done:
-			return err
+			// fn may return bare ctx.Err() when it observes the deadline; normalize
+			// so callers always get CodeDeadlineExceeded (not only the slow path).
+			return mapTimeoutErr(err)
 		case <-ctx.Done():
 			select {
 			case err := <-done:
-				return err
+				return mapTimeoutErr(err)
 			default:
-				cause := ctx.Err()
-				if errors.Is(cause, context.DeadlineExceeded) {
-					return errors.DeadlineExceeded("operation timed out", cause)
-				}
-				return cause
+				return mapTimeoutErr(ctx.Err())
 			}
 		}
 	}
+}
+
+// mapTimeoutErr promotes bare context.DeadlineExceeded into a CodeDeadlineExceeded
+// AppError. Already-coded deadline errors and non-deadline errors are unchanged.
+func mapTimeoutErr(err error) error {
+	if err == nil {
+		return nil
+	}
+	if !errors.Is(err, context.DeadlineExceeded) {
+		return err
+	}
+	if errors.IsCode(err, errors.CodeDeadlineExceeded) {
+		return err
+	}
+	return errors.DeadlineExceeded("operation timed out", err)
 }
