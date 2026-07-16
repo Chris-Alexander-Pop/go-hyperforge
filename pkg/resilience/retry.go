@@ -125,11 +125,15 @@ func WithTimeout(timeout time.Duration, fn Executor) Executor {
 
 		select {
 		case err := <-done:
-			return err
+			return wrapTimeoutErr(err)
 		case <-ctx.Done():
 			select {
 			case err := <-done:
-				return err
+				// fn returned (often ctx.Err()) in the same window as the deadline.
+				if err == nil {
+					return errors.DeadlineExceeded("operation timed out", ctx.Err())
+				}
+				return wrapTimeoutErr(err)
 			default:
 				cause := ctx.Err()
 				if errors.Is(cause, context.DeadlineExceeded) {
@@ -139,4 +143,19 @@ func WithTimeout(timeout time.Duration, fn Executor) Executor {
 			}
 		}
 	}
+}
+
+// wrapTimeoutErr ensures deadline failures are CodeDeadlineExceeded AppErrors
+// while preserving errors.Is(..., context.DeadlineExceeded).
+func wrapTimeoutErr(err error) error {
+	if err == nil {
+		return nil
+	}
+	if errors.Is(err, context.DeadlineExceeded) {
+		if errors.IsCode(err, errors.CodeDeadlineExceeded) {
+			return err
+		}
+		return errors.DeadlineExceeded("operation timed out", err)
+	}
+	return err
 }
