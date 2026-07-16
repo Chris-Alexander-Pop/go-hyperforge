@@ -152,7 +152,7 @@ func (s *Server) recommend(c echo.Context) error {
 		id string
 		sc int
 	}
-	var ranked []kv
+	ranked := make([]kv, 0, len(scores))
 	for id, sc := range scores {
 		ranked = append(ranked, kv{id, sc})
 	}
