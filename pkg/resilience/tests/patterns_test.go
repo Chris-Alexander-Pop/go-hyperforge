@@ -119,8 +119,40 @@ func TestWithTimeout_IgnoresContext(t *testing.T) {
 	if !errors.Is(err, context.DeadlineExceeded) {
 		t.Fatalf("expected deadline exceeded, got %v", err)
 	}
+	if !apperrors.IsCode(err, apperrors.CodeDeadlineExceeded) {
+		t.Fatalf("expected CodeDeadlineExceeded, got %q", apperrors.Code(err))
+	}
 	if elapsed > 300*time.Millisecond {
 		t.Fatalf("timeout not enforced promptly, took %v", elapsed)
+	}
+}
+
+func TestWithTimeout_CodeStableUnderLoad(t *testing.T) {
+	// Regression: when fn returns bare ctx.Err() on deadline, the done-channel
+	// path used to skip CodeDeadlineExceeded wrapping (flake under load).
+	const n = 200
+	var wg sync.WaitGroup
+	errs := make(chan error, n)
+	for i := 0; i < n; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			fn := resilience.WithTimeout(2*time.Millisecond, func(ctx context.Context) error {
+				<-ctx.Done()
+				return ctx.Err()
+			})
+			errs <- fn(context.Background())
+		}()
+	}
+	wg.Wait()
+	close(errs)
+	for err := range errs {
+		if !errors.Is(err, context.DeadlineExceeded) {
+			t.Fatalf("expected deadline exceeded, got %v", err)
+		}
+		if !apperrors.IsCode(err, apperrors.CodeDeadlineExceeded) {
+			t.Fatalf("expected CodeDeadlineExceeded, got %q", apperrors.Code(err))
+		}
 	}
 }
 

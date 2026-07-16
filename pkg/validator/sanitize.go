@@ -99,16 +99,36 @@ func (s *Sanitizer) sanitizeValue(v interface{}) interface{} {
 	}
 }
 
-// HTML tag stripping regex
-var htmlTagRegex = regexp.MustCompile(`<[^>]*>`)
-
 func stripHTMLTags(input string) string {
 	// Fast path: if the input doesn't contain a '<', it can't contain an HTML tag.
-	// This avoids allocating memory and executing regex in the common non-matching case.
 	if !strings.Contains(input, "<") {
 		return input
 	}
-	return htmlTagRegex.ReplaceAllString(input, "")
+
+	// Manual scan avoids regexp allocation/overhead on this hot path.
+	var builder strings.Builder
+	builder.Grow(len(input))
+
+	remaining := input
+	for {
+		start := strings.IndexByte(remaining, '<')
+		if start == -1 {
+			builder.WriteString(remaining)
+			break
+		}
+
+		builder.WriteString(remaining[:start])
+
+		end := strings.IndexByte(remaining[start:], '>')
+		if end == -1 {
+			builder.WriteString(remaining[start:])
+			break
+		}
+
+		remaining = remaining[start+end+1:]
+	}
+
+	return builder.String()
 }
 
 // =========================================================================
@@ -217,7 +237,7 @@ func SanitizePath(input string) string {
 }
 
 // ValidatePathInside checks if the target path is within the base directory.
-// It resolves paths to absolute paths and cleans them.
+// It resolves paths (including symlinks) to absolute paths and cleans them.
 // Returns the absolute clean path if valid, or an InvalidArgument error on traversal.
 func ValidatePathInside(baseDir, targetPath string) (string, error) {
 	absBase, err := filepath.Abs(baseDir)
@@ -225,20 +245,59 @@ func ValidatePathInside(baseDir, targetPath string) (string, error) {
 		return "", errors.InvalidArgument("failed to resolve base directory", err)
 	}
 
-	// Clean the target path (relative to base)
-	fullPath := filepath.Join(absBase, targetPath)
+	evalBase, err := filepath.EvalSymlinks(absBase)
+	if err != nil {
+		return "", errors.InvalidArgument("failed to eval base directory", err)
+	}
 
-	// Ensure prefix matches
-	prefix := absBase
+	// Clean the target path (relative to evaluated base)
+	fullPath := filepath.Join(evalBase, targetPath)
+
+	// Resolve symlinks for the target path. Walk parents when the leaf does not exist yet.
+	current := fullPath
+	var evalFull string
+	for {
+		eval, err := filepath.EvalSymlinks(current)
+		if err == nil {
+			rel, err := filepath.Rel(current, fullPath)
+			if err != nil {
+				return "", errors.InvalidArgument("failed to resolve relative path", err)
+			}
+			if rel == "." {
+				evalFull = eval
+			} else {
+				evalFull = filepath.Join(eval, rel)
+			}
+			break
+		}
+
+		if !os.IsNotExist(err) {
+			return "", errors.InvalidArgument("failed to eval target path", err)
+		}
+
+		// Fail closed on broken symlinks to prevent traversal bypasses.
+		if _, lstatErr := os.Lstat(current); lstatErr == nil {
+			return "", errors.InvalidArgument("broken symlink detected: "+current, nil)
+		}
+
+		parent := filepath.Dir(current)
+		if parent == current {
+			evalFull = fullPath
+			break
+		}
+		current = parent
+	}
+
+	prefix := evalBase
 	if !strings.HasSuffix(prefix, string(os.PathSeparator)) {
 		prefix += string(os.PathSeparator)
 	}
 
-	if !strings.HasPrefix(fullPath, prefix) {
-		return "", errPathTraversal(targetPath, fullPath, baseDir)
+	if !strings.HasPrefix(evalFull, prefix) {
+		return "", errPathTraversal(targetPath, evalFull, evalBase)
 	}
 
-	return fullPath, nil
+	return evalFull, nil
 }
 
 // =========================================================================
