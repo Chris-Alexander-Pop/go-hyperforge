@@ -41,23 +41,58 @@ type Config struct {
 	AuditServiceURL        string `env:"AUDIT_SERVICE_URL" env-default:"http://127.0.0.1:8093"`
 	WorkflowServiceURL     string `env:"WORKFLOW_SERVICE_URL" env-default:"http://127.0.0.1:8094"`
 
-	LLMGatewayServiceURL       string `env:"LLMGATEWAY_SERVICE_URL" env-default:"http://127.0.0.1:8095"`
-	AgentRuntimeServiceURL     string `env:"AGENTRUNTIME_SERVICE_URL" env-default:"http://127.0.0.1:8096"`
-	ToolRegistryServiceURL     string `env:"TOOLREGISTRY_SERVICE_URL" env-default:"http://127.0.0.1:8097"`
-	ContextManagerServiceURL   string `env:"CONTEXTMANAGER_SERVICE_URL" env-default:"http://127.0.0.1:8098"`
-	EmbeddingServiceURL        string `env:"EMBEDDING_SERVICE_URL" env-default:"http://127.0.0.1:8099"`
-	VectorSearchServiceURL     string `env:"VECTORSEARCH_SERVICE_URL" env-default:"http://127.0.0.1:8100"`
-	PromptEngineServiceURL     string `env:"PROMPTENGINE_SERVICE_URL" env-default:"http://127.0.0.1:8101"`
-	MetricsCollectorServiceURL string `env:"METRICSCOLLECTOR_SERVICE_URL" env-default:"http://127.0.0.1:8102"`
-	LogAggregatorServiceURL    string `env:"LOGAGGREGATOR_SERVICE_URL" env-default:"http://127.0.0.1:8103"`
-	TraceCollectorServiceURL   string `env:"TRACECOLLECTOR_SERVICE_URL" env-default:"http://127.0.0.1:8104"`
-	AlertingServiceURL         string `env:"ALERTING_SERVICE_URL" env-default:"http://127.0.0.1:8105"`
-	DiscoveryServiceURL        string `env:"DISCOVERY_SERVICE_URL" env-default:"http://127.0.0.1:8106"`
-	FeatureFlagServiceURL      string `env:"FEATUREFLAG_SERVICE_URL" env-default:"http://127.0.0.1:8107"`
-	SecretManagerServiceURL    string `env:"SECRETMANAGER_SERVICE_URL" env-default:"http://127.0.0.1:8108"`
-	SearchServiceURL           string `env:"SEARCH_SERVICE_URL" env-default:"http://127.0.0.1:8109"`
-	MediaServiceURL            string `env:"MEDIA_SERVICE_URL" env-default:"http://127.0.0.1:8110"`
-	RateLimiterServiceURL      string `env:"RATELIMITER_SERVICE_URL" env-default:"http://127.0.0.1:8111"`
+	LLMGatewayServiceURL        string `env:"LLMGATEWAY_SERVICE_URL" env-default:"http://127.0.0.1:8095"`
+	AgentRuntimeServiceURL      string `env:"AGENTRUNTIME_SERVICE_URL" env-default:"http://127.0.0.1:8096"`
+	ToolRegistryServiceURL      string `env:"TOOLREGISTRY_SERVICE_URL" env-default:"http://127.0.0.1:8097"`
+	ContextManagerServiceURL    string `env:"CONTEXTMANAGER_SERVICE_URL" env-default:"http://127.0.0.1:8098"`
+	EmbeddingServiceURL         string `env:"EMBEDDING_SERVICE_URL" env-default:"http://127.0.0.1:8099"`
+	VectorSearchServiceURL      string `env:"VECTORSEARCH_SERVICE_URL" env-default:"http://127.0.0.1:8100"`
+	PromptEngineServiceURL      string `env:"PROMPTENGINE_SERVICE_URL" env-default:"http://127.0.0.1:8101"`
+	MetricsCollectorServiceURL  string `env:"METRICSCOLLECTOR_SERVICE_URL" env-default:"http://127.0.0.1:8102"`
+	LogAggregatorServiceURL     string `env:"LOGAGGREGATOR_SERVICE_URL" env-default:"http://127.0.0.1:8103"`
+	TraceCollectorServiceURL    string `env:"TRACECOLLECTOR_SERVICE_URL" env-default:"http://127.0.0.1:8104"`
+	AlertingServiceURL          string `env:"ALERTING_SERVICE_URL" env-default:"http://127.0.0.1:8105"`
+	DiscoveryServiceURL         string `env:"DISCOVERY_SERVICE_URL" env-default:"http://127.0.0.1:8106"`
+	FeatureFlagServiceURL       string `env:"FEATUREFLAG_SERVICE_URL" env-default:"http://127.0.0.1:8107"`
+	SecretManagerServiceURL     string `env:"SECRETMANAGER_SERVICE_URL" env-default:"http://127.0.0.1:8108"`
+	SearchServiceURL            string `env:"SEARCH_SERVICE_URL" env-default:"http://127.0.0.1:8109"`
+	MediaServiceURL             string `env:"MEDIA_SERVICE_URL" env-default:"http://127.0.0.1:8110"`
+	RateLimiterServiceURL       string `env:"RATELIMITER_SERVICE_URL" env-default:"http://127.0.0.1:8111"`
+	PricingServiceURL           string `env:"PRICING_SERVICE_URL" env-default:"http://127.0.0.1:8112"`
+	AnalyticsServiceURL         string `env:"ANALYTICS_SERVICE_URL" env-default:"http://127.0.0.1:8113"`
+	ReportingServiceURL         string `env:"REPORTING_SERVICE_URL" env-default:"http://127.0.0.1:8114"`
+	MLInferenceServiceURL       string `env:"MLINFERENCE_SERVICE_URL" env-default:"http://127.0.0.1:8115"`
+	RecommendationServiceURL    string `env:"RECOMMENDATION_SERVICE_URL" env-default:"http://127.0.0.1:8116"`
+	CMSServiceURL               string `env:"CMS_SERVICE_URL" env-default:"http://127.0.0.1:8117"`
+	ScheduledJobsServiceURL     string `env:"SCHEDULEDJOBS_SERVICE_URL" env-default:"http://127.0.0.1:8118"`
+	AgentOrchestratorServiceURL string `env:"AGENTORCHESTRATOR_SERVICE_URL" env-default:"http://127.0.0.1:8119"`
+	FineTuningServiceURL        string `env:"FINETUNING_SERVICE_URL" env-default:"http://127.0.0.1:8120"`
+	ModelRegistryServiceURL     string `env:"MODELREGISTRY_SERVICE_URL" env-default:"http://127.0.0.1:8121"`
+	BillingServiceURL           string `env:"BILLING_SERVICE_URL" env-default:"http://127.0.0.1:8122"`
+	InvoiceServiceURL           string `env:"INVOICE_SERVICE_URL" env-default:"http://127.0.0.1:8123"`
+	TaxCalculatorServiceURL     string `env:"TAXCALCULATOR_SERVICE_URL" env-default:"http://127.0.0.1:8124"`
+	SubscriptionServiceURL      string `env:"SUBSCRIPTION_SERVICE_URL" env-default:"http://127.0.0.1:8125"`
+	FeedbackServiceURL          string `env:"FEEDBACK_SERVICE_URL" env-default:"http://127.0.0.1:8126"`
+	IdentityProviderServiceURL  string `env:"IDENTITYPROVIDER_SERVICE_URL" env-default:"http://127.0.0.1:8127"`
+	PushNotificationServiceURL  string `env:"PUSHNOTIFICATION_SERVICE_URL" env-default:"http://127.0.0.1:8128"`
+	ChatServiceURL              string `env:"CHAT_SERVICE_URL" env-default:"http://127.0.0.1:8129"`
+	WebhookManagerServiceURL    string `env:"WEBHOOKMANAGER_SERVICE_URL" env-default:"http://127.0.0.1:8130"`
+	FraudDetectionServiceURL    string `env:"FRAUDDETECTION_SERVICE_URL" env-default:"http://127.0.0.1:8131"`
+	KYCVerificationServiceURL   string `env:"KYCVERIFICATION_SERVICE_URL" env-default:"http://127.0.0.1:8132"`
+	EncryptionServiceURL        string `env:"ENCRYPTION_SERVICE_URL" env-default:"http://127.0.0.1:8133"`
+	KeyManagementServiceURL     string `env:"KEYMANAGEMENT_SERVICE_URL" env-default:"http://127.0.0.1:8134"`
+	ComplianceServiceURL        string `env:"COMPLIANCE_SERVICE_URL" env-default:"http://127.0.0.1:8135"`
+	DataRetentionServiceURL     string `env:"DATARETENTION_SERVICE_URL" env-default:"http://127.0.0.1:8136"`
+	GDPRProcessorServiceURL     string `env:"GDPRPROCESSOR_SERVICE_URL" env-default:"http://127.0.0.1:8137"`
+	AccessLogsServiceURL        string `env:"ACCESSLOGS_SERVICE_URL" env-default:"http://127.0.0.1:8138"`
+	ETLPipelineServiceURL       string `env:"ETLPIPELINE_SERVICE_URL" env-default:"http://127.0.0.1:8139"`
+	DataCatalogServiceURL       string `env:"DATACATALOG_SERVICE_URL" env-default:"http://127.0.0.1:8140"`
+	SchemaRegistryServiceURL    string `env:"SCHEMAREGISTRY_SERVICE_URL" env-default:"http://127.0.0.1:8141"`
+	BackupServiceURL            string `env:"BACKUP_SERVICE_URL" env-default:"http://127.0.0.1:8142"`
+	ArchivalServiceURL          string `env:"ARCHIVAL_SERVICE_URL" env-default:"http://127.0.0.1:8143"`
+	CachingLayerServiceURL      string `env:"CACHINGLAYER_SERVICE_URL" env-default:"http://127.0.0.1:8144"`
+	BlobStorageServiceURL       string `env:"BLOBSTORAGE_SERVICE_URL" env-default:"http://127.0.0.1:8145"`
+	IncidentManagerServiceURL   string `env:"INCIDENTMANAGER_SERVICE_URL" env-default:"http://127.0.0.1:8146"`
 }
 
 type route struct {
@@ -113,6 +148,41 @@ func New(cfg Config, tokens *jwtauth.Adapter) (*Server, error) {
 		{prefix: "/v1/search", targetURL: cfg.SearchServiceURL, requireJWT: false},
 		{prefix: "/v1/media", targetURL: cfg.MediaServiceURL, requireJWT: true, injectUser: true},
 		{prefix: "/v1/ratelimits", targetURL: cfg.RateLimiterServiceURL, requireJWT: true, injectUser: true},
+		{prefix: "/v1/prices", targetURL: cfg.PricingServiceURL, requireJWT: true, injectUser: true},
+		{prefix: "/v1/analytics", targetURL: cfg.AnalyticsServiceURL, requireJWT: true, injectUser: true},
+		{prefix: "/v1/reports", targetURL: cfg.ReportingServiceURL, requireJWT: true, injectUser: true},
+		{prefix: "/v1/inferences", targetURL: cfg.MLInferenceServiceURL, requireJWT: true, injectUser: true},
+		{prefix: "/v1/recommendations", targetURL: cfg.RecommendationServiceURL, requireJWT: false, injectUser: false},
+		{prefix: "/v1/pages", targetURL: cfg.CMSServiceURL, requireJWT: false, injectUser: false},
+		{prefix: "/v1/jobs", targetURL: cfg.ScheduledJobsServiceURL, requireJWT: true, injectUser: true},
+		{prefix: "/v1/orchestrations", targetURL: cfg.AgentOrchestratorServiceURL, requireJWT: true, injectUser: true},
+		{prefix: "/v1/finetunes", targetURL: cfg.FineTuningServiceURL, requireJWT: true, injectUser: true},
+		{prefix: "/v1/models", targetURL: cfg.ModelRegistryServiceURL, requireJWT: true, injectUser: true},
+		{prefix: "/v1/bills", targetURL: cfg.BillingServiceURL, requireJWT: true, injectUser: true},
+		{prefix: "/v1/invoices", targetURL: cfg.InvoiceServiceURL, requireJWT: true, injectUser: true},
+		{prefix: "/v1/taxes", targetURL: cfg.TaxCalculatorServiceURL, requireJWT: true, injectUser: true},
+		{prefix: "/v1/subscriptions", targetURL: cfg.SubscriptionServiceURL, requireJWT: true, injectUser: true},
+		{prefix: "/v1/feedback", targetURL: cfg.FeedbackServiceURL, requireJWT: true, injectUser: true},
+		{prefix: "/v1/identities", targetURL: cfg.IdentityProviderServiceURL, requireJWT: true, injectUser: true},
+		{prefix: "/v1/pushes", targetURL: cfg.PushNotificationServiceURL, requireJWT: true, injectUser: true},
+		{prefix: "/v1/chats", targetURL: cfg.ChatServiceURL, requireJWT: true, injectUser: true},
+		{prefix: "/v1/webhooks", targetURL: cfg.WebhookManagerServiceURL, requireJWT: true, injectUser: true},
+		{prefix: "/v1/fraud", targetURL: cfg.FraudDetectionServiceURL, requireJWT: true, injectUser: true},
+		{prefix: "/v1/kyc", targetURL: cfg.KYCVerificationServiceURL, requireJWT: true, injectUser: true},
+		{prefix: "/v1/encryption", targetURL: cfg.EncryptionServiceURL, requireJWT: true, injectUser: true},
+		{prefix: "/v1/keys", targetURL: cfg.KeyManagementServiceURL, requireJWT: true, injectUser: true},
+		{prefix: "/v1/compliance", targetURL: cfg.ComplianceServiceURL, requireJWT: true, injectUser: true},
+		{prefix: "/v1/retention", targetURL: cfg.DataRetentionServiceURL, requireJWT: true, injectUser: true},
+		{prefix: "/v1/gdpr", targetURL: cfg.GDPRProcessorServiceURL, requireJWT: true, injectUser: true},
+		{prefix: "/v1/access-logs", targetURL: cfg.AccessLogsServiceURL, requireJWT: true, injectUser: true},
+		{prefix: "/v1/etl", targetURL: cfg.ETLPipelineServiceURL, requireJWT: true, injectUser: true},
+		{prefix: "/v1/catalogs", targetURL: cfg.DataCatalogServiceURL, requireJWT: true, injectUser: true},
+		{prefix: "/v1/schemas", targetURL: cfg.SchemaRegistryServiceURL, requireJWT: true, injectUser: true},
+		{prefix: "/v1/backups", targetURL: cfg.BackupServiceURL, requireJWT: true, injectUser: true},
+		{prefix: "/v1/archives", targetURL: cfg.ArchivalServiceURL, requireJWT: true, injectUser: true},
+		{prefix: "/v1/caches", targetURL: cfg.CachingLayerServiceURL, requireJWT: true, injectUser: true},
+		{prefix: "/v1/blobs", targetURL: cfg.BlobStorageServiceURL, requireJWT: true, injectUser: true},
+		{prefix: "/v1/incidents", targetURL: cfg.IncidentManagerServiceURL, requireJWT: true, injectUser: true},
 	}
 
 	e := r.Echo()
