@@ -125,18 +125,31 @@ func WithTimeout(timeout time.Duration, fn Executor) Executor {
 
 		select {
 		case err := <-done:
-			return err
+			return mapTimeoutError(err)
 		case <-ctx.Done():
 			select {
 			case err := <-done:
-				return err
+				return mapTimeoutError(err)
 			default:
-				cause := ctx.Err()
-				if errors.Is(cause, context.DeadlineExceeded) {
-					return errors.DeadlineExceeded("operation timed out", cause)
-				}
-				return cause
+				return mapTimeoutError(ctx.Err())
 			}
 		}
 	}
+}
+
+// mapTimeoutError ensures deadline failures from WithTimeout always carry
+// CodeDeadlineExceeded while remaining errors.Is-compatible with
+// context.DeadlineExceeded. Context-aware fns that return ctx.Err() would
+// otherwise bypass the wrap path and leave an uncoded deadline error.
+func mapTimeoutError(err error) error {
+	if err == nil {
+		return nil
+	}
+	if errors.IsCode(err, errors.CodeDeadlineExceeded) {
+		return err
+	}
+	if errors.Is(err, context.DeadlineExceeded) {
+		return errors.DeadlineExceeded("operation timed out", err)
+	}
+	return err
 }
