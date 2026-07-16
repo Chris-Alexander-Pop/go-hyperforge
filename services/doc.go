@@ -3,9 +3,10 @@
 // See SERVICE_CATALOG.md for the full service catalog and docs/services.md
 // for layout and bootstrap conventions.
 //
-// Identity cluster (v1):
-//   - services/auth     — register / login, JWT issuance
-//   - services/user     — user profiles
-//   - services/gateway  — edge reverse proxy + JWT verification
-//   - services/platform — shared bootstrap helpers
+// Runnable services (v1 memory CRUD unless noted):
+//   - auth, user, gateway, permission
+//   - notification, email, sms
+//   - product, cart, order, payment, inventory
+//   - appconfig, audit, workflow
+//   - platform (bootstrap, memstore, crudserver helpers)
 package services

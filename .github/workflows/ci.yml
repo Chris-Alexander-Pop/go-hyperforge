@@ -61,7 +61,7 @@ jobs:
 
       - name: Run tests with coverage
         run: |
-          go test -race -coverprofile=coverage.out -covermode=atomic ./pkg/...
+          go test -race -coverprofile=coverage.out -covermode=atomic ./pkg/... ./services/...
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4

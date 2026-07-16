@@ -27,8 +27,9 @@ Centralized identity management.
 - Role-based access control (RBAC)
 - Claims and attributes
 
-### 4. **permission**
+### 4. **permission** ✅
 Fine-grained authorization.
+- **Implemented:** [`services/permission`](permission) — CRUD `/v1/permissions` (memory)
 - Policy evaluation
 - Attribute-based access control (ABAC)
 - Resource permissions
@@ -40,20 +41,23 @@ Fine-grained authorization.
 
 ### 5. **notification** ✅
 Multi-channel notification orchestration.
+- **Implemented:** [`services/notification`](notification) — CRUD `/v1/notifications` (memory)
 - Template management
 - Delivery scheduling
 - Priority queuing
 - Delivery receipts
 
-### 6. **email**
+### 6. **email** ✅
 Email sending and tracking.
+- **Implemented:** [`services/email`](email) — CRUD `/v1/emails` (memory)
 - SMTP/SendGrid integration
 - Template rendering
 - Bounce/complaint handling
 - Analytics
 
-### 7. **sms**
+### 7. **sms** ✅
 SMS/text messaging.
+- **Implemented:** [`services/sms`](sms) — CRUD `/v1/sms` (memory)
 - Twilio/SNS integration
 - Short links
 - Delivery status tracking
@@ -92,8 +96,9 @@ Service-to-service communication.
 - Retry policies
 - Observability
 
-### 12. **config**
+### 12. **config** ✅
 Centralized configuration management.
+- **Implemented:** [`services/appconfig`](appconfig) — CRUD `/v1/configs` (memory)
 - Feature flags
 - Environment-specific configs
 - Dynamic updates
@@ -138,36 +143,41 @@ Advanced routing and filtering.
 
 ## 🛒 E-Commerce (6)
 
-### 18. **product**
+### 18. **product** ✅
 Product catalog management.
+- **Implemented:** [`services/product`](product) — CRUD `/v1/products` (memory; public via gateway)
 - Product CRUD
 - Categories and tags
 - Variants and attributes
 - Inventory sync
 
-### 19. **cart**
+### 19. **cart** ✅
 Shopping cart service.
+- **Implemented:** [`services/cart`](cart) — CRUD `/v1/carts` (memory)
 - Session-based carts
 - Merge on login
 - Cart abandonment tracking
 - Promo code validation
 
-### 20. **order**
+### 20. **order** ✅
 Order processing and fulfillment.
+- **Implemented:** [`services/order`](order) — CRUD `/v1/orders` (memory)
 - Order creation
 - Status tracking
 - Cancellation/refund logic
 - Shipping integration
 
-### 21. **payment**
+### 21. **payment** ✅
 Payment processing.
+- **Implemented:** [`services/payment`](payment) — CRUD `/v1/payments` (memory)
 - Stripe/PayPal integration
 - PCI compliance
 - Webhook handling
 - Refund processing
 
-### 22. **inventory**
+### 22. **inventory** ✅
 Stock and warehouse management.
+- **Implemented:** [`services/inventory`](inventory) — CRUD `/v1/inventory` (memory)
 - Real-time inventory
 - Reservation system
 - Multi-warehouse support
@@ -241,15 +251,17 @@ Content management system.
 
 ## 🔧 Operations & Observability (3)
 
-### 28. **audit**
+### 28. **audit** ✅
 Audit logging and compliance.
+- **Implemented:** [`services/audit`](audit) — CRUD `/v1/audits` (memory)
 - Activity tracking
 - Compliance reporting
 - Data retention
 - GDPR/CCPA support
 
-### 29. **workflow**
+### 29. **workflow** ✅
 Orchestration and state machines.
+- **Implemented:** [`services/workflow`](workflow) — CRUD `/v1/workflows` (memory)
 - Saga pattern
 - Long-running processes
 - Temporal/Cadence integration

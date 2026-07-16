@@ -8,11 +8,10 @@ Conventions for microservices under `services/`. Packages in `pkg/` remain the c
 services/<name>/
   cmd/<name>/main.go     # process entrypoint
   server/                # HTTP API + typed env Config (importable)
-  internal/store/        # persistence adapters (memory first)
-  internal/<domain>/     # service logic when non-trivial
+  internal/...           # domain logic / stores when not using platform/crudserver
 ```
 
-Shared helpers live in [`services/platform`](../services/platform) (bootstrap only — not a framework).
+Shared helpers live in [`services/platform`](../services/platform): bootstrap, `memstore`, and `crudserver`.
 
 ## Bootstrap
 
@@ -33,11 +32,25 @@ Use `services/platform.Bootstrap` for steps 1–2, or copy the pattern from `tem
 
 ## Identity cluster (v1)
 
-| Service   | Default port | Role                                      |
-|-----------|--------------|-------------------------------------------|
-| gateway   | `8080`       | Edge entry; JWT verify; reverse proxy     |
-| auth      | `8081`       | Register / login; issues JWTs             |
-| user      | `8082`       | User profiles; trusts `X-User-ID`         |
+| Service      | Default port | Role                                      |
+|--------------|--------------|-------------------------------------------|
+| gateway      | `8080`       | Edge entry; JWT verify; reverse proxy     |
+| auth         | `8081`       | Register / login; issues JWTs             |
+| user         | `8082`       | User profiles; trusts `X-User-ID`         |
+| permission   | `8083`       | Permission records                        |
+| notification | `8084`       | Notification records                      |
+| email        | `8085`       | Email send records                        |
+| sms          | `8086`       | SMS send records                          |
+| product      | `8087`       | Product catalog (public via gateway)      |
+| cart         | `8088`       | Shopping carts                            |
+| order        | `8089`       | Orders                                    |
+| payment      | `8090`       | Payments                                  |
+| inventory    | `8091`       | Inventory                                 |
+| appconfig    | `8092`       | App / feature config                      |
+| audit        | `8093`       | Audit events                              |
+| workflow     | `8094`       | Workflow instances                        |
+
+CRUD-shaped services use `services/platform/crudserver` + `memstore` (in-memory). Domain-deep adapters come later.
 
 Shared secrets: `JWT_SECRET` and `JWT_ISSUER` must match on **auth** and **gateway**.
 
