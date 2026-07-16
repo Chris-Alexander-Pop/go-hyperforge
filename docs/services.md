@@ -49,6 +49,23 @@ Use `services/platform.Bootstrap` for steps 1–2, or copy the pattern from `tem
 | appconfig    | `8092`       | App / feature config                      |
 | audit        | `8093`       | Audit events                              |
 | workflow     | `8094`       | Workflow instances                        |
+| llmgateway   | `8095`       | LLM request gateway                       |
+| agentruntime | `8096`       | Agent runtime                             |
+| toolregistry | `8097`       | Tool registry                             |
+| contextmanager | `8098`     | Conversation / agent contexts             |
+| embeddingsvc | `8099`       | Embeddings                                |
+| vectorsearch | `8100`       | Vector search                             |
+| promptengine | `8101`       | Prompt templates                          |
+| metricscollector | `8102`   | Metrics ingestion                         |
+| logaggregator | `8103`      | Log aggregation                           |
+| tracecollector | `8104`     | Trace collection                          |
+| alerting     | `8105`       | Alerting                                  |
+| discovery    | `8106`       | Service discovery registry                |
+| featureflag  | `8107`       | Feature flags                             |
+| secretmanager | `8108`      | Secrets                                   |
+| searchsvc    | `8109`       | Search (public via gateway)               |
+| mediasvc     | `8110`       | Media assets                              |
+| ratelimitersvc | `8111`     | Rate-limit policies                       |
 
 CRUD-shaped services use `services/platform/crudserver` + `memstore` (in-memory). Domain-deep adapters come later.
 

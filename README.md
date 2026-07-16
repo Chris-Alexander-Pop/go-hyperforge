@@ -5,7 +5,7 @@
 [![Go Reference](https://pkg.go.dev/badge/github.com/chris-alexander-pop/go-hyperforge.svg)](https://pkg.go.dev/github.com/chris-alexander-pop/go-hyperforge)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-**Production-ready Go libraries for building distributed systems. 34 packages, 15 microservices, zero boilerplate.**
+**Production-ready Go libraries for building distributed systems. 34 packages, 32 microservices, zero boilerplate.**
 
 ---
 
@@ -13,7 +13,7 @@
 
 ```
 ├── pkg/           # Reusable libraries (34 packages)
-├── services/      # Microservices (15 runnable: identity + communication + commerce + platform)
+├── services/      # Microservices (32 runnable: identity + communication + commerce + platform)
 ├── templates/     # Service starters
 └── docs/          # Documentation
 ```
