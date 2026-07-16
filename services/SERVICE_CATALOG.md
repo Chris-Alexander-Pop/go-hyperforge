@@ -6,6 +6,7 @@ This catalog defines **120 critical microservices** for hyperscale production ap
 
 ### 1. **auth** ✅
 Authentication and authorization service.
+- **Implemented:** [`services/auth`](auth) — `POST /v1/auth/register`, `POST /v1/auth/login` (JWT via `pkg/auth`, memory credentials)
 - JWT generation; OAuth2 authorization-server token issuance (memory adapter; not a full OpenID Provider)
 - Session management
 - Multi-factor authentication
@@ -13,6 +14,7 @@ Authentication and authorization service.
 
 ### 2. **user** ✅
 User profile and account management.
+- **Implemented:** [`services/user`](user) — `POST /v1/users`, `GET /v1/users/me`, `GET /v1/users/:id` (memory profiles; trusts `X-User-ID`)
 - User CRUD operations
 - Profile data storage
 - Preferences and settings
@@ -77,6 +79,7 @@ Real-time messaging.
 
 ### 10. **gateway** ✅
 API Gateway and reverse proxy.
+- **Implemented:** [`services/gateway`](gateway) — proxies `/v1/auth/*` and JWT-protected `/v1/users/*`
 - Request routing
 - Rate limiting
 - Authentication middleware

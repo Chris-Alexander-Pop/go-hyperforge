@@ -5,7 +5,7 @@
 [![Go Reference](https://pkg.go.dev/badge/github.com/chris-alexander-pop/go-hyperforge.svg)](https://pkg.go.dev/github.com/chris-alexander-pop/go-hyperforge)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-**Production-ready Go libraries for building distributed systems. 34 packages, 130+ services, zero boilerplate.**
+**Production-ready Go libraries for building distributed systems. 34 packages, identity-cluster microservices, zero boilerplate.**
 
 ---
 
@@ -13,7 +13,7 @@
 
 ```
 ├── pkg/           # Reusable libraries (34 packages)
-├── services/      # Reference microservices (130+)
+├── services/      # Microservices (identity cluster: auth, user, gateway)
 ├── templates/     # Service starters
 └── docs/          # Documentation
 ```
@@ -33,6 +33,32 @@ make setup  # Install tools + hooks
 make up     # Start infrastructure
 make check  # Run all quality gates
 ```
+
+### Run the identity cluster locally
+
+```bash
+# Terminal 1 — user profiles (:8082)
+go run ./services/user/cmd/user
+
+# Terminal 2 — auth (:8081), posts profiles to user
+go run ./services/auth/cmd/auth
+
+# Terminal 3 — gateway (:8080)
+go run ./services/gateway/cmd/gateway
+
+# Register / login / me
+curl -s -X POST localhost:8080/v1/auth/register \
+  -H 'Content-Type: application/json' \
+  -d '{"email":"alice@example.com","password":"s3cret-pass","name":"Alice"}'
+
+TOKEN=$(curl -s -X POST localhost:8080/v1/auth/login \
+  -H 'Content-Type: application/json' \
+  -d '{"email":"alice@example.com","password":"s3cret-pass"}' | jq -r .access_token)
+
+curl -s localhost:8080/v1/users/me -H "Authorization: Bearer $TOKEN"
+```
+
+Shared JWT settings default to `JWT_SECRET=dev-hyperforge-jwt-secret-change-me` on auth and gateway. See [Service Conventions](docs/services.md).
 
 ---
 
@@ -110,6 +136,8 @@ go test -bench=. -benchmem ./pkg/resilience/...
 
 - [Package Standards](pkg/PACKAGE_STANDARDS.md) - Design patterns and conventions
 - [Package Index](pkg/README.md) - All packages with descriptions
+- [Service Conventions](docs/services.md) - Microservice layout and identity cluster
+- [Service Catalog](services/SERVICE_CATALOG.md) - Planned microservices
 - [Contributing](CONTRIBUTING.md) - Development workflow
 - [Changelog](CHANGELOG.md) - Version history
 - [Security](SECURITY.md) - Vulnerability reporting
