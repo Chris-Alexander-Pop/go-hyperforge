@@ -66,6 +66,41 @@ Use `services/platform.Bootstrap` for steps 1–2, or copy the pattern from `tem
 | searchsvc    | `8109`       | Search (public via gateway)               |
 | mediasvc     | `8110`       | Media assets                              |
 | ratelimitersvc | `8111`     | Rate-limit policies                       |
+| pricing | `8112` | Pricing |
+| analytics | `8113` | Analytics |
+| reporting | `8114` | Reporting |
+| mlinference | `8115` | ML inference |
+| recommendation | `8116` | Recommendations (public) |
+| cms | `8117` | CMS pages (public) |
+| scheduledjobs | `8118` | Scheduled jobs |
+| agentorchestrator | `8119` | Agent orchestrator |
+| finetuning | `8120` | Fine-tuning jobs |
+| modelregistry | `8121` | Model registry |
+| billing | `8122` | Billing |
+| invoice | `8123` | Invoices |
+| taxcalculator | `8124` | Tax calculator |
+| subscription | `8125` | Subscriptions |
+| feedback | `8126` | Feedback |
+| identityprovider | `8127` | Identity provider records |
+| pushnotification | `8128` | Push notifications |
+| chat | `8129` | Chat |
+| webhookmanager | `8130` | Webhooks |
+| frauddetection | `8131` | Fraud detection |
+| kycverification | `8132` | KYC |
+| encryption | `8133` | Encryption |
+| keymanagement | `8134` | Key management |
+| compliance | `8135` | Compliance |
+| dataretention | `8136` | Data retention |
+| gdprprocessor | `8137` | GDPR processor |
+| accesslogs | `8138` | Access logs |
+| etlpipeline | `8139` | ETL pipelines |
+| datacatalog | `8140` | Data catalog |
+| schemaregistry | `8141` | Schema registry |
+| backupsvc | `8142` | Backups |
+| archival | `8143` | Archival |
+| cachinglayer | `8144` | Caching layer |
+| blobstorage | `8145` | Blob storage |
+| incidentmanager | `8146` | Incident manager |
 
 CRUD-shaped services use `services/platform/crudserver` + `memstore` (in-memory). Domain-deep adapters come later.
 
