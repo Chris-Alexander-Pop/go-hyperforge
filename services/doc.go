@@ -4,9 +4,12 @@
 // for layout and bootstrap conventions.
 //
 // Runnable services (v1 memory CRUD unless noted):
-//   - auth, user, gateway, permission
-//   - notification, email, sms
-//   - product, cart, order, payment, inventory
-//   - appconfig, audit, workflow
-//   - platform (bootstrap, memstore, crudserver helpers)
+//   - Identity: auth, user, gateway, permission
+//   - Communication: notification, email, sms
+//   - Commerce: product, cart, order, payment, inventory
+//   - Platform: appconfig, audit, workflow, discovery, featureflag, secretmanager, ratelimitersvc
+//   - AI: llmgateway, agentruntime, toolregistry, contextmanager, embeddingsvc, vectorsearch, promptengine
+//   - Observability: metricscollector, logaggregator, tracecollector, alerting
+//   - Content: searchsvc, mediasvc
+//   - platform helpers: bootstrap, memstore, crudserver
 package services

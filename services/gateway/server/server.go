@@ -40,6 +40,24 @@ type Config struct {
 	AppConfigServiceURL    string `env:"APPCONFIG_SERVICE_URL" env-default:"http://127.0.0.1:8092"`
 	AuditServiceURL        string `env:"AUDIT_SERVICE_URL" env-default:"http://127.0.0.1:8093"`
 	WorkflowServiceURL     string `env:"WORKFLOW_SERVICE_URL" env-default:"http://127.0.0.1:8094"`
+
+	LLMGatewayServiceURL       string `env:"LLMGATEWAY_SERVICE_URL" env-default:"http://127.0.0.1:8095"`
+	AgentRuntimeServiceURL     string `env:"AGENTRUNTIME_SERVICE_URL" env-default:"http://127.0.0.1:8096"`
+	ToolRegistryServiceURL     string `env:"TOOLREGISTRY_SERVICE_URL" env-default:"http://127.0.0.1:8097"`
+	ContextManagerServiceURL   string `env:"CONTEXTMANAGER_SERVICE_URL" env-default:"http://127.0.0.1:8098"`
+	EmbeddingServiceURL        string `env:"EMBEDDING_SERVICE_URL" env-default:"http://127.0.0.1:8099"`
+	VectorSearchServiceURL     string `env:"VECTORSEARCH_SERVICE_URL" env-default:"http://127.0.0.1:8100"`
+	PromptEngineServiceURL     string `env:"PROMPTENGINE_SERVICE_URL" env-default:"http://127.0.0.1:8101"`
+	MetricsCollectorServiceURL string `env:"METRICSCOLLECTOR_SERVICE_URL" env-default:"http://127.0.0.1:8102"`
+	LogAggregatorServiceURL    string `env:"LOGAGGREGATOR_SERVICE_URL" env-default:"http://127.0.0.1:8103"`
+	TraceCollectorServiceURL   string `env:"TRACECOLLECTOR_SERVICE_URL" env-default:"http://127.0.0.1:8104"`
+	AlertingServiceURL         string `env:"ALERTING_SERVICE_URL" env-default:"http://127.0.0.1:8105"`
+	DiscoveryServiceURL        string `env:"DISCOVERY_SERVICE_URL" env-default:"http://127.0.0.1:8106"`
+	FeatureFlagServiceURL      string `env:"FEATUREFLAG_SERVICE_URL" env-default:"http://127.0.0.1:8107"`
+	SecretManagerServiceURL    string `env:"SECRETMANAGER_SERVICE_URL" env-default:"http://127.0.0.1:8108"`
+	SearchServiceURL           string `env:"SEARCH_SERVICE_URL" env-default:"http://127.0.0.1:8109"`
+	MediaServiceURL            string `env:"MEDIA_SERVICE_URL" env-default:"http://127.0.0.1:8110"`
+	RateLimiterServiceURL      string `env:"RATELIMITER_SERVICE_URL" env-default:"http://127.0.0.1:8111"`
 }
 
 type route struct {
@@ -78,6 +96,23 @@ func New(cfg Config, tokens *jwtauth.Adapter) (*Server, error) {
 		{prefix: "/v1/configs", targetURL: cfg.AppConfigServiceURL, requireJWT: true, injectUser: true},
 		{prefix: "/v1/audits", targetURL: cfg.AuditServiceURL, requireJWT: true, injectUser: true},
 		{prefix: "/v1/workflows", targetURL: cfg.WorkflowServiceURL, requireJWT: true, injectUser: true},
+		{prefix: "/v1/llm-requests", targetURL: cfg.LLMGatewayServiceURL, requireJWT: true, injectUser: true},
+		{prefix: "/v1/agents", targetURL: cfg.AgentRuntimeServiceURL, requireJWT: true, injectUser: true},
+		{prefix: "/v1/tools", targetURL: cfg.ToolRegistryServiceURL, requireJWT: true, injectUser: true},
+		{prefix: "/v1/contexts", targetURL: cfg.ContextManagerServiceURL, requireJWT: true, injectUser: true},
+		{prefix: "/v1/embeddings", targetURL: cfg.EmbeddingServiceURL, requireJWT: true, injectUser: true},
+		{prefix: "/v1/vectors", targetURL: cfg.VectorSearchServiceURL, requireJWT: true, injectUser: true},
+		{prefix: "/v1/prompts", targetURL: cfg.PromptEngineServiceURL, requireJWT: true, injectUser: true},
+		{prefix: "/v1/metrics", targetURL: cfg.MetricsCollectorServiceURL, requireJWT: true, injectUser: true},
+		{prefix: "/v1/logs", targetURL: cfg.LogAggregatorServiceURL, requireJWT: true, injectUser: true},
+		{prefix: "/v1/traces", targetURL: cfg.TraceCollectorServiceURL, requireJWT: true, injectUser: true},
+		{prefix: "/v1/alerts", targetURL: cfg.AlertingServiceURL, requireJWT: true, injectUser: true},
+		{prefix: "/v1/services", targetURL: cfg.DiscoveryServiceURL, requireJWT: true, injectUser: true},
+		{prefix: "/v1/flags", targetURL: cfg.FeatureFlagServiceURL, requireJWT: true, injectUser: true},
+		{prefix: "/v1/secrets", targetURL: cfg.SecretManagerServiceURL, requireJWT: true, injectUser: true},
+		{prefix: "/v1/search", targetURL: cfg.SearchServiceURL, requireJWT: false},
+		{prefix: "/v1/media", targetURL: cfg.MediaServiceURL, requireJWT: true, injectUser: true},
+		{prefix: "/v1/ratelimits", targetURL: cfg.RateLimiterServiceURL, requireJWT: true, injectUser: true},
 	}
 
 	e := r.Echo()

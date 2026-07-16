@@ -104,8 +104,9 @@ Centralized configuration management.
 - Dynamic updates
 - Secret encryption
 
-### 13. **discovery**
+### 13. **discovery** ✅
 Service registry and health checks.
+- **Implemented:** [`services/discovery`](discovery) — CRUD `/v1/services` (memory)
 - Service registration
 - DNS/Consul integration
 - Health monitoring
@@ -226,14 +227,16 @@ Personalized recommendations.
 
 ## 📦 Content & Media (3)
 
-### 25. **media**
+### 25. **media** ✅
+- **Implemented:** [`services/mediasvc`](mediasvc) — CRUD `/v1/media` (memory)
 Image and video processing.
 - Upload handling (S3/GCS)
 - Resize/transcode
 - CDN integration
 - Metadata extraction
 
-### 26. **search**
+### 26. **search** ✅
+- **Implemented:** [`services/searchsvc`](searchsvc) — CRUD `/v1/search` (memory)
 Full-text search engine.
 - Elasticsearch/Algolia integration
 - Indexing pipeline
@@ -278,7 +281,8 @@ Cron and batch processing.
 
 ## 🤖 AI & Agentic Systems (10)
 
-### 31. **agent-runtime**
+### 31. **agent-runtime** ✅
+- **Implemented:** [`services/agentruntime`](agentruntime) — CRUD `/v1/agents` (memory)
 Execution environment for AI agents.
 - Agent lifecycle management
 - Resource allocation
@@ -292,42 +296,48 @@ Multi-agent coordination and planning.
 - Parallel execution
 - Result aggregation
 
-### 33. **tool-registry**
+### 33. **tool-registry** ✅
+- **Implemented:** [`services/toolregistry`](toolregistry) — CRUD `/v1/tools` (memory)
 Catalog of agent-callable tools.
 - Tool discovery
 - Schema validation
 - Permission management
 - Usage tracking
 
-### 34. **context-manager**
+### 34. **context-manager** ✅
+- **Implemented:** [`services/contextmanager`](contextmanager) — CRUD `/v1/contexts` (memory)
 Conversation and memory management.
 - Context window optimization
 - Memory compaction
 - RAG integration
 - Session continuity
 
-### 35. **prompt-engine**
+### 35. **prompt-engine** ✅
+- **Implemented:** [`services/promptengine`](promptengine) — CRUD `/v1/prompts` (memory)
 Template and prompt management.
 - Prompt versioning
 - A/B testing
 - Dynamic rendering
 - Chain-of-thought templates
 
-### 36. **embedding-service**
+### 36. **embedding-service** ✅
+- **Implemented:** [`services/embeddingsvc`](embeddingsvc) — CRUD `/v1/embeddings` (memory)
 Vector embedding generation.
 - Multi-model support (OpenAI, Cohere)
 - Batch processing
 - Caching
 - Dimension reduction
 
-### 37. **vector-search**
+### 37. **vector-search** ✅
+- **Implemented:** [`services/vectorsearch`](vectorsearch) — CRUD `/v1/vectors` (memory)
 Semantic search and retrieval.
 - Pinecone/Weaviate integration
 - Hybrid search
 - Re-ranking
 - Filtering
 
-### 38. **llm-gateway**
+### 38. **llm-gateway** ✅
+- **Implemented:** [`services/llmgateway`](llmgateway) — CRUD `/v1/llm-requests` (memory)
 Unified LLM API proxy.
 - Multi-provider routing (OpenAI, Anthropic)
 - Rate limiting per model
@@ -373,7 +383,8 @@ Infrastructure provisioning.
 - Canary releases
 - Rollback automation
 
-### 44. **secret-manager**
+### 44. **secret-manager** ✅
+- **Implemented:** [`services/secretmanager`](secretmanager) — CRUD `/v1/secrets` (memory)
 Secrets and credentials storage.
 - Vault integration
 - Auto-rotation
@@ -387,7 +398,8 @@ Dynamic environment creation.
 - Resource quotas
 - Auto-cleanup
 
-### 46. **feature-flag**
+### 46. **feature-flag** ✅
+- **Implemented:** [`services/featureflag`](featureflag) — CRUD `/v1/flags` (memory)
 Runtime feature toggles.
 - Percentage rollouts
 - User targeting
@@ -440,7 +452,8 @@ Know Your Customer checks.
 - Sanction screening
 - Ongoing monitoring
 
-### 53. **rate-limiter**
+### 53. **rate-limiter** ✅
+- **Implemented:** [`services/ratelimitersvc`](ratelimitersvc) — CRUD `/v1/ratelimits` (memory)
 Distributed rate limiting.
 - Token bucket algorithm
 - Per-user/IP limits
@@ -560,28 +573,32 @@ Object storage abstraction.
 
 ## 📈 Monitoring & Operations (8)
 
-### 69. **metrics-collector**
+### 69. **metrics-collector** ✅
+- **Implemented:** [`services/metricscollector`](metricscollector) — CRUD `/v1/metrics` (memory)
 Telemetry aggregation.
 - Prometheus/DataDog
 - Custom metrics
 - Cardinality management
 - Downsampling
 
-### 70. **log-aggregator**
+### 70. **log-aggregator** ✅
+- **Implemented:** [`services/logaggregator`](logaggregator) — CRUD `/v1/logs` (memory)
 Centralized logging.
 - Elasticsearch/Loki
 - Log parsing
 - Retention policies
 - Search optimization
 
-### 71. **trace-collector**
+### 71. **trace-collector** ✅
+- **Implemented:** [`services/tracecollector`](tracecollector) — CRUD `/v1/traces` (memory)
 Distributed tracing.
 - OpenTelemetry
 - Span storage
 - Service maps
 - Performance analysis
 
-### 72. **alerting**
+### 72. **alerting** ✅
+- **Implemented:** [`services/alerting`](alerting) — CRUD `/v1/alerts` (memory)
 Alert routing and escalation.
 - PagerDuty/Opsgenie integration
 - Smart grouping
