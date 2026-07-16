@@ -85,3 +85,23 @@ func (m *SecretManager) Rotate(ctx context.Context, name, newValue string) (stri
 	m.secrets[name] = newValue
 	return newValue, nil
 }
+
+// Delete removes a secret. This is an extension beyond secrets.SecretManager
+// (mirrors cloud adapters such as Azure Key Vault).
+func (m *SecretManager) Delete(ctx context.Context, name string) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	if name == "" {
+		return secrets.ErrInvalidArgument
+	}
+
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	if _, ok := m.secrets[name]; !ok {
+		return secrets.ErrNotFound
+	}
+	delete(m.secrets, name)
+	return nil
+}

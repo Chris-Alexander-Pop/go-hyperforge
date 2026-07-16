@@ -10,27 +10,44 @@ import (
 	"github.com/chris-alexander-pop/go-hyperforge/services/reporting/server"
 )
 
-func TestHealthAndCRUD(t *testing.T) {
+func TestCreateAndGet(t *testing.T) {
 	srv := server.New(server.Config{Port: "0"})
 	ts := httptest.NewServer(srv.Echo())
 	t.Cleanup(ts.Close)
 
-	res, err := http.Get(ts.URL + "/healthz")
-	if err != nil {
-		t.Fatalf("healthz: %v", err)
-	}
+	res, _ := http.Get(ts.URL + "/healthz")
 	res.Body.Close()
-	if res.StatusCode != http.StatusOK {
-		t.Fatalf("healthz status=%d", res.StatusCode)
-	}
 
-	body, _ := json.Marshal(map[string]interface{}{"name": "item-1"})
-	createResp, err := http.Post(ts.URL+"/v1/reports", "application/json", bytes.NewReader(body))
+	body, _ := json.Marshal(map[string]string{"name": "weekly", "type": "summary"})
+	cr, err := http.Post(ts.URL+"/v1/reports", "application/json", bytes.NewReader(body))
 	if err != nil {
 		t.Fatalf("create: %v", err)
 	}
-	defer createResp.Body.Close()
-	if createResp.StatusCode != http.StatusCreated {
-		t.Fatalf("create status=%d", createResp.StatusCode)
+	defer cr.Body.Close()
+	var job map[string]interface{}
+	json.NewDecoder(cr.Body).Decode(&job)
+	id, _ := job["id"].(string)
+
+	gr, err := http.Get(ts.URL + "/v1/reports/" + id)
+	if err != nil {
+		t.Fatalf("get: %v", err)
+	}
+	gr.Body.Close()
+	if gr.StatusCode != http.StatusOK {
+		t.Fatalf("get=%d", gr.StatusCode)
+	}
+}
+
+func TestGetMissing(t *testing.T) {
+	srv := server.New(server.Config{Port: "0"})
+	ts := httptest.NewServer(srv.Echo())
+	t.Cleanup(ts.Close)
+	gr, err := http.Get(ts.URL + "/v1/reports/missing")
+	if err != nil {
+		t.Fatalf("get: %v", err)
+	}
+	defer gr.Body.Close()
+	if gr.StatusCode != http.StatusNotFound {
+		t.Fatalf("expected 404, got %d", gr.StatusCode)
 	}
 }

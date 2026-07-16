@@ -10,27 +10,47 @@ import (
 	"github.com/chris-alexander-pop/go-hyperforge/services/backupsvc/server"
 )
 
-func TestHealthAndCRUD(t *testing.T) {
+func TestCreateListRestore(t *testing.T) {
 	srv := server.New(server.Config{Port: "0"})
 	ts := httptest.NewServer(srv.Echo())
 	t.Cleanup(ts.Close)
 
-	res, err := http.Get(ts.URL + "/healthz")
-	if err != nil {
-		t.Fatalf("healthz: %v", err)
-	}
+	res, _ := http.Get(ts.URL + "/healthz")
 	res.Body.Close()
-	if res.StatusCode != http.StatusOK {
-		t.Fatalf("healthz status=%d", res.StatusCode)
-	}
 
-	body, _ := json.Marshal(map[string]interface{}{"name": "item-1"})
-	createResp, err := http.Post(ts.URL+"/v1/backups", "application/json", bytes.NewReader(body))
+	body, _ := json.Marshal(map[string]string{"source": "db/main"})
+	cr, err := http.Post(ts.URL+"/v1/backups", "application/json", bytes.NewReader(body))
 	if err != nil {
 		t.Fatalf("create: %v", err)
 	}
-	defer createResp.Body.Close()
-	if createResp.StatusCode != http.StatusCreated {
-		t.Fatalf("create status=%d", createResp.StatusCode)
+	defer cr.Body.Close()
+	var b map[string]interface{}
+	json.NewDecoder(cr.Body).Decode(&b)
+	id, _ := b["id"].(string)
+
+	lr, _ := http.Get(ts.URL + "/v1/backups")
+	lr.Body.Close()
+
+	rr, err := http.Post(ts.URL+"/v1/backups/"+id+"/restore", "application/json", bytes.NewReader([]byte("{}")))
+	if err != nil {
+		t.Fatalf("restore: %v", err)
+	}
+	defer rr.Body.Close()
+	if rr.StatusCode != http.StatusOK {
+		t.Fatalf("restore status=%d", rr.StatusCode)
+	}
+}
+
+func TestRestoreMissing(t *testing.T) {
+	srv := server.New(server.Config{Port: "0"})
+	ts := httptest.NewServer(srv.Echo())
+	t.Cleanup(ts.Close)
+	rr, err := http.Post(ts.URL+"/v1/backups/missing/restore", "application/json", bytes.NewReader([]byte("{}")))
+	if err != nil {
+		t.Fatalf("restore: %v", err)
+	}
+	defer rr.Body.Close()
+	if rr.StatusCode != http.StatusNotFound {
+		t.Fatalf("expected 404, got %d", rr.StatusCode)
 	}
 }

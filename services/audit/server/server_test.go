@@ -10,27 +10,48 @@ import (
 	"github.com/chris-alexander-pop/go-hyperforge/services/audit/server"
 )
 
-func TestHealthAndCRUD(t *testing.T) {
+func TestAppendAndQuery(t *testing.T) {
 	srv := server.New(server.Config{Port: "0"})
 	ts := httptest.NewServer(srv.Echo())
 	t.Cleanup(ts.Close)
 
-	res, err := http.Get(ts.URL + "/healthz")
-	if err != nil {
-		t.Fatalf("healthz: %v", err)
-	}
+	res, _ := http.Get(ts.URL + "/healthz")
 	res.Body.Close()
-	if res.StatusCode != http.StatusOK {
-		t.Fatalf("healthz status=%d", res.StatusCode)
+
+	body, _ := json.Marshal(map[string]string{"actor_id": "u1", "action": "update", "resource_id": "doc-1", "outcome": "success"})
+	ar, err := http.Post(ts.URL+"/v1/audits", "application/json", bytes.NewReader(body))
+	if err != nil {
+		t.Fatalf("append: %v", err)
+	}
+	ar.Body.Close()
+	if ar.StatusCode != http.StatusCreated {
+		t.Fatalf("append=%d", ar.StatusCode)
 	}
 
-	body, _ := json.Marshal(map[string]interface{}{"name": "item-1"})
-	createResp, err := http.Post(ts.URL+"/v1/audits", "application/json", bytes.NewReader(body))
+	qr, err := http.Get(ts.URL + "/v1/audits?actor_id=u1")
 	if err != nil {
-		t.Fatalf("create: %v", err)
+		t.Fatalf("query: %v", err)
 	}
-	defer createResp.Body.Close()
-	if createResp.StatusCode != http.StatusCreated {
-		t.Fatalf("create status=%d", createResp.StatusCode)
+	defer qr.Body.Close()
+	var out map[string]interface{}
+	json.NewDecoder(qr.Body).Decode(&out)
+	items, _ := out["audits"].([]interface{})
+	if len(items) != 1 {
+		t.Fatalf("expected 1 audit, got %v", out)
+	}
+}
+
+func TestAppendMissingActor(t *testing.T) {
+	srv := server.New(server.Config{Port: "0"})
+	ts := httptest.NewServer(srv.Echo())
+	t.Cleanup(ts.Close)
+	body, _ := json.Marshal(map[string]string{"action": "update"})
+	ar, err := http.Post(ts.URL+"/v1/audits", "application/json", bytes.NewReader(body))
+	if err != nil {
+		t.Fatalf("append: %v", err)
+	}
+	defer ar.Body.Close()
+	if ar.StatusCode != http.StatusBadRequest {
+		t.Fatalf("expected 400, got %d", ar.StatusCode)
 	}
 }

@@ -10,7 +10,7 @@ import (
 	"github.com/chris-alexander-pop/go-hyperforge/services/mlinference/server"
 )
 
-func TestHealthAndCRUD(t *testing.T) {
+func TestHealthAndPredict(t *testing.T) {
 	srv := server.New(server.Config{Port: "0"})
 	ts := httptest.NewServer(srv.Echo())
 	t.Cleanup(ts.Close)
@@ -24,13 +24,45 @@ func TestHealthAndCRUD(t *testing.T) {
 		t.Fatalf("healthz status=%d", res.StatusCode)
 	}
 
-	body, _ := json.Marshal(map[string]interface{}{"name": "item-1"})
-	createResp, err := http.Post(ts.URL+"/v1/inferences", "application/json", bytes.NewReader(body))
+	body, _ := json.Marshal(map[string]interface{}{
+		"model_id": "demo-model",
+		"input":    map[string]interface{}{"x": 1.5},
+	})
+	predictResp, err := http.Post(ts.URL+"/v1/inferences", "application/json", bytes.NewReader(body))
 	if err != nil {
-		t.Fatalf("create: %v", err)
+		t.Fatalf("predict: %v", err)
 	}
-	defer createResp.Body.Close()
-	if createResp.StatusCode != http.StatusCreated {
-		t.Fatalf("create status=%d", createResp.StatusCode)
+	defer predictResp.Body.Close()
+	if predictResp.StatusCode != http.StatusOK {
+		t.Fatalf("predict status=%d", predictResp.StatusCode)
+	}
+
+	var out struct {
+		Output map[string]interface{} `json:"output"`
+	}
+	if err := json.NewDecoder(predictResp.Body).Decode(&out); err != nil {
+		t.Fatalf("decode: %v", err)
+	}
+	if out.Output == nil || out.Output["model_id"] != "demo-model" {
+		t.Fatalf("unexpected output: %+v", out.Output)
+	}
+}
+
+func TestPredictMissingModelID(t *testing.T) {
+	srv := server.New(server.Config{Port: "0"})
+	ts := httptest.NewServer(srv.Echo())
+	t.Cleanup(ts.Close)
+
+	body, _ := json.Marshal(map[string]interface{}{
+		"model_id": "",
+		"input":    map[string]interface{}{"x": 1},
+	})
+	resp, err := http.Post(ts.URL+"/v1/inferences", "application/json", bytes.NewReader(body))
+	if err != nil {
+		t.Fatalf("predict: %v", err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusBadRequest {
+		t.Fatalf("expected 400, got %d", resp.StatusCode)
 	}
 }

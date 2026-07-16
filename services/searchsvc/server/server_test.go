@@ -10,7 +10,7 @@ import (
 	"github.com/chris-alexander-pop/go-hyperforge/services/searchsvc/server"
 )
 
-func TestHealthAndCRUD(t *testing.T) {
+func TestHealthIndexAndQuery(t *testing.T) {
 	srv := server.New(server.Config{Port: "0"})
 	ts := httptest.NewServer(srv.Echo())
 	t.Cleanup(ts.Close)
@@ -24,13 +24,44 @@ func TestHealthAndCRUD(t *testing.T) {
 		t.Fatalf("healthz status=%d", res.StatusCode)
 	}
 
-	body, _ := json.Marshal(map[string]interface{}{"name": "item-1"})
-	createResp, err := http.Post(ts.URL+"/v1/search", "application/json", bytes.NewReader(body))
+	docBody, _ := json.Marshal(map[string]interface{}{
+		"documents": []map[string]interface{}{
+			{"id": "1", "document": map[string]interface{}{"title": "hello world", "body": "search me"}},
+			{"id": "2", "document": map[string]interface{}{"title": "other", "body": "nothing"}},
+		},
+	})
+	idxResp, err := http.Post(ts.URL+"/v1/search/indexes/products/documents", "application/json", bytes.NewReader(docBody))
 	if err != nil {
-		t.Fatalf("create: %v", err)
+		t.Fatalf("index: %v", err)
 	}
-	defer createResp.Body.Close()
-	if createResp.StatusCode != http.StatusCreated {
-		t.Fatalf("create status=%d", createResp.StatusCode)
+	defer idxResp.Body.Close()
+	if idxResp.StatusCode != http.StatusCreated {
+		t.Fatalf("index status=%d", idxResp.StatusCode)
+	}
+
+	qBody, _ := json.Marshal(map[string]string{"index": "products", "query": "hello"})
+	qResp, err := http.Post(ts.URL+"/v1/search/query", "application/json", bytes.NewReader(qBody))
+	if err != nil {
+		t.Fatalf("query: %v", err)
+	}
+	defer qResp.Body.Close()
+	if qResp.StatusCode != http.StatusOK {
+		t.Fatalf("query status=%d", qResp.StatusCode)
+	}
+}
+
+func TestQueryMissingIndex(t *testing.T) {
+	srv := server.New(server.Config{Port: "0"})
+	ts := httptest.NewServer(srv.Echo())
+	t.Cleanup(ts.Close)
+
+	body, _ := json.Marshal(map[string]string{"query": "hello"})
+	resp, err := http.Post(ts.URL+"/v1/search/query", "application/json", bytes.NewReader(body))
+	if err != nil {
+		t.Fatalf("query: %v", err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusBadRequest {
+		t.Fatalf("expected 400, got %d", resp.StatusCode)
 	}
 }
