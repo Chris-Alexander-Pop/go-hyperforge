@@ -73,6 +73,8 @@ jobs:
   security:
     name: Security Scan
     runs-on: ubuntu-latest
+    # CodeQL overlay caches are large; run on main only to avoid PR cache churn.
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
     permissions:
       security-events: write
     steps:
@@ -112,3 +114,4 @@ jobs:
         with:
           name: benchmark-results
           path: benchmark.txt
+          retention-days: 7
